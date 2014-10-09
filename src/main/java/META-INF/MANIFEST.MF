@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Class-Path: derby.jar
+Main-Class: com.itemanalysis.jmetrik.gui.Jmetrik
+

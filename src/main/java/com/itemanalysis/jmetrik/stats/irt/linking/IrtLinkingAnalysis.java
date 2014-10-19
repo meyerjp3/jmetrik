@@ -73,13 +73,13 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
 
     private boolean biasSd = true;
 
-    private MeanMeanMethod mm = null;
-
-    private MeanSigmaMethod ms = null;
-
-    private HaebaraMethod hb = null;
-
-    private StockingLordMethod sl = null;
+//    private MeanMeanMethod mm = null;
+//
+//    private MeanSigmaMethod ms = null;
+//
+//    private HaebaraMethod hb = null;
+//
+//    private StockingLordMethod sl = null;
 
     private EquatingCriterionType criterionType = EquatingCriterionType.Q1Q2;
 
@@ -117,6 +117,7 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
     private DatabaseAccessObject dao = null;
     private DatabaseName dbName = null;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
+    private IrtScaleLinking irtScaleLinking = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
@@ -171,76 +172,81 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
     }
 
     public void computeCoefficients()throws IllegalArgumentException{
-        mm = new MeanMeanMethod(irmX, irmY);
-        mm.setPrecision(precision);
-        ms = new MeanSigmaMethod(irmX, irmY, biasSd);
-        ms.setPrecision(precision);
 
-        double[] startValues = {0,1};
+        irtScaleLinking = new IrtScaleLinking(irmX, irmY, xDistribution, yDistribution);
+        irtScaleLinking.setStockingLordCritionType(criterionType);
+        irtScaleLinking.setHaebaraCritionType(criterionType);
+        irtScaleLinking.setPrecision(6);
+        irtScaleLinking.computeCoefficients();
 
-        double[] initial = {ms.getIntercept(), ms.getScale()};
-        sl = new StockingLordMethod(irmX, irmY, xDistribution, yDistribution, criterionType);
-        sl.setPrecision(precision);
-
-        PointValuePair optimum = null;
-        int numIter = 0;
-        String minMethod = "Powell's BOBYQA";
-        int numIterpolationPoints = 2 * 2;//two dimensions A and B
-        BOBYQAOptimizer underlying = new BOBYQAOptimizer(numIterpolationPoints);
-        RandomGenerator g = new JDKRandomGenerator();
-        RandomVectorGenerator generator = new UncorrelatedRandomVectorGenerator(2, new GaussianRandomGenerator(g));
-        MultiStartMultivariateOptimizer optimizer = new MultiStartMultivariateOptimizer(underlying, 10, generator);
-        optimum = optimizer.optimize(
-                new MaxEval(2000),
-                new ObjectiveFunction(sl),
-                GoalType.MINIMIZE,
-                SimpleBounds.unbounded(2),
-                new InitialGuess(startValues)
-        );
-        numIter = optimizer.getEvaluations();
-
-        double[] slCoefficients = optimum.getPoint();
-        sl.setIntercept(slCoefficients[0]);
-        sl.setScale(slCoefficients[1]);
-        logger.info("Stocking-Lord: " + minMethod + " optimization Fmin = " + optimum.getValue() + ", Iterations = " + numIter);
-
-        hb = new HaebaraMethod(irmX, irmY, xDistribution, yDistribution, criterionType);
-        hb.setPrecision(precision);
-
-        underlying = new BOBYQAOptimizer(numIterpolationPoints);
-        g = new JDKRandomGenerator();
-        generator = new UncorrelatedRandomVectorGenerator(2, new GaussianRandomGenerator(g));
-        optimizer = new MultiStartMultivariateOptimizer(underlying, 10, generator);
-        optimum = optimizer.optimize(
-                new MaxEval(2000),
-                new ObjectiveFunction(hb),
-                GoalType.MINIMIZE,
-                SimpleBounds.unbounded(2),
-                new InitialGuess(startValues));
-        numIter = optimizer.getEvaluations();
-
-        double[] hbCoefficients = optimum.getPoint();
-        hb.setIntercept(hbCoefficients[0]);
-        hb.setScale(hbCoefficients[1]);
-        logger.info("Haebara: " + minMethod + " optimization. Fmin = " + optimum.getValue() + ", Iterations = " + numIter);
+//        mm = new MeanMeanMethod(irmX, irmY);
+//        mm.setPrecision(precision);
+//        ms = new MeanSigmaMethod(irmX, irmY, biasSd);
+//        ms.setPrecision(precision);
+//
+//        double[] startValues = {0,1};
+//
+//        double[] initial = {ms.getIntercept(), ms.getScale()};
+//        sl = new StockingLordMethod(irmX, irmY, xDistribution, yDistribution, criterionType);
+//        sl.setPrecision(precision);
+//
+//        PointValuePair optimum = null;
+//        int numIter = 0;
+//        String minMethod = "Powell's BOBYQA";
+//        int numIterpolationPoints = 2 * 2;//two dimensions A and B
+//        BOBYQAOptimizer underlying = new BOBYQAOptimizer(numIterpolationPoints);
+//        RandomGenerator g = new JDKRandomGenerator();
+//        RandomVectorGenerator generator = new UncorrelatedRandomVectorGenerator(2, new GaussianRandomGenerator(g));
+//        MultiStartMultivariateOptimizer optimizer = new MultiStartMultivariateOptimizer(underlying, 10, generator);
+//        optimum = optimizer.optimize(
+//                new MaxEval(2000),
+//                new ObjectiveFunction(sl),
+//                GoalType.MINIMIZE,
+//                SimpleBounds.unbounded(2),
+//                new InitialGuess(startValues)
+//        );
+//        numIter = optimizer.getEvaluations();
+//
+//        double[] slCoefficients = optimum.getPoint();
+//        sl.setIntercept(slCoefficients[0]);
+//        sl.setScale(slCoefficients[1]);
+//        logger.info("Stocking-Lord: " + minMethod + " optimization Fmin = " + optimum.getValue() + ", Iterations = " + numIter);
+//
+//        hb = new HaebaraMethod(irmX, irmY, xDistribution, yDistribution, criterionType);
+//        hb.setPrecision(precision);
+//
+//        underlying = new BOBYQAOptimizer(numIterpolationPoints);
+//        g = new JDKRandomGenerator();
+//        generator = new UncorrelatedRandomVectorGenerator(2, new GaussianRandomGenerator(g));
+//        optimizer = new MultiStartMultivariateOptimizer(underlying, 10, generator);
+//        optimum = optimizer.optimize(
+//                new MaxEval(2000),
+//                new ObjectiveFunction(hb),
+//                GoalType.MINIMIZE,
+//                SimpleBounds.unbounded(2),
+//                new InitialGuess(startValues));
+//        numIter = optimizer.getEvaluations();
+//
+//        double[] hbCoefficients = optimum.getPoint();
+//        hb.setIntercept(hbCoefficients[0]);
+//        hb.setScale(hbCoefficients[1]);
+//        logger.info("Haebara: " + minMethod + " optimization. Fmin = " + optimum.getValue() + ", Iterations = " + numIter);
 
         //Stocking-lord is default transformation method
-        A = sl.getScale();
-        B = sl.getIntercept();
+        A = irtScaleLinking.getStockingLordMethod().getScale();
+        B = irtScaleLinking.getStockingLordMethod().getIntercept();
 
         //use a different transformation method
         if(command.getSelectOneOption("method").isValueSelected("mm")){
-            A = mm.getScale();
-            B = mm.getIntercept();
+            A = irtScaleLinking.getMeanMeanMethod().getScale();
+            B = irtScaleLinking.getMeanMeanMethod().getIntercept();
         }else if(command.getSelectOneOption("method").isValueSelected("ms")){
-            A = ms.getScale();
-            B = ms.getIntercept();
+            A = irtScaleLinking.getMeanSigmaMethod().getScale();
+            B = irtScaleLinking.getMeanSigmaMethod().getIntercept();
         }else if(command.getSelectOneOption("method").isValueSelected("hb")){
-            A = hb.getScale();
-            B = hb.getIntercept();
+            A = irtScaleLinking.getHaebaraMethod().getScale();
+            B = irtScaleLinking.getHaebaraMethod().getIntercept();
         }
-
-
 
     }
 
@@ -367,30 +373,30 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
 
     }
 
-    public void printEquatingCoefficients(){
-        StringBuilder sb = new StringBuilder();
-        Formatter f = new Formatter(sb);
-        String gapFormat1 = "%-" + Math.max(13, precision+4+5) + "s";
-        String gapFormat2 = "%-" + Math.max(9, precision+4+5) + "s";
-        String intFormat = "%" + Math.max(13, (precision+4))  + "." + precision + "f";
-        String sclFormat = "%" + Math.max(9, (precision+4))  + "." + precision + "f";
-        f.format("%n");
-        f.format("%60s", "               TRANSFORMATION COEFFICIENTS                 "); f.format("%n");
-        f.format("%60s", "           Form X (New Form) to Form Y (Old Form)          "); f.format("%n");
-        f.format("%60s", "============================================================"); f.format("%n");
-        f.format("%-18s", " Method");f.format(gapFormat2, "Slope (A)"); f.format("%5s"," "); f.format(gapFormat1, "Intercept (B)"); f.format("%5s"," "); f.format("%n");
-        f.format("%60s", "------------------------------------------------------------"); f.format("%n");
-        f.format("%-17s", " Mean/Mean");     f.format(sclFormat, mm.getScale());    f.format("%5s"," "); f.format(intFormat, mm.getIntercept());
-        f.format("%5s"," "); f.format("%n");
-        f.format("%-17s", " Mean/Sigma");    f.format(sclFormat, ms.getScale());    f.format("%5s"," "); f.format(intFormat, ms.getIntercept());
-        f.format("%5s"," "); f.format("%n");
-        f.format("%-17s", " Haebara");       f.format(sclFormat, hb.getScale());   f.format("%5s"," "); f.format(intFormat, hb.getIntercept());
-        f.format("%5s"," "); f.format("%n");
-        f.format("%-17s", " Stocking-Lord"); f.format(sclFormat, sl.getScale());    f.format("%5s"," "); f.format(intFormat, sl.getIntercept());
-        f.format("%5s"," "); f.format("%n");
-        f.format("%60s", "============================================================"); f.format("%n");
-        publish(f.toString());
-    }
+//    public void printEquatingCoefficients(){
+//        StringBuilder sb = new StringBuilder();
+//        Formatter f = new Formatter(sb);
+//        String gapFormat1 = "%-" + Math.max(13, precision+4+5) + "s";
+//        String gapFormat2 = "%-" + Math.max(9, precision+4+5) + "s";
+//        String intFormat = "%" + Math.max(13, (precision+4))  + "." + precision + "f";
+//        String sclFormat = "%" + Math.max(9, (precision+4))  + "." + precision + "f";
+//        f.format("%n");
+//        f.format("%60s", "               TRANSFORMATION COEFFICIENTS                 "); f.format("%n");
+//        f.format("%60s", "           Form X (New Form) to Form Y (Old Form)          "); f.format("%n");
+//        f.format("%60s", "============================================================"); f.format("%n");
+//        f.format("%-18s", " Method");f.format(gapFormat2, "Slope (A)"); f.format("%5s"," "); f.format(gapFormat1, "Intercept (B)"); f.format("%5s"," "); f.format("%n");
+//        f.format("%60s", "------------------------------------------------------------"); f.format("%n");
+//        f.format("%-17s", " Mean/Mean");     f.format(sclFormat, mm.getScale());    f.format("%5s"," "); f.format(intFormat, mm.getIntercept());
+//        f.format("%5s"," "); f.format("%n");
+//        f.format("%-17s", " Mean/Sigma");    f.format(sclFormat, ms.getScale());    f.format("%5s"," "); f.format(intFormat, ms.getIntercept());
+//        f.format("%5s"," "); f.format("%n");
+//        f.format("%-17s", " Haebara");       f.format(sclFormat, hb.getScale());   f.format("%5s"," "); f.format(intFormat, hb.getIntercept());
+//        f.format("%5s"," "); f.format("%n");
+//        f.format("%-17s", " Stocking-Lord"); f.format(sclFormat, sl.getScale());    f.format("%5s"," "); f.format(intFormat, sl.getIntercept());
+//        f.format("%5s"," "); f.format("%n");
+//        f.format("%60s", "============================================================"); f.format("%n");
+//        publish(f.toString());
+//    }
 
     @Override
     protected void process(List<String> chunks){
@@ -506,9 +512,9 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
             publish(itemSummary.printItemSummary());
             publish(itemSummary.commonItemCorrelations());
             publish(itemSummary.robustZTest());
+            publish(irtScaleLinking.toString());
 
-
-            printEquatingCoefficients();
+//            printEquatingCoefficients();
 
             if(command.getSelectAllOption("transform").isArgumentSelected("items")){
                 newItemTable = new DataTableName(tableNameItemsX.toString() + "_t");

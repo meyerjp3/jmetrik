@@ -23,6 +23,7 @@ import com.itemanalysis.psychometrics.irt.model.*;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 public class DbItemParameterSet {
@@ -58,12 +59,13 @@ public class DbItemParameterSet {
         VariableName aparam = new VariableName("aparam");
         VariableName bparam = new VariableName("bparam");
         VariableName cparam = new VariableName("cparam");
+        VariableName uparam = new VariableName("uparam");
         VariableName scoreWeight = new VariableName("sweight");
         VariableName scale = new VariableName("scale");
         VariableName step = null;
         VariableName iName = null;
 
-        double a = 1, b = 0, c = 0, D = 1.0, defaultD = 1.0;
+        double a = 1, b = 0, c = 0, D = 1.0, u = 1.0, defaultD = 1.0;
         double[] stepParam = null;
         String model = "L3";
         int ncat = 2;
@@ -89,6 +91,7 @@ public class DbItemParameterSet {
                 a = 1;
                 b = 0;
                 c = 0;
+                u = 1;
                 D = defaultD;
                 binaryModelParam = 1;
 
@@ -127,7 +130,7 @@ public class DbItemParameterSet {
                 }
 
                 //binary item response model
-                if("L3".equals(model) || "L2".equals(model) || "L1".equals(model)){
+                if("L4".equals(model) || "L3".equals(model) || "L2".equals(model) || "L1".equals(model)){
 
                     //lower-asymptote parameter -- optional
                     if(colNames.contains(cparam)){
@@ -139,17 +142,51 @@ public class DbItemParameterSet {
                         }
                     }
 
+                    //upper-asymptote parameter -- optional
+                    if(colNames.contains(uparam)){
+                        u = rs.getDouble(uparam.nameForDatabase());
+                        if(rs.wasNull()){
+                            u = 1.0;
+                        }else{
+                            binaryModelParam = 4;
+                        }
+                    }
+
                     //difficulty parameter -- required column for L3
                     b = rs.getDouble(bparam.nameForDatabase());
 
                     //Set specific type of binary model because irm constructor will
                     //determine number of parameters from constructor.
-                    if(binaryModelParam==1){
-                        irm = new Irm3PL(b, D);
-                    }else if(binaryModelParam==2){
-                        irm = new Irm3PL(a, b, D);
+
+                    if("L4".equals(model)){
+                        irm = new Irm4PL(a, b, c, u, D);
                     }else{
-                        irm = new Irm3PL(a, b, c, D);
+                        if(binaryModelParam==1){
+                            irm = new Irm3PL(b, D);
+                        }else if(binaryModelParam==2){
+                            irm = new Irm3PL(a, b, D);
+                        }else{
+                            irm = new Irm3PL(a, b, c, D);
+                        }
+                        irm.setSlipping(u);
+                    }
+
+
+
+                }else if("PC1".equals(model) || "PC4".equals(model)){
+                    //polytomous item response models that use the new parameter array with zero in the first index
+                    //TODO convert the extraction of other polytomous items to this format once changed in psychometrics library
+                    stepParam = new double[ncat];
+                    stepParam[0] = 0;//This is the new part
+                    for(int k=1;k<ncat;k++){
+                        step = new VariableName("step" + k);
+                        stepParam[k] = rs.getDouble(step.nameForDatabase());
+                    }
+                    if("PC1".equals(model)){
+                        irm = new IrmGPCM(a, stepParam, D);
+                    }
+                    if("PC4".equals(model)){
+                        irm = new IrmPCM2(stepParam, D);
                     }
 
                 }else{
@@ -159,7 +196,7 @@ public class DbItemParameterSet {
                     stepParam = new double[ncat-1];
                     for(int k=1;k<ncat;k++){
                         step = new VariableName("step" + k);
-                        stepParam[k-1] = rs.getDouble(step.nameForDatabase());
+                        stepParam[k] = rs.getDouble(step.nameForDatabase());
                     }
 
                     if("PC1".equals(model)){
@@ -201,8 +238,6 @@ public class DbItemParameterSet {
             if(pstmt!=null) pstmt.close();
         }
 
-
-
     }
 
     /**
@@ -231,11 +266,12 @@ public class DbItemParameterSet {
         VariableName aparam = new VariableName("aparam");
         VariableName bparam = new VariableName("bparam");
         VariableName cparam = new VariableName("cparam");
+        VariableName uparam = new VariableName("uparam");
         VariableName scoreWeight = new VariableName("sweight");
         VariableName scale = new VariableName("scale");
         VariableName step = null;
 
-        double a = 1, b = 0, c = 0, D = 1.0, defaultD = 1.0;
+        double a = 1, b = 0, c = 0, u = 1.0, D = 1.0, defaultD = 1.0;
         double[] stepParam = null;
         String model = "L3";
         int ncat = 2;
@@ -260,6 +296,7 @@ public class DbItemParameterSet {
                 a = 1;
                 b = 0;
                 c = 0;
+                u = 1.0;
                 D = defaultD;
                 binaryModelParam = 1;
 
@@ -292,7 +329,7 @@ public class DbItemParameterSet {
                 }
 
                 //binary item response model
-                if("L3".equals(model) || "L2".equals(model) || "L1".equals(model)){
+                if("L4".equals(model) || "L3".equals(model) || "L2".equals(model) || "L1".equals(model)){
 
                     //lower-asymptote parameter -- optional
                     if(colNames.contains(cparam)){
@@ -304,19 +341,49 @@ public class DbItemParameterSet {
                         }
                     }
 
+                    //upper-asymptote parameter -- optional
+                    if(colNames.contains(uparam)){
+                        u = rs.getDouble(uparam.nameForDatabase());
+                        if(rs.wasNull()){
+                            u = 1.0;
+                        }else{
+                            binaryModelParam = 4;
+                        }
+                    }
+
                     //difficulty parameter -- required column for L3
                     b = rs.getDouble(bparam.nameForDatabase());
 
                     //Set specific type of binary model because irm constructor will
                     //determine number of parameters from constructor.
-                    if(binaryModelParam==1){
-                        irm = new Irm3PL(b, D);
-                    }else if(binaryModelParam==2){
-                        irm = new Irm3PL(a, b, D);
+                    if("L4".equals(model)){
+                        irm = new Irm4PL(a, b, c, u, D);
                     }else{
-                        irm = new Irm3PL(a, b, c, D);
+                        if(binaryModelParam==1){
+                            irm = new Irm3PL(b, D);
+                        }else if(binaryModelParam==2){
+                            irm = new Irm3PL(a, b, D);
+                        }else{
+                            irm = new Irm3PL(a, b, c, D);
+                        }
+                        irm.setSlipping(u);
                     }
 
+                }else if("PC1".equals(model) || "PC4".equals(model)){
+                    //polytomous item response models that use the new parameter array with zero in the first index
+                    //TODO convert the extraction of other polytomous items to this format once changed in psychometrics library
+                    stepParam = new double[ncat];
+                    stepParam[0] = 0;//This is the new part
+                    for(int k=1;k<ncat;k++){
+                        step = new VariableName("step" + k);
+                        stepParam[k] = rs.getDouble(step.nameForDatabase());
+                    }
+                    if("PC1".equals(model)){
+                        irm = new IrmGPCM(a, stepParam, D);
+                    }
+                    if("PC4".equals(model)){
+                        irm = new IrmPCM2(stepParam, D);
+                    }
                 }else{
                     //polytomous item response models
 
@@ -327,15 +394,26 @@ public class DbItemParameterSet {
                         stepParam[k-1] = rs.getDouble(step.nameForDatabase());
                     }
 
+                    //Generalized partial credit model discrimination and steps
                     if("PC1".equals(model)){
                         irm = new IrmGPCM(a, stepParam, D);
-                    }else if("PC2".equals(model)){
+                    }
+                    //Generalized partial credit model discrimination, difficulty and steps
+                    else if("PC2".equals(model)){
                         b = rs.getDouble(bparam.nameForDatabase());
                         irm = new IrmGPCM2(a, b, stepParam, D);
-                    }else if("PC3".equals(model)){
+                    }
+                    //Partial credit model difficulty + steps
+                    else if("PC3".equals(model)){
                         b = rs.getDouble(bparam.nameForDatabase());
                         irm = new IrmPCM(b, stepParam, D);
-                    }else if("GR".equals(model)){
+                    }
+                    //Partial credit model steps only
+                    else if("PC4".equals(model)){
+                        irm = new IrmPCM2(stepParam, D);
+                    }
+                    //Graded response model
+                    else if("GR".equals(model)){
                         irm = new IrmGRM(a, stepParam, D);
                     }
 

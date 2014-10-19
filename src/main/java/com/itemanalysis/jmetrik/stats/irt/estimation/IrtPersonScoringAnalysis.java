@@ -249,25 +249,32 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
 
             Object response = null;
             byte responseScore = 0;
-            int index = 0;
+            byte[] responseVector = null;
+//            int index = 0;
+            int col = 0;
 
             IrtExaminee personScoring = new IrtExaminee(irm);
-        int personIndex = 1000;
+            int personIndex = 1000;
 
             while(rs.next()){
-                index = 0;
+                col = 0;
+//                index = 0;
                 personScoring.clearResponseVector();
-
+                responseVector = new byte[variables.size()];
                 for(VariableInfo v : variables){//columns in data will be in same order as variables
                     response = rs.getObject(v.getName().nameForDatabase());
                     if((response==null || response.equals("") || response.equals("NA")) && ignoreMissing){
-                        personScoring.increment((byte)-1);//-1 is code for omitted response and missing data
+                        responseScore = (byte)-1;
+//                        personScoring.increment((byte)-1);//-1 is code for omitted response and missing data
                     }else{
                         responseScore = (byte)v.getItemScoring().computeItemScore(response);
-                        personScoring.increment(responseScore);
+//                        personScoring.increment(responseScore);
                     }
-                    index++;
+                    responseVector[col] = responseScore;
+                    col++;
+//                    index++;
                 }
+                personScoring.setResponseVector(responseVector);
 
                 double score = 0.0;
                 double se = 0.0;

@@ -17,15 +17,14 @@
 
 package com.itemanalysis.jmetrik.graph.irt;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import javax.swing.SwingWorker;
 
 import com.itemanalysis.jmetrik.dao.DatabaseAccessObject;
 import com.itemanalysis.jmetrik.sql.DataTableName;
+import com.itemanalysis.jmetrik.stats.irt.linking.DbItemParameterSet;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.psychometrics.data.VariableName;
@@ -92,101 +91,200 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         lineNumber++;
     }
 
+    //NOTE: The scaling constant 1 or 1.7 is only incorporated if it is contained in the item parameter table.
+    //There is no default for the scaling constant that is set here.
+
     public void summarize()throws SQLException{
-        Statement stmt = null;
-        ResultSet rs=null;
-        double maxPossibleTestScore = 0.0;
+//        Statement stmt = null;
+//        ResultSet rs=null;
+
 
         initializeProgress();
 
-        Table sqlTable = new Table(tableName.getNameForDatabase());
-        SelectQuery select = new SelectQuery();
-        select.addColumn(sqlTable, "*");
-        stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        rs=stmt.executeQuery(select.toString());
+        ArrayList<VariableName> selectedVariableNames = new ArrayList<VariableName>();
+        for(String s : variables){
+            selectedVariableNames.add(new VariableName(s));
+        }
 
-        VariableName name = new VariableName("name");
-        VariableName ncat = new VariableName("ncat");
-        VariableName delta = new VariableName("bparam");
-        VariableName tau = null;
+        DbItemParameterSet dbItemParameterSet = new DbItemParameterSet();
+        LinkedHashMap<String, ItemResponseModel> itemParameterSet = dbItemParameterSet.getItemParameters(
+                conn, tableName, selectedVariableNames, true
+        );
 
         if(plotTcc) tcc = new double[theta.length];
         if(plotTestInfo || plotTestStdError) tinfo = new double[theta.length];
 
-        String itemName = "";
-        double difficulty = 0.0;
-        double[] step = null;
-        int nCat = 2;
-        Double cats = 0.0;
-        XYSeriesCollection collection = null;
+        double maxPossibleTestScore = 0.0;
         double maxItemScore = 1;
-
+        XYSeriesCollection collection = null;
         ItemResponseModel irm = null;
-
-        while(rs.next()){
+        for(String s : itemParameterSet.keySet()){
             collection = new XYSeriesCollection();
-            itemName = rs.getString(name.nameForDatabase());
-            if(variables.contains(itemName)){
-                cats = rs.getDouble(ncat.nameForDatabase());
-                maxPossibleTestScore += cats-1.0;
-                nCat = cats.intValue();
-                difficulty = rs.getDouble(delta.nameForDatabase());
-                if(nCat>2){
-                    step = new double[nCat-1];
-                    for(int i=0;i<nCat-1;i++){
-                        tau = new VariableName("step" + (i+1));
-                        step[i] = rs.getDouble(tau.nameForDatabase());
-                    }
-                    irm = new IrmPCM(difficulty, step, 1.0);
-                }else{
-                    irm = new Irm3PL(difficulty, 1.0);
-                }
+            irm = itemParameterSet.get(s);
+            maxPossibleTestScore += irm.getMaxScoreWeight();
+            int ncat = irm.getNcat();
 
-
-
-                //plot icc
-                if(plotIcc){
-                    if(nCat>2){
-                        if(categoryProbability){
-                            //plot all category probabilities for polytomous item
-                            for(int i=0;i<nCat;i++){
-                                collection.addSeries(getCategoryProbability(irm, i));
-                            }
-                        }else{
-                            maxItemScore = (double)(nCat-1);
-                            //plot expected value for polytomous item
-                            collection.addSeries(getExpectedValue(irm));
+            //plot icc
+            if(plotIcc){
+                if(ncat>2){
+                    if(categoryProbability){
+                        //plot all category probabilities for polytomous item
+                        for(int i=0;i<ncat;i++){
+                            collection.addSeries(getCategoryProbability(irm, i));
                         }
                     }else{
-                        //plot probability of a correct response for binary item
-                        collection.addSeries(getCategoryProbability(irm, 1));
+                        //plot expected value for polytomous item
+                        collection.addSeries(getExpectedValue(irm));
+                        maxItemScore = irm.getMaxScoreWeight();
                     }
+                }else{
+                    //plot probability of a correct response for binary item
+                    collection.addSeries(getCategoryProbability(irm, 1));
                 }
+            }
 
-                irtPanel.updateOrdinate(itemName, 0.0, maxItemScore);
-                if(plotItemInfo){
-                    collection.addSeries(getItemInformation(irm));
-                    if(!plotIcc){
-                        irtPanel.setOrdinateLabel(itemName, "Item Information");
-                        irtPanel.setOrdinateAutoRange(itemName, true);
-                    }
+            irtPanel.updateOrdinate(s, 0.0, maxItemScore);
+            if(plotItemInfo){
+                collection.addSeries(getItemInformation(irm));
+                if(!plotIcc){
+                    irtPanel.setOrdinateLabel(s, "Item Information");
+                    irtPanel.setOrdinateAutoRange(s, true);
                 }
-                irtPanel.updateDataset(itemName, collection, collection.getSeriesCount()>1);
+            }
+            irtPanel.updateDataset(s, collection, collection.getSeriesCount()>1);
 
 
-                if(plotTcc){
-                    incrementTcc(irm);
-                }
+            if(plotTcc){
+                incrementTcc(irm);
+            }
 
-                if(plotTestInfo || plotTestStdError){
-                    incrementTestInfo(irm);
-                }
+            if(plotTestInfo || plotTestStdError){
+                incrementTestInfo(irm);
+            }
 
-            }//end check for selected items
-            updateProgress();
-        }//end while
-        rs.close();
-        stmt.close();
+        }
+
+
+//        Table sqlTable = new Table(tableName.getNameForDatabase());
+//        SelectQuery select = new SelectQuery();
+//        select.addColumn(sqlTable, "*");
+//        stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+//        rs=stmt.executeQuery(select.toString());
+
+//        VariableName name = new VariableName("name");
+//        VariableName ncat = new VariableName("ncat");
+//        VariableName model = new VariableName("model");
+//        VariableName aparam = new VariableName("aparam");
+//        VariableName bparam = new VariableName("bparam");
+//        VariableName cparam = new VariableName("cparam");
+//        VariableName uparam = new VariableName("uparam");
+//        VariableName tau = null;
+
+//        if(plotTcc) tcc = new double[theta.length];
+//        if(plotTestInfo || plotTestStdError) tinfo = new double[theta.length];
+
+//        String itemName = "";
+//        String modelName = "";
+//        int nCat = 2;
+//        double a = 1.0;
+//        double b = 0.0;
+//        double c = 0.0;
+//        double u = 0.0;
+////        int binaryModelParam = 1;
+//        double[] step = null;
+//
+//        Double cats = 0.0;
+//        XYSeriesCollection collection = null;
+//        double maxItemScore = 1;
+//
+//        //get meta data to check for variable names -- could be slow for some drivers
+//        ResultSetMetaData rsmd = rs.getMetaData();
+//        int ncols = rsmd.getColumnCount();
+//        ArrayList<VariableName> colNames = new ArrayList<VariableName>();
+//        for(int i=0;i<ncols;i++){
+//            VariableName vName = new VariableName(rsmd.getColumnName(i+1));
+//            colNames.add(vName);
+//        }
+//
+//        ItemResponseModel irm = null;
+//        while(rs.next()){
+//            collection = new XYSeriesCollection();
+//            itemName = rs.getString(name.nameForDatabase());
+//            modelName = rs.getString(model.nameForDatabase());
+//            if(variables.contains(itemName)){
+//                cats = rs.getDouble(ncat.nameForDatabase());
+//                maxPossibleTestScore += cats-1.0;//Assumes all scoring begins at zero
+//                nCat = cats.intValue();
+//                b = rs.getDouble(bparam.nameForDatabase());
+//
+//                //discrimination parameter -- optional
+//                if(colNames.contains(aparam)){
+//                    a = rs.getDouble(aparam.nameForDatabase());
+//                    if(rs.wasNull()){
+//                        a = 1.0;
+//                    }else{
+//                        binaryModelParam = 2;
+//                    }
+//                }else{
+//                    a = 1.0;
+//                }
+//
+//                if(nCat>2){
+//                    step = new double[nCat-1];
+//                    for(int i=0;i<nCat-1;i++){
+//                        tau = new VariableName("step" + (i+1));
+//                        step[i] = rs.getDouble(tau.nameForDatabase());
+//                    }
+//                    irm = new IrmPCM(b, step, 1.0);
+//                }else{
+//                    irm = new Irm3PL(b, 1.0);
+//                }
+
+
+
+//                //plot icc
+//                if(plotIcc){
+//                    if(nCat>2){
+//                        if(categoryProbability){
+//                            //plot all category probabilities for polytomous item
+//                            for(int i=0;i<nCat;i++){
+//                                collection.addSeries(getCategoryProbability(irm, i));
+//                            }
+//                        }else{
+//                            maxItemScore = (double)(nCat-1);
+//                            //plot expected value for polytomous item
+//                            collection.addSeries(getExpectedValue(irm));
+//                        }
+//                    }else{
+//                        //plot probability of a correct response for binary item
+//                        collection.addSeries(getCategoryProbability(irm, 1));
+//                    }
+//                }
+//
+//                irtPanel.updateOrdinate(itemName, 0.0, maxItemScore);
+//                if(plotItemInfo){
+//                    collection.addSeries(getItemInformation(irm));
+//                    if(!plotIcc){
+//                        irtPanel.setOrdinateLabel(itemName, "Item Information");
+//                        irtPanel.setOrdinateAutoRange(itemName, true);
+//                    }
+//                }
+//                irtPanel.updateDataset(itemName, collection, collection.getSeriesCount()>1);
+//
+//
+//                if(plotTcc){
+//                    incrementTcc(irm);
+//                }
+//
+//                if(plotTestInfo || plotTestStdError){
+//                    incrementTestInfo(irm);
+//                }
+//
+//            }//end check for selected items
+//            updateProgress();
+//        }//end while
+//        rs.close();
+//        stmt.close();
 
         if(plotTcc || plotTestInfo || plotTestStdError) {
             collection = new XYSeriesCollection();

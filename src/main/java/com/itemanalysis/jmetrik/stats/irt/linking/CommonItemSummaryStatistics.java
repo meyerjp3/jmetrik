@@ -19,6 +19,7 @@ package com.itemanalysis.jmetrik.stats.irt.linking;
 
 import com.itemanalysis.psychometrics.data.VariableName;
 import com.itemanalysis.psychometrics.irt.equating.RobustZEquatingTest;
+import com.itemanalysis.psychometrics.irt.model.IrmType;
 import com.itemanalysis.psychometrics.irt.model.ItemResponseModel;
 import com.itemanalysis.psychometrics.polycor.PearsonCorrelation;
 import com.itemanalysis.psychometrics.texttable.TextTable;
@@ -28,6 +29,7 @@ import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.LinkedHashMap;
 
@@ -45,19 +47,19 @@ public class CommonItemSummaryStatistics {
     private double[] cY = null;
     private int numberOfCommonItems = 0;
 
-    private Mean xAMean = new Mean();
-    private Mean yAMean = new Mean();
-    private Mean xBMean = new Mean();
-    private Mean yBMean = new Mean();
-    private Mean xCMean = new Mean();
-    private Mean yCMean = new Mean();
+    private Mean xAMean;
+    private Mean yAMean;
+    private Mean xBMean;
+    private Mean yBMean;
+    private Mean xCMean;
+    private Mean yCMean;
 
-    private StandardDeviation xASd = new StandardDeviation();
-    private StandardDeviation yASd = new StandardDeviation();
-    private StandardDeviation xBSd = new StandardDeviation();
-    private StandardDeviation yBSd = new StandardDeviation();
-    private StandardDeviation xCSd = new StandardDeviation();
-    private StandardDeviation yCSd = new StandardDeviation();
+    private StandardDeviation xASd;
+    private StandardDeviation yASd;
+    private StandardDeviation xBSd;
+    private StandardDeviation yBSd;
+    private StandardDeviation xCSd;
+    private StandardDeviation yCSd;
 
     public CommonItemSummaryStatistics(LinkedHashMap<String, ItemResponseModel> irmX, LinkedHashMap<String, ItemResponseModel> irmY){
         this.irmX = irmX;
@@ -147,7 +149,14 @@ public class CommonItemSummaryStatistics {
                 polyIndex++;
                 varNamesB.add(new VariableName(s));
             }else{
-                double[] steps = irm.getStepParameters();
+                double[] steps;
+                if(irm.getType()== IrmType.GPCM || irm.getType()==IrmType.PCM2){
+                    steps = irm.getStepParameters();
+                    steps = Arrays.copyOfRange(steps, 1, steps.length);//Omit first step since it is zero.
+                }else{
+                    steps = irm.getStepParameters();
+                }
+
                 for(int k=0;k<steps.length;k++){
                     bX[polyIndex] = steps[k];
                     xBMean.increment(bX[polyIndex]);
@@ -187,7 +196,14 @@ public class CommonItemSummaryStatistics {
                 binaryIndex++;
                 polyIndex++;
             }else{
-                double[] steps = irm.getStepParameters();
+                double[] steps;
+                if(irm.getType()== IrmType.GPCM || irm.getType()==IrmType.PCM2){
+                    steps = irm.getStepParameters();
+                    steps = Arrays.copyOfRange(steps, 1, steps.length);//Omit first step since it is zero.
+                }else{
+                    steps = irm.getStepParameters();
+                }
+
                 for(int k=0;k<steps.length;k++){
                     bY[polyIndex] = steps[k];
                     yBMean.increment(bY[polyIndex]);

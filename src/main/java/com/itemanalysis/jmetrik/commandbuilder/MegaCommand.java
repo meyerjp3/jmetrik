@@ -24,8 +24,12 @@ import java.util.regex.Pattern;
 /**
  * The text representation of a command has the form commandName{ commandBody }, where the commandBody
  * is a list of MegaOptions separated by semicolons.
+ *
+ * //TODO remove the interface to Command once all commands in jMetrik have been converted to MegaCommand.
+ * //TODO make this class abstract
+ * //This interface is here only for the IRTAnalysis feature. It is the first one to use the MegaCommand.
  */
-public class MegaCommand {
+public class MegaCommand implements Command{
 
     private String commandName = "";
     private String commandDescription = "";
@@ -52,6 +56,14 @@ public class MegaCommand {
         commandOptions.put(optionName, option);
     }
 
+    public String getCommandName(){
+        return commandName;
+    }
+
+    public String getCommandDescription(){
+        return commandDescription;
+    }
+
     /**
      * REturns only the first option in a list of options.
      *
@@ -63,16 +75,16 @@ public class MegaCommand {
     }
 
     public void split(String text){
-        int commandNameEnd = text.indexOf("{");
-        int commandBodyEnd = text.lastIndexOf("}");
-        String cName = text.substring(0, commandNameEnd).trim();
-        if(!commandName.equals(cName)) return;
-
-        String commandBody = text.substring(commandNameEnd+1, commandBodyEnd).trim();
-        commandBody = commandBody.replaceAll("(?:\\n|\\r)", "");//remove all new lines and carriage returns
+//        int commandNameEnd = text.indexOf("{");
+//        int commandBodyEnd = text.lastIndexOf("}");
+//        String cName = text.substring(0, commandNameEnd).trim();
+//        if(!commandName.equals(cName)) return;
+//
+//        String commandBody = text.substring(commandNameEnd+1, commandBodyEnd).trim();
+//        commandBody = commandBody.replaceAll("(?:\\n|\\r)", "");//remove all new lines and carriage returns
 
         MegaOptionParser optionParser = new MegaOptionParser();
-        String[] options = commandBody.trim().split(";");
+        String[] options = text.trim().split(";");
         MegaOption temp = null;
         for(String s : options){
             String op = s.trim();
@@ -91,7 +103,9 @@ public class MegaCommand {
         sb.append(commandName + "{\n");
         for(String s : commandOptions.keySet()){
             MegaOption mo = commandOptions.get(s);
-            sb.append("  " + mo.paste() + ";\n");
+            if(mo.hasAnyValues){
+                sb.append("  " + mo.paste() + ";\n");
+            }
         }
         sb.append("}");
         return sb.toString();
@@ -128,6 +142,70 @@ public class MegaCommand {
         }
         sb.append("}");
         return sb.toString();
+    }
+
+    public String getName(){
+        return commandName;
+    }
+
+
+
+    //TODO remove these empty methods once all procedures in jMetrik have been converted to MegaOption
+
+    public void addSelectOneOption(SelectOneOption optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public void addSelectAllOption(SelectAllOption optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public void addFreeOption(FreeOption optionName) throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public void addFreeOptionList(FreeOptionList optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public void addPairedOptionList(PairedOptionList optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public void addRepeatedOption(RepeatedPairedOptionList optionName) throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public void removeOption(String optionName){
+        throw new UnsupportedOperationException();
+    }
+
+    public SelectOneOption getSelectOneOption(String optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public SelectAllOption getSelectAllOption(String optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public FreeOption getFreeOption(String optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public FreeOptionList getFreeOptionList(String optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public PairedOptionList getPairedOptionList(String optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
+    }
+
+    public ArrayList<String> getRequiredOptions(){
+        throw new UnsupportedOperationException();
+    }
+
+    public RepeatedPairedOptionList getRepeatedOption(String optionName)throws IllegalArgumentException{
+        throw new UnsupportedOperationException();
     }
 
 }

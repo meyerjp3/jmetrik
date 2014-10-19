@@ -15,10 +15,7 @@
  */
 package com.itemanalysis.jmetrik.commandbuilder;
 
-import java.util.ArrayList;
-import java.util.Formatter;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * A flexible class for defining an option and storing values. It can take named arguments of not.
@@ -37,8 +34,10 @@ import java.util.HashSet;
  * All values are stored as Strings, but there are methods that will convert the value to double or int
  * before returning them.
  *
+ * This class is called MegaCommand because it uses one class to accomplish the same work that once took many classes.
+ *
  */
-public class MegaOption {
+public class MegaOption{
 
     /**
      * A unique option name
@@ -91,6 +90,8 @@ public class MegaOption {
      * A static name for the no argument case.
      */
     private static String NULL_ARGUMENT = "NOARG";
+
+    public boolean hasAnyValues = false;
 
     public MegaOption(String optionName, String optionDescription, OptionType type){
         this(optionName, optionDescription, type, false);
@@ -173,10 +174,24 @@ public class MegaOption {
         return optionName;
     }
 
+    public String getOptionDescription(){
+        return optionDescription;
+    }
+
+    /**
+     * Indicates whether the option is required
+     *
+     * @return true if option is required and false otherwise
+     */
     public boolean isRequired(){
         return required;
     }
 
+    /**
+     * Indicates whether the option uses argument value pairs or just one or more values.
+     * @return true if argument uses option value pairs. Return false if uses one ore more values
+     * without arguments.
+     */
     public boolean hasArguments(){
         return argumentValuePair;
     }
@@ -249,6 +264,7 @@ public class MegaOption {
                 argumentValue.get(argName).add(0, argValue);
             }
 
+            hasAnyValues = true;
         }else{
             throw new IllegalArgumentException(optionName + " does not take named arguments.");
         }
@@ -278,7 +294,7 @@ public class MegaOption {
                 if(!argumentValueList.isEmpty()) argumentValueList.remove(0);
                 argumentValueList.add(value);
             }
-
+            hasAnyValues = true;
         }
     }
 
@@ -360,7 +376,7 @@ public class MegaOption {
      * @return
      * @throws IllegalArgumentException
      */
-    public double getValueAsInteger(int defaultValue)throws IllegalArgumentException{
+    public int getValueAsInteger(int defaultValue)throws IllegalArgumentException{
         String value = getValue(Integer.valueOf(defaultValue).toString());
         return Integer.parseInt(value);
     }
@@ -383,7 +399,8 @@ public class MegaOption {
 
         if(argumentValuePair){
             if(argument.contains(argName) && argumentValue.containsKey(argName)){
-                String value = argumentValue.get(argName).get(0);
+                String value = defaultValue;
+                if(argumentValue.get(argName).size()>0) value = argumentValue.get(argName).get(0);
                 return value;
             }else{
                 if(argumentRequired.get(argName)==Boolean.TRUE) throw new IllegalArgumentException("Value not found for required argument: " + argName);
@@ -399,7 +416,7 @@ public class MegaOption {
         return Double.parseDouble(value);
     }
 
-    public double getValueAtAsInteger(String argName, double defaultValue)throws IllegalArgumentException{
+    public int getValueAtAsInteger(String argName, double defaultValue)throws IllegalArgumentException{
         String value = getValueAt(argName, Double.valueOf(defaultValue).toString());
         return Integer.parseInt(value);
     }
@@ -487,6 +504,7 @@ public class MegaOption {
         if(argumentValuePair){
             if(argument.contains(argName) && argumentValue.containsKey(argName)){
                 ArrayList<String> valueList = argumentValue.get(argName);
+                if(valueList.size()==0) return defaultValues;
                 String[] values = new String[valueList.size()];
                 for(int i=0;i<valueList.size();i++){
                     values[i] = valueList.get(i);
@@ -509,6 +527,7 @@ public class MegaOption {
 
         String[] s = getValuesAt(argName, dv);
 
+        n = s.length;
         double[] d = new double[n];
         for(int i=0;i<n;i++){
             d[i] = Double.parseDouble(s[i]);
@@ -524,12 +543,77 @@ public class MegaOption {
         }
 
         String[] s = getValuesAt(argName, dv);
+        n = s.length;
 
         int[] d = new int[n];
         for(int i=0;i<n;i++){
             d[i] = Integer.parseInt(s[i]);
         }
         return d;
+    }
+
+    public boolean hasAnyValues(){
+        return hasAnyValues;
+    }
+
+    public MegaOption split(String input, MegaOption option){
+        if(option==null) throw new NullPointerException("Check your option names");
+
+        String REGEX = ",(?![^()]*+\\))";//split only on commas not contained in parentheses
+        int nameEnd = input.indexOf("(");
+        int optionEnd = input.lastIndexOf(")");
+        String optionName = input.substring(0, nameEnd).trim();
+        String optionValue = input.substring(nameEnd+1, optionEnd).trim();
+
+        if(!optionName.equals(option.getOptionName())){
+            return null;
+        }
+
+        if(option.hasArguments()){
+            if(optionValue.contains("=")){
+                String[] argValuePairs = optionValue.split(REGEX);
+                String REGEX2 = "=(?![^()]*+\\))";//split only on equal signs not contained in parentheses
+                for(int i=0;i<argValuePairs.length;i++){
+                    //pair[0] is the argument name
+                    //pair[1] is the argument value, which could be a comma delimited list
+                    String[] pair = argValuePairs[i].split(REGEX2);
+                    String arg = pair[0].trim();
+                    if(option.includesArgument(arg)){
+
+                        String value = pair[1].trim();
+                        int start = value.indexOf("(");
+                        int end = value.lastIndexOf(")");
+
+                        if(start==-1 && end == -1){
+                            //A single value, just add it
+                            option.addValueAt(arg, value);
+                        }else{
+                            //A list of values contained in parentheses. Split the list and add each element.
+                            value = value.substring(start+1, end);
+                            String[] valueList = value.split(",");
+                            for(String v : valueList){
+                                option.addValueAt(arg, v.trim());
+                            }
+                        }
+
+
+                    }else{
+                        throw new IllegalArgumentException(option.getOptionName() + " does not include the argument " + arg);
+                    }
+                }
+            }else{
+                throw new IllegalArgumentException("Argument/value pairs must be separated by an = sign in " + option.getOptionName() + ".");
+            }
+
+
+        }else{
+            String[] s = optionValue.split(REGEX);
+            for(int i=0;i<s.length;i++){
+                option.addValue(s[i].trim());
+            }
+        }
+
+        return option;
     }
 
     /**

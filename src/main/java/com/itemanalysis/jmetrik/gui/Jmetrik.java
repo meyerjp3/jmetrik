@@ -37,6 +37,7 @@ import com.itemanalysis.jmetrik.graph.density.DensityProcess;
 import com.itemanalysis.jmetrik.stats.descriptives.DescriptiveProcess;
 import com.itemanalysis.jmetrik.stats.frequency.FrequencyProcess;
 import com.itemanalysis.jmetrik.stats.irt.equating.IrtEquatingProcess;
+import com.itemanalysis.jmetrik.stats.irt.estimation.IrtItemCalibrationProcess;
 import com.itemanalysis.jmetrik.stats.irt.estimation.IrtPersonScoringProcess;
 import com.itemanalysis.jmetrik.stats.irt.linking.IrtLinkingProcess;
 import com.itemanalysis.jmetrik.stats.irt.rasch.RaschAnalysisProcess;
@@ -750,9 +751,8 @@ public class Jmetrik extends JFrame{
         RaschAnalysisProcess raschAnalysisProcess = new RaschAnalysisProcess();
         raschAnalysisProcess.addMenuItem(Jmetrik.this, analyzeMenu, dialogs, workspace, workspaceList);
 
-        mItem = new JMenuItem("Item Calibration (MMLE)...");
-        mItem.setEnabled(false);
-        analyzeMenu.add(mItem);
+        IrtItemCalibrationProcess irtItemCalibrationProcess = new IrtItemCalibrationProcess();
+        irtItemCalibrationProcess.addMenuItem(Jmetrik.this, analyzeMenu, dialogs, workspace, workspaceList);
 
         IrtPersonScoringProcess irtPersonScoringProcess = new IrtPersonScoringProcess();
         irtPersonScoringProcess.addMenuItem(Jmetrik.this, analyzeMenu, dialogs, workspace, workspaceList);
@@ -1254,7 +1254,7 @@ public class Jmetrik extends JFrame{
                     needUpdate++;
                 }
             }
-            if(needUpdate>0){
+            if(needUpdate>0  && !BETA_VERSION){
                 showUpdateResults(needUpdate>0);
                 logger.info("jMetrik updates available. Please go to www.ItemAnalysis.com and download the new version.");
             }else{

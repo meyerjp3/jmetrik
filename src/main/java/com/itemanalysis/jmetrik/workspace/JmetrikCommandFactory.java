@@ -34,6 +34,7 @@ import com.itemanalysis.jmetrik.stats.correlation.CorrelationCommand;
 import com.itemanalysis.jmetrik.stats.descriptives.DescriptiveCommand;
 import com.itemanalysis.jmetrik.stats.frequency.FrequencyCommand;
 import com.itemanalysis.jmetrik.stats.irt.equating.IrtEquatingCommand;
+import com.itemanalysis.jmetrik.stats.irt.estimation.IrtItemCalibrationCommand;
 import com.itemanalysis.jmetrik.stats.irt.estimation.IrtPersonScoringCommand;
 import com.itemanalysis.jmetrik.stats.irt.linking.IrtLinkingCommand;
 import com.itemanalysis.jmetrik.stats.irt.rasch.RaschCommand;
@@ -219,6 +220,11 @@ public class JmetrikCommandFactory {
         }
         else if(commandName.equals("irtscoring")){
             IrtPersonScoringCommand command = new IrtPersonScoringCommand();
+            command.split(commandSyntax);
+            return command;
+        }
+        else if(commandName.equals("irt")){
+            IrtItemCalibrationCommand command = new IrtItemCalibrationCommand();
             command.split(commandSyntax);
             return command;
         }

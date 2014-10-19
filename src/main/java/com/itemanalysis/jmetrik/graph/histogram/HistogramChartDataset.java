@@ -53,7 +53,8 @@ public class HistogramChartDataset extends AbstractDataset implements IntervalXY
 
     public Number getX(int series, int item){
         Histogram h = histogram.get(getSeriesKey(series));
-        Double d = new Double(h.getBinAt(item).getMidPoint());
+        Double d = h.getPointAt(item);
+//        Double d = new Double(h.getBinAt(item).getMidPoint());
         return d;
     }
 
@@ -65,7 +66,8 @@ public class HistogramChartDataset extends AbstractDataset implements IntervalXY
     public Number getY(int series, int item) {
         Histogram h = histogram.get(getSeriesKey(series));
         Double d = null;
-        d = new Double(h.getBinAt(item).getValue());
+//        d = new Double(h.getBinAt(item).getFrequency());
+        d = new Double(h.getValueAt(item));
         return d;
     }
 

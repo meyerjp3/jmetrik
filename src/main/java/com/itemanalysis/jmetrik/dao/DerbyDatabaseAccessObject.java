@@ -1675,11 +1675,12 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
         VariableName aparam = new VariableName("aparam");
         VariableName bparam = new VariableName("bparam");
         VariableName cparam = new VariableName("cparam");
+        VariableName uparam = new VariableName("uparam");
         VariableName scoreWeight = new VariableName("sweight");
         VariableName scale = new VariableName("scale");
         VariableName step = null;
 
-        double a = 1, b = 0, c = 0, D = 1.0, defaultD = 1.0;
+        double a = 1, b = 0, c = 0, u = 1.0, D = 1.0, defaultD = 1.0;
         double[] stepParam = null;
         String model = "L3";
         int ncat = 2;
@@ -1704,6 +1705,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
                 a = 1;
                 b = 0;
                 c = 0;
+                u = 1;
                 D = defaultD;
                 binaryModelParam = 1;
 
@@ -1736,7 +1738,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
                 }
 
                 //binary item response model
-                if("L3".equals(model)){
+                if("L4".equals(model) || "L3".equals(model) || "L2".equals(model) || "L1".equals(model)){
 
                     //lower-asymptote parameter -- optional
                     if(colNames.contains(cparam)){
@@ -1748,28 +1750,53 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
                         }
                     }
 
+                    //upper-asymptote parameter -- optional
+                    if(colNames.contains(uparam)){
+                        u = rs.getDouble(uparam.nameForDatabase());
+                        if(rs.wasNull()){
+                            u = 1.0;
+                        }else{
+                            binaryModelParam = 4;
+                        }
+                    }
+
                     //difficulty parameter -- required column for L3
                     b = rs.getDouble(bparam.nameForDatabase());
 
                     //Set specific type of binary model because irm constructor will
                     //determine number of parameters from constructor.
-                    if(binaryModelParam==1){
-                        irm = new Irm3PL(b, D);
-                    }else if(binaryModelParam==2){
-                        irm = new Irm3PL(a, b, D);
+                    if("L4".equals(model)){
+                        irm = new Irm4PL(a, b, c, u, D);
                     }else{
-                        irm = new Irm3PL(a, b, c, D);
+                        if(binaryModelParam==1){
+                            irm = new Irm3PL(b, D);
+                        }else if(binaryModelParam==2){
+                            irm = new Irm3PL(a, b, D);
+                        }else{
+                            irm = new Irm3PL(a, b, c, D);
+                        }
+                        irm.setSlipping(u);
                     }
 
                 }else{
                     //polytomous item response models
 
                     //all polytomous models have step parameter variables in database
-                    stepParam = new double[ncat-1];
-                    for(int k=1;k<ncat;k++){
-                        step = new VariableName("step" + k);
-                        stepParam[k-1] = rs.getDouble(step.nameForDatabase());
+                    if("PC1".equals(model) || "PC4".equals(model)){
+                        stepParam = new double[ncat];
+                        stepParam[0]=0;
+                        for(int k=1;k<ncat;k++){
+                            step = new VariableName("step" + k);
+                            stepParam[k] = rs.getDouble(step.nameForDatabase());
+                        }
+                    }else{
+                        stepParam = new double[ncat-1];
+                        for(int k=1;k<ncat;k++){
+                            step = new VariableName("step" + k);
+                            stepParam[k-1] = rs.getDouble(step.nameForDatabase());
+                        }
                     }
+
 
                     if("PC1".equals(model)){
                         irm = new IrmGPCM(a, stepParam, D);
@@ -1779,6 +1806,8 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
                     }else if("PC3".equals(model)){
                         b = rs.getDouble(bparam.nameForDatabase());
                         irm = new IrmPCM(b, stepParam, D);
+                    }else if("PC4".equals(model)){
+                        irm = new IrmPCM2(stepParam, D);
                     }else if("GR".equals(model)){
                         irm = new IrmGRM(a, stepParam, D);
                     }

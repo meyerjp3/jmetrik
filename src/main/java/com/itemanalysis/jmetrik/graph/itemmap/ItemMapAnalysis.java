@@ -22,7 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.TreeMap;
+import java.util.Iterator;
 import javax.swing.SwingWorker;
 
 import com.itemanalysis.jmetrik.dao.DatabaseAccessObject;
@@ -33,8 +33,9 @@ import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.psychometrics.data.VariableInfo;
 import com.itemanalysis.psychometrics.data.VariableName;
+import com.itemanalysis.psychometrics.histogram.BinCalculationType;
 import com.itemanalysis.psychometrics.histogram.Histogram;
-import com.itemanalysis.psychometrics.histogram.SturgesBinCalculation;
+import com.itemanalysis.psychometrics.histogram.HistogramType;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
@@ -93,18 +94,8 @@ public class ItemMapAnalysis extends SwingWorker<ItemMapPanel, Void> {
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             rs=stmt.executeQuery(select.toString());
 
-            //compute bins
-            SturgesBinCalculation sturges = new SturgesBinCalculation();
+            Histogram histogram = new Histogram(HistogramType.DENSITY, BinCalculationType.STURGES, true);
             String dbVarName = variable.get(0).getName().nameForDatabase();
-            while(rs.next()){
-                Double value = (Double)rs.getObject(dbVarName);
-                if(value!=null){
-                    sturges.increment(value.doubleValue());
-                }
-                updateProgress();
-            }
-
-            Histogram histogram = new Histogram(sturges, Histogram.HistogramType.DENSITY);
             rs=stmt.executeQuery(select.toString());
             while(rs.next()){
                 Double value = (Double)rs.getObject(dbVarName);
@@ -113,13 +104,15 @@ public class ItemMapAnalysis extends SwingWorker<ItemMapPanel, Void> {
                 }
                 updateProgress();
             }
-            rs.close();
-            stmt.close();
+            histogram.evaluate();//compute histogram
             data.addHistogram("Theta", histogram);
             return data;
         }catch(SQLException ex){
             logger.fatal(ex.getMessage(), ex);
             throw new SQLException(ex);
+        }finally{
+            if(rs!=null) rs.close();
+            if(stmt!=null) stmt.close();
         }
     }
 
@@ -129,94 +122,69 @@ public class ItemMapAnalysis extends SwingWorker<ItemMapPanel, Void> {
 
         HistogramChartDataset data = new HistogramChartDataset();
 
-        Table sqlTable = new Table(itemTableName.getNameForDatabase());
-        SelectQuery select = new SelectQuery();
-        select.addColumn(sqlTable, "*");
-        stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-        rs=stmt.executeQuery(select.toString());
+        try{
+            Table sqlTable = new Table(itemTableName.getNameForDatabase());
+            SelectQuery select = new SelectQuery();
+            select.addColumn(sqlTable, "*");
+            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            rs=stmt.executeQuery(select.toString());
 
-        VariableName nCatName = new VariableName("ncat");
-        VariableName deltaName = new VariableName("bparam");
-        VariableName tauName = null;
-        int numCat = 2;
-        String gName = "difficulty";
+            VariableName nCatName = new VariableName("ncat");
+            VariableName deltaName = new VariableName("bparam");
+            VariableName tauName = null;
+            int numCat = 2;
+            String gName = "difficulty";
+            rs=stmt.executeQuery(select.toString());
 
-        TreeMap<String, SturgesBinCalculation> sturges = new TreeMap<String, SturgesBinCalculation>();
+            //fill bins
+            while(rs.next()){
+                Double nCat = (Double)rs.getObject(nCatName.nameForDatabase());
+                Double delta = (Double)rs.getObject(deltaName.nameForDatabase());
+                Double tau = 0.0;
+                Double step = 0.0;
+                if(nCat!=null && delta!=null){
+                    numCat = nCat.intValue();
+                    if(numCat>2){
+                        for(int i=1;i<numCat;i++){
+                            gName = "step" + i;
+                            //compute step difficulties and frequency of occurrence
+                            tauName = new VariableName(gName);
+                            tau = delta + (Double)rs.getObject(tauName.nameForDatabase());
+                            step = delta + tau;
 
-        //compute bins
-        while(rs.next()){
-            Double nCat = (Double)rs.getObject(nCatName.nameForDatabase());
-            Double delta = (Double)rs.getObject(deltaName.nameForDatabase());
-            Double tau = 0.0;
-            Double step = 0.0;
-            if(nCat!=null && delta!=null){
-                numCat = nCat.intValue();
-                if(numCat>2){
-                    for(int i=1;i<numCat;i++){
-                        gName = "step" + i;
-                        //compute step difficulties and frequency of occurrence
-                        tauName = new VariableName(gName);
-                        tau = delta + (Double)rs.getObject(tauName.nameForDatabase());
-                        step = delta + tau;
-
-                        SturgesBinCalculation s = sturges.get(gName);
-                        if(s==null){
-                            s = new SturgesBinCalculation();
-                            sturges.put(gName, s);
+                            Histogram h = data.getHistogram(gName);
+                            if(h==null){
+                                h = new Histogram(HistogramType.FREQUENCY, BinCalculationType.STURGES, true);
+                                data.addHistogram(gName, h);
+                            }
+                            h.increment(step);
                         }
-                        s.increment(step);
-                    }
-                }else{
-                    SturgesBinCalculation s = sturges.get(gName);
-                    if(s==null){
-                        s = new SturgesBinCalculation();
-                        sturges.put(gName, s);
-                    }
-                    s.increment(delta);
-                }
-            }
-            updateProgress();
-        }
-
-        rs=stmt.executeQuery(select.toString());
-
-        //fill bins
-        while(rs.next()){
-            Double nCat = (Double)rs.getObject(nCatName.nameForDatabase());
-            Double delta = (Double)rs.getObject(deltaName.nameForDatabase());
-            Double tau = 0.0;
-            Double step = 0.0;
-            if(nCat!=null && delta!=null){
-                numCat = nCat.intValue();
-                if(numCat>2){
-                    for(int i=1;i<numCat;i++){
-                        gName = "step" + i;
-                        //compute step difficulties and frequency of occurrence
-                        tauName = new VariableName(gName);
-                        tau = delta + (Double)rs.getObject(tauName.nameForDatabase());
-                        step = delta + tau;
-
+                    }else{
                         Histogram h = data.getHistogram(gName);
                         if(h==null){
-                            h = new Histogram(sturges.get(gName), Histogram.HistogramType.FREQUENCY);
+                            h = new Histogram(HistogramType.FREQUENCY, BinCalculationType.STURGES, true);
                             data.addHistogram(gName, h);
                         }
-                        h.increment(step);
+                        h.increment(delta);
                     }
-                }else{
-                    Histogram h = data.getHistogram(gName);
-                    if(h==null){
-                        h = new Histogram(sturges.get(gName), Histogram.HistogramType.FREQUENCY);
-                        data.addHistogram(gName, h);
-                    }
-                    h.increment(delta);
                 }
+                updateProgress();
             }
-            updateProgress();
+
+            //Compute histogram
+            Iterator<Comparable> iter = data.iterator();
+            Histogram h = null;
+            while(iter.hasNext()){
+                data.getHistogram(iter.next()).evaluate();
+            }
+
+            return data;
+        }catch(SQLException ex){
+            throw(ex);
+        }finally{
+            if(rs!=null) rs.close();
+            if(stmt!=null) stmt.close();
         }
-        rs.close();
-        stmt.close();
-        return data;
     }
 
     protected ItemMapPanel doInBackground(){

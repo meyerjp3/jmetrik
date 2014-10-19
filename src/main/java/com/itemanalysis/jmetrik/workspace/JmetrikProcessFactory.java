@@ -18,6 +18,7 @@
 package com.itemanalysis.jmetrik.workspace;
 
 import com.itemanalysis.jmetrik.commandbuilder.Command;
+import com.itemanalysis.jmetrik.commandbuilder.MegaCommand;
 import com.itemanalysis.jmetrik.graph.barchart.BarChartProcess;
 import com.itemanalysis.jmetrik.graph.histogram.HistogramProcess;
 import com.itemanalysis.jmetrik.graph.irt.IrtPlotProcess;
@@ -34,6 +35,7 @@ import com.itemanalysis.jmetrik.graph.density.DensityProcess;
 import com.itemanalysis.jmetrik.stats.descriptives.DescriptiveProcess;
 import com.itemanalysis.jmetrik.stats.frequency.FrequencyProcess;
 import com.itemanalysis.jmetrik.stats.irt.equating.IrtEquatingProcess;
+import com.itemanalysis.jmetrik.stats.irt.estimation.IrtItemCalibrationProcess;
 import com.itemanalysis.jmetrik.stats.irt.estimation.IrtPersonScoringProcess;
 import com.itemanalysis.jmetrik.stats.irt.linking.IrtLinkingProcess;
 import com.itemanalysis.jmetrik.stats.irt.rasch.RaschAnalysisProcess;
@@ -50,6 +52,10 @@ public class JmetrikProcessFactory {
 
     public JmetrikProcess getProcess(Command command){
         return getProcess(command.getName());
+    }
+
+    public JmetrikProcess getProcess(MegaCommand command){
+        return getProcess(command.getCommandName());
     }
     
     public JmetrikProcess getProcess(String commandName){
@@ -150,7 +156,9 @@ public class JmetrikProcessFactory {
         else if(commandName.equals("irtscoring")){
             return new IrtPersonScoringProcess();
         }
-
+        else if(commandName.equals("irt")){
+            return new IrtItemCalibrationProcess();
+        }
 
         return null;
     }

@@ -18,11 +18,8 @@
 package com.itemanalysis.jmetrik.graph.histogram;
 
 import com.itemanalysis.jmetrik.dao.DatabaseAccessObject;
-import com.itemanalysis.jmetrik.dao.DatabaseType;
-import com.itemanalysis.jmetrik.dao.JmetrikDatabaseFactory;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.psychometrics.data.VariableInfo;
@@ -137,87 +134,87 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
      * @throws SQLException
      * @throws IllegalArgumentException
      */
-    private void binCalculation()throws SQLException, IllegalArgumentException{
-        Statement stmt = null;
-        ResultSet rs=null;
-
-        try{
-            binCalc = new TreeMap<Object, BinCalculation>();
-
-            initializeProgressBar();
-
-            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-            SelectQuery select = new SelectQuery();
-            Table table = new Table(tableName.getNameForDatabase());
-            select.addColumn(table, variable.getName().nameForDatabase());
-            rs=stmt.executeQuery(select.toString());
-
-            for(Object o : groupbyValues){
-                //select all cases ind b with groupByValue of Object o
-                select = new SelectQuery();
-                table = new Table(tableName.getNameForDatabase());
-                select.addColumn(table, variable.getName().nameForDatabase());
-
-                //add where clause if groupby variable provided
-                if(hasGroupingVariable && groupVar !=null){
-                    select.addColumn(table, groupVar.getName().nameForDatabase());
-                    if(groupVar.getType().getDataType()== VariableType.DOUBLE){
-                        select.addCriteria((new MatchCriteria(
-                                new Column(table, groupVar.getName().nameForDatabase()),
-                                MatchCriteria.EQUALS,
-                                ((Double)o).doubleValue()
-                        )));
-                    }else{
-                        select.addCriteria((new MatchCriteria(
-                                new Column(table, groupVar.getName().nameForDatabase()),
-                                MatchCriteria.EQUALS,
-                                o.toString()
-                        )));
-                    }
-                }
-                rs=stmt.executeQuery(select.toString());
-
-                //loop over data and add value sto array list
-                double value = Double.NaN;
-                while(rs.next()){
-                    value=rs.getDouble(variable.getName().nameForDatabase());
-                    if(!rs.wasNull()){
-                        BinCalculation bc = binCalc.get(o);
-                        if(bc==null){
-                            bc = getBinCalculation();
-                            binCalc.put(o, bc);
-                        }
-                        bc.increment(value);
-                    }
-                    updateProgress();
-                }
-                rs.close();
-            }
-            stmt.close();
-        }catch(SQLException ex){
-            throw new SQLException(ex);
-        }catch(IllegalArgumentException ex){
-            throw new IllegalArgumentException(ex);
-        }
-
-    }
-
-    private BinCalculation getBinCalculation()throws IllegalArgumentException{
-        BinCalculation bc = null;
-        try{
-            if(command.getSelectOneOption("bintype").isValueSelected("sturges")){
-                bc = new SturgesBinCalculation();
-            }else if(command.getSelectOneOption("bintype").isValueSelected("scott")){
-                bc = new ScottBinCalculation();
-            }else if(command.getSelectOneOption("bintype").isValueSelected("fd")){
-                bc = new FreedmanDiaconisBinCalculation();
-            }
-            return bc;
-        }catch(IllegalArgumentException ex){
-            throw new IllegalArgumentException(ex);
-        }
-
-    }
+//    private void binCalculation()throws SQLException, IllegalArgumentException{
+//        Statement stmt = null;
+//        ResultSet rs=null;
+//
+//        try{
+//            binCalc = new TreeMap<Object, BinCalculation>();
+//
+//            initializeProgressBar();
+//
+//            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+//            SelectQuery select = new SelectQuery();
+//            Table table = new Table(tableName.getNameForDatabase());
+//            select.addColumn(table, variable.getName().nameForDatabase());
+//            rs=stmt.executeQuery(select.toString());
+//
+//            for(Object o : groupbyValues){
+//                //select all cases ind b with groupByValue of Object o
+//                select = new SelectQuery();
+//                table = new Table(tableName.getNameForDatabase());
+//                select.addColumn(table, variable.getName().nameForDatabase());
+//
+//                //add where clause if groupby variable provided
+//                if(hasGroupingVariable && groupVar !=null){
+//                    select.addColumn(table, groupVar.getName().nameForDatabase());
+//                    if(groupVar.getType().getDataType()== VariableType.DOUBLE){
+//                        select.addCriteria((new MatchCriteria(
+//                                new Column(table, groupVar.getName().nameForDatabase()),
+//                                MatchCriteria.EQUALS,
+//                                ((Double)o).doubleValue()
+//                        )));
+//                    }else{
+//                        select.addCriteria((new MatchCriteria(
+//                                new Column(table, groupVar.getName().nameForDatabase()),
+//                                MatchCriteria.EQUALS,
+//                                o.toString()
+//                        )));
+//                    }
+//                }
+//                rs=stmt.executeQuery(select.toString());
+//
+//                //loop over data and add value sto array list
+//                double value = Double.NaN;
+//                while(rs.next()){
+//                    value=rs.getDouble(variable.getName().nameForDatabase());
+//                    if(!rs.wasNull()){
+//                        BinCalculation bc = binCalc.get(o);
+//                        if(bc==null){
+//                            bc = getBinCalculation();
+//                            binCalc.put(o, bc);
+//                        }
+//                        bc.increment(value);
+//                    }
+//                    updateProgress();
+//                }
+//                rs.close();
+//            }
+//            stmt.close();
+//        }catch(SQLException ex){
+//            throw new SQLException(ex);
+//        }catch(IllegalArgumentException ex){
+//            throw new IllegalArgumentException(ex);
+//        }
+//
+//    }
+//
+//    private BinCalculation getBinCalculation()throws IllegalArgumentException{
+//        BinCalculation bc = null;
+//        try{
+//            if(command.getSelectOneOption("bintype").isValueSelected("sturges")){
+//                bc = new SturgesBinCalculation();
+//            }else if(command.getSelectOneOption("bintype").isValueSelected("scott")){
+//                bc = new ScottBinCalculation();
+//            }else if(command.getSelectOneOption("bintype").isValueSelected("fd")){
+//                bc = new FreedmanDiaconisBinCalculation();
+//            }
+//            return bc;
+//        }catch(IllegalArgumentException ex){
+//            throw new IllegalArgumentException(ex);
+//        }
+//
+//    }
 
     /**
      * Second loop over db to compute histogram
@@ -234,14 +231,13 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
         try{
 
             setGroupByValues();
-            binCalculation();
-
-            Histogram.HistogramType histType = null;
+            HistogramType histogramType = HistogramType.DENSITY;
             if(command.getSelectOneOption("yaxis").isValueSelected("freq")){
-                histType = Histogram.HistogramType.FREQUENCY;
-            }else{
-                histType = Histogram.HistogramType.DENSITY;
+                histogramType = HistogramType.FREQUENCY;
+
             }
+
+            Histogram histogram = null;
 
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             SelectQuery select = new SelectQuery();
@@ -275,7 +271,7 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
                 rs=stmt.executeQuery(select.toString());
 
                 //loop over data and add value sto array list
-                Histogram histogram = new Histogram(binCalc.get(o), histType);
+                histogram = new Histogram(histogramType);
                 double value = Double.NaN;
                 while(rs.next()){
                     value=rs.getDouble(variable.getName().nameForDatabase());
@@ -284,10 +280,67 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
                     }
                     updateProgress();
                 }
-                rs.close();
+
+                histogram.evaluate();//do computations
                 data.addHistogram(o.toString(), histogram);
             }
-            stmt.close();
+
+            //===========================================================OLd BELOW
+//            setGroupByValues();
+//            binCalculation();
+//
+//            Histogram.HistogramType histType = null;
+//            if(command.getSelectOneOption("yaxis").isValueSelected("freq")){
+//                histType = Histogram.HistogramType.FREQUENCY;
+//            }else{
+//                histType = Histogram.HistogramType.DENSITY;
+//            }
+//
+//            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+//            SelectQuery select = new SelectQuery();
+//            Table table = new Table(tableName.getNameForDatabase());
+//            select.addColumn(table, variable.getName().nameForDatabase());
+//            rs=stmt.executeQuery(select.toString());
+//
+//            for(Object o : groupbyValues){
+//                //select all cases ind b with groupByValue of Object o
+//                select = new SelectQuery();
+//                table = new Table(tableName.getNameForDatabase());
+//                select.addColumn(table, variable.getName().nameForDatabase());
+//
+//                //add where clause if groupby variable provided
+//                if(hasGroupingVariable && groupVar !=null){
+//                    select.addColumn(table, groupVar.getName().nameForDatabase());
+//                    if(groupVar.getType().getDataType()==VariableType.DOUBLE){
+//                        select.addCriteria((new MatchCriteria(
+//                                new Column(table, groupVar.getName().nameForDatabase()),
+//                                MatchCriteria.EQUALS,
+//                                ((Double)o).doubleValue()
+//                        )));
+//                    }else{
+//                        select.addCriteria((new MatchCriteria(
+//                                new Column(table, groupVar.getName().nameForDatabase()),
+//                                MatchCriteria.EQUALS,
+//                                o.toString()
+//                        )));
+//                    }
+//                }
+//                rs=stmt.executeQuery(select.toString());
+//
+//                //loop over data and add values to array list
+//                Histogram histogram = new Histogram(binCalc.get(o), histType);
+//                double value = Double.NaN;
+//                while(rs.next()){
+//                    value=rs.getDouble(variable.getName().nameForDatabase());
+//                    if(!rs.wasNull()){
+//                        histogram.increment(value);
+//                    }
+//                    updateProgress();
+//                }
+//                rs.close();
+//                data.addHistogram(o.toString(), histogram);
+//            }
+//            stmt.close();
 
 //            Iterator<Comparable> iter = data.iterator();
 //            while(iter.hasNext()){
@@ -302,6 +355,9 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
         }catch(IllegalArgumentException ex){
             logger.fatal(ex.getMessage(), ex);
             throw new IllegalArgumentException(ex);
+        }finally{
+            if(rs!=null) rs.close();
+            if(stmt!=null) stmt.close();
         }
 
     }

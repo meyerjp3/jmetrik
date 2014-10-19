@@ -256,7 +256,7 @@ public class IrtPlotDialog extends JDialog {
         xaxisPanel.add(xminLabel, gridBagConstraints);
         xminLabel.getAccessibleContext().setAccessibleName("Min: ");
 
-        xMinText.setText("-4.0");
+        xMinText.setText("-5.0");
         xMinText.setMinimumSize(new Dimension(50, 25));
         xMinText.setPreferredSize(new Dimension(50, 25));
         gridBagConstraints = new GridBagConstraints();
@@ -273,7 +273,7 @@ public class IrtPlotDialog extends JDialog {
         gridBagConstraints.insets = new Insets(0, 5, 5, 5);
         xaxisPanel.add(xMaxLabel, gridBagConstraints);
 
-        xMaxText.setText("4.0");
+        xMaxText.setText("5.0");
         xMaxText.setToolTipText("Maximum value");
         xMaxText.setMinimumSize(new Dimension(50, 25));
         xMaxText.setPreferredSize(new Dimension(50, 25));

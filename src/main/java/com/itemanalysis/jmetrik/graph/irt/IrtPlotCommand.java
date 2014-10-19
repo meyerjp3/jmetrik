@@ -57,8 +57,8 @@ public class IrtPlotCommand extends AbstractCommand {
             xaxis.addArgument("min", "Minimum value", OptionValueType.DOUBLE);
             xaxis.addArgument("max", "Maximum value", OptionValueType.DOUBLE);
             xaxis.addArgument("points", "Number of points on xaxis", OptionValueType.INTEGER);
-            xaxis.addValue("min", -4.0);
-            xaxis.addValue("max", 4.0);
+            xaxis.addValue("min", -5.0);
+            xaxis.addValue("max", 5.0);
             xaxis.addValue("points", 31);
             this.addPairedOptionList(xaxis);
 

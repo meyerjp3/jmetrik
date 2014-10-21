@@ -1,5 +1,6 @@
 package com.itemanalysis.jmetrik.commandbuilder;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import static org.junit.Assert.*;
 
 public class MegaCommandTest {
 
+    @Ignore
     @Test
     public void megaCommandSplitTest1(){
         MegaCommand command = new MegaCommand("descriptives");
@@ -65,6 +67,7 @@ public class MegaCommandTest {
 
     }
 
+    @Ignore
     @Test
     public void megaCommandRepeatedOptionTest(){
 
@@ -154,6 +157,7 @@ public class MegaCommandTest {
 
     }
 
+    @Ignore
     @Test
     public void megaCommandRepeatedOptionSplitTest(){
 
@@ -212,6 +216,7 @@ public class MegaCommandTest {
         assertFalse(v[3].equals("A"));
 
     }
+
 
     public MegaCommand getIrtCommand(int maxGroups){
         MegaCommand cmd = new MegaCommand("irt", "IRT item calibration");
@@ -273,6 +278,7 @@ public class MegaCommandTest {
         return cmd;
     }
 
+    @Ignore
     @Test
     public void irtCommandTest(){
 
@@ -283,6 +289,7 @@ public class MegaCommandTest {
 
     }
 
+    @Ignore
     @Test
     public void IrtParseTest1(){
         String commandText = "irt{\n" +

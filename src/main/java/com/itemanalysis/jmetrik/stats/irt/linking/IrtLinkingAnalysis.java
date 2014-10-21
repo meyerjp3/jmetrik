@@ -176,7 +176,7 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
         irtScaleLinking = new IrtScaleLinking(irmX, irmY, xDistribution, yDistribution);
         irtScaleLinking.setStockingLordCritionType(criterionType);
         irtScaleLinking.setHaebaraCritionType(criterionType);
-        irtScaleLinking.setPrecision(6);
+        irtScaleLinking.setPrecision(precision);
         irtScaleLinking.computeCoefficients();
 
 //        mm = new MeanMeanMethod(irmX, irmY);

@@ -174,8 +174,7 @@ public class DbItemParameterSet {
 
 
                 }else if("PC1".equals(model) || "PC4".equals(model)){
-                    //polytomous item response models that use the new parameter array with zero in the first index
-                    //TODO convert the extraction of other polytomous items to this format once changed in psychometrics library
+                    //These item response models store step parameters in array of size ncat and the first value is always zero.
                     stepParam = new double[ncat];
                     stepParam[0] = 0;//This is the new part
                     for(int k=1;k<ncat;k++){
@@ -192,16 +191,15 @@ public class DbItemParameterSet {
                 }else{
                     //polytomous item response models
 
-                    //all polytomous models have step parameter variables in database
+                    //These polytomous models store step parameters in an array of size ncat-1
+                    //TODO change to new parameter array of size ncat
                     stepParam = new double[ncat-1];
                     for(int k=1;k<ncat;k++){
                         step = new VariableName("step" + k);
-                        stepParam[k] = rs.getDouble(step.nameForDatabase());
+                        stepParam[k-1] = rs.getDouble(step.nameForDatabase());
                     }
 
-                    if("PC1".equals(model)){
-                        irm = new IrmGPCM(a, stepParam, D);
-                    }else if("PC2".equals(model)){
+                    if("PC2".equals(model)){
                         b = rs.getDouble(bparam.nameForDatabase());
                         irm = new IrmGPCM2(a, b, stepParam, D);
                     }else if("PC3".equals(model)){
@@ -394,23 +392,15 @@ public class DbItemParameterSet {
                         stepParam[k-1] = rs.getDouble(step.nameForDatabase());
                     }
 
-                    //Generalized partial credit model discrimination and steps
-                    if("PC1".equals(model)){
-                        irm = new IrmGPCM(a, stepParam, D);
-                    }
-                    //Generalized partial credit model discrimination, difficulty and steps
-                    else if("PC2".equals(model)){
+                    //GPCM difficulty + thresholds
+                    if("PC2".equals(model)){
                         b = rs.getDouble(bparam.nameForDatabase());
                         irm = new IrmGPCM2(a, b, stepParam, D);
                     }
-                    //Partial credit model difficulty + steps
+                    //Partial credit model difficulty + thresholds
                     else if("PC3".equals(model)){
                         b = rs.getDouble(bparam.nameForDatabase());
                         irm = new IrmPCM(b, stepParam, D);
-                    }
-                    //Partial credit model steps only
-                    else if("PC4".equals(model)){
-                        irm = new IrmPCM2(stepParam, D);
                     }
                     //Graded response model
                     else if("GR".equals(model)){

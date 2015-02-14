@@ -11,3 +11,21 @@ jMetrik’s embedded database increases productivity by providing a common data 
 The compiled jMetrik application can be downloaded from <a href="http://www.ItemAnalysis.com">http://www.ItemAnalysis.com</a>.
 
 jMetrik involves a variety of dependencies including Apache Derby, Apache Commons Math, jFreeChart, and the psychometrics library.
+
+Building
+========
+
+You will first need version 1.3 of the psychometrics library, which can be obtained from
+
+https://github.com/meyerjp3/psychometrics/tree/5f2bf9b0509883ec938eef40b28fe25263d466d6
+
+Download that to its own separate directory and build it there with `mvn clean install`.
+
+Now to import it into the jmetrik directory. Assuming the psychometrics project was downloaded
+to `/projects/psychometrics`, run the following command from within the jmetrik directory:
+
+```
+mvn install:install-file -Dfile=/psychometrics/target/psychometrics-1.3.jar -DgroupId=com.itemanalysis -DartifactId=psychometrics -Dversion=1.3 -Dpackaging=jar
+```
+
+Once that's done, you can build jmetrik itself with `mvn clean install`.

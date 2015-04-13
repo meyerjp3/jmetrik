@@ -22,8 +22,9 @@ import com.itemanalysis.jmetrik.model.VariableListModel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.*;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import javax.swing.*;
 import java.awt.*;
@@ -56,7 +57,7 @@ public class SubsetCasesDialog extends JDialog implements VariableChangeListener
     private JList unselectedVariableList;
     private boolean canRun = false;
     private boolean selectVariables = true;
-    private VariableListFilter unselectedVariableFilter;
+//    private VariableListFilter unselectedVariableFilter;
     private VariableListModel unselectedListModel;
     private SubsetCasesCommand command;
     private DatabaseName dbName;
@@ -64,22 +65,22 @@ public class SubsetCasesDialog extends JDialog implements VariableChangeListener
     // End of variables declaration
 
     /** Creates new form SubsetCasesDialog */
-    public SubsetCasesDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables) {
+    public SubsetCasesDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables) {
         super(parent, "Subset Cases", true);
         this.dbName = dbName;
         this.tableName = tableName;
-        ArrayList<VariableType> variableFilter = new ArrayList<VariableType>();
-        variableFilter.add(new VariableType(VariableType.NO_FILTER, VariableType.NO_FILTER));
-
-        //create list filter and list model
-        unselectedVariableFilter = new VariableListFilter();
-        for(VariableType t : variableFilter){
-            unselectedVariableFilter.addFilteredType(t);
-        }
-        unselectedListModel = new VariableListModel(unselectedVariableFilter);
+//        ArrayList<VariableType> variableFilter = new ArrayList<VariableType>();
+//        variableFilter.add(new VariableType(VariableType.NO_FILTER, VariableType.NO_FILTER));
+//        //create list filter and list model
+//        unselectedVariableFilter = new VariableListFilter();
+//        for(VariableType t : variableFilter){
+//            unselectedVariableFilter.addFilteredType(t);
+//        }
+        VariableListFilter variableListfilter = new VariableListFilter(DataType.NO_DATATYPE_FILTER, ItemType.NO_ITEMTYPE_FILTER);
+        unselectedListModel = new VariableListModel(variableListfilter);
 
         //add variables to unselected list
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             unselectedListModel.addElement(v);
         }
 
@@ -396,10 +397,10 @@ public class SubsetCasesDialog extends JDialog implements VariableChangeListener
         pack();
     }// </editor-fold>
 
-    public void setVariables(ArrayList<VariableInfo> variables){
+    public void setVariables(ArrayList<VariableAttributes> variables){
         reset();
         unselectedListModel.clear();
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             unselectedListModel.addElement(v);
         }
     }
@@ -480,13 +481,13 @@ public class SubsetCasesDialog extends JDialog implements VariableChangeListener
 
     public void variableChanged(VariableChangeEvent e){
 
-        VariableInfo varInfo = e.getVariable();
+        VariableAttributes varAttr = e.getVariable();
 
         if(e.getChangeType()== VariableChangeType.VARIABLE_DELETED){
-            unselectedListModel.removeElement(varInfo);
+            unselectedListModel.removeElement(varAttr);
 
             //find variable name in text area and remove it
-            String name = varInfo.getName().toString();
+            String name = varAttr.getName().toString();
             String temp = sqlTextArea.getText().trim();
             String[] text = temp.split("\\s+");
             temp = "";
@@ -498,13 +499,13 @@ public class SubsetCasesDialog extends JDialog implements VariableChangeListener
             }
             sqlTextArea.setText(temp.trim());
         }else if(e.getChangeType()==VariableChangeType.VARIABLE_ADDED){
-            unselectedListModel.addElement(varInfo);
+            unselectedListModel.addElement(varAttr);
         }else if(e.getChangeType()==VariableChangeType.VARIABLE_MODIFIED){
             //do not use selectedListModel.replaceElement(v) because of need to filter variable
-            if(unselectedListModel.contains(varInfo)){
+            if(unselectedListModel.contains(varAttr)){
                 //do not use variableListModel.replaceElement(v) because of need to filter variable
-                unselectedListModel.removeElement(varInfo);
-                unselectedListModel.addElement(varInfo); //will force filtering of modified variable
+                unselectedListModel.removeElement(varAttr);
+                unselectedListModel.addElement(varAttr); //will force filtering of modified variable
             }
         }
     }

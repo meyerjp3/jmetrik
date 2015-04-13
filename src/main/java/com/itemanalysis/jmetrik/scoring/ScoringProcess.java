@@ -26,7 +26,7 @@ import com.itemanalysis.jmetrik.workspace.AbstractJmetrikProcess;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
 import com.itemanalysis.jmetrik.workspace.Workspace;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -46,6 +46,7 @@ public class ScoringProcess extends AbstractJmetrikProcess {
     private static final String PROCESS_NAME = "Scoring Process";
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public ScoringProcess(){
         command = new ScoringCommand();
@@ -101,12 +102,12 @@ public class ScoringProcess extends AbstractJmetrikProcess {
             public Throwable theException = null;
             private String tableName = null;
             private VariableTableName variableTableName = null;
-            private ArrayList<VariableInfo> variables = null;
+            private ArrayList<VariableAttributes> variables = null;
 
             protected String doInBackground()throws Exception{
                 firePropertyChange("status", "", "Setting variable scoring...");
                 firePropertyChange("progress-ind-on", null, null);
-                logger.info(command.paste());
+                scriptLogger.info(command.paste());
                 try{
                     DatabaseAccessObject dao = dbFactory.getDatabaseAccessObject();
                     dao.setVariableScoring(conn, command);
@@ -126,7 +127,7 @@ public class ScoringProcess extends AbstractJmetrikProcess {
                         firePropertyChange("status", "", "Ready");
                         DataTableName tableName = new DataTableName(get());
                         firePropertyChange("table-updated", null, tableName);//updates display of data table
-                        for(VariableInfo v: variables){
+                        for(VariableAttributes v: variables){
                             //updates variables in dialogs
                             fireVariableChangeEvent(new VariableChangeEvent(this, variableTableName, v, VariableChangeType.VARIABLE_MODIFIED));
                         }

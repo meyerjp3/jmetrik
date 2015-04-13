@@ -26,7 +26,7 @@ import com.itemanalysis.jmetrik.model.SortedListModel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
 import org.apache.log4j.Logger;
 
@@ -1134,7 +1134,7 @@ public class IrtLinkingDialog extends JDialog {
 
     public void isItemParameterTable(DataTableName tableName)throws SQLException{
         VariableName nameColumn = new VariableName("name");
-        ArrayList<VariableInfo> tempVar = dao.getVariableInfoFromColumn(conn, tableName, nameColumn);
+        ArrayList<VariableAttributes> tempVar = dao.getVariableAttributesFromColumn(conn, tableName, nameColumn);
     }
 
     public boolean canRun(){

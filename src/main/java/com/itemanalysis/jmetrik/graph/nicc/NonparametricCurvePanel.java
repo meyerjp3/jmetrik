@@ -66,11 +66,22 @@ public class NonparametricCurvePanel extends GraphPanel {
         ValueAxis axis = plot.getRangeAxis();
         axis.setLowerBound(min);
         axis.setUpperBound(max);
+
     }
 
     public void savePlots(String path)throws IOException{
         File dir = new File(path);
         if(!dir.exists()) dir.mkdirs();
+
+        //Will Save in a way that an OS will list them in selected order but omits the TCC
+//        int index=1;
+//        for(String s : names){
+//            JFreeChart c = charts.get(s);
+//            String n = "a"+index+"-"+s;
+//            ChartUtilities.saveChartAsJPEG(new File(dir.getAbsolutePath()+"/"+n+".jpg"), c, width, height);
+//            index++;
+//        }
+
         for(String s : charts.keySet()){
             JFreeChart c = charts.get(s);
             ChartUtilities.saveChartAsJPEG(new File(dir.getAbsolutePath()+"/"+s+".jpg"), c, width, height);

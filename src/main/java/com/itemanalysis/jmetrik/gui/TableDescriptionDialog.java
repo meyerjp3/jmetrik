@@ -21,7 +21,6 @@ import com.itemanalysis.jmetrik.dao.DatabaseAccessObject;
 import com.itemanalysis.jmetrik.model.SortedListModel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
-import com.itemanalysis.jmetrik.sql.SqlSafeTableName;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;

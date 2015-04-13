@@ -26,7 +26,7 @@ import com.itemanalysis.jmetrik.model.*;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -363,8 +363,8 @@ public class Workspace implements StatusNotifier{
         return currentDataTable;
     }
     
-    public ArrayList<VariableInfo> getVariables(){
-        ArrayList<VariableInfo> variables = null;
+    public ArrayList<VariableAttributes> getVariables(){
+        ArrayList<VariableAttributes> variables = null;
         try{
             variables = dao.getAllVariables(conn, currentVariableTable);
         }catch(Exception ex){

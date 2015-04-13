@@ -32,10 +32,9 @@ import com.itemanalysis.jmetrik.dao.DatabaseAccessObject;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
-import com.itemanalysis.jmetrik.swing.TextFileArea;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.texttable.TextTable;
 import com.itemanalysis.psychometrics.texttable.TextTableColumnFormat;
 import com.itemanalysis.psychometrics.texttable.TextTablePosition;
@@ -60,12 +59,13 @@ public class DescriptiveAnalysis extends SwingWorker<String,String> {
     private StopWatch sw = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
     private DataTableName tableName = null;
 
-    private LinkedHashMap<VariableInfo, DescriptiveStatistics> data = null;
+    private LinkedHashMap<VariableAttributes, DescriptiveStatistics> data = null;
 
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
 
@@ -80,7 +80,7 @@ public class DescriptiveAnalysis extends SwingWorker<String,String> {
         this.dao = dao;
         this.command = command;
         this.textFile = textFile;
-        data = new LinkedHashMap<VariableInfo, DescriptiveStatistics>();
+        data = new LinkedHashMap<VariableAttributes, DescriptiveStatistics>();
         variableChangeListeners = new ArrayList<VariableChangeListener>();
     }
 
@@ -103,7 +103,7 @@ public class DescriptiveAnalysis extends SwingWorker<String,String> {
 
         Table sqlTable = new Table(tableName.getNameForDatabase());
         SelectQuery select = new SelectQuery();
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             select.addColumn(sqlTable, v.getName().nameForDatabase());
         }
         stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -111,7 +111,7 @@ public class DescriptiveAnalysis extends SwingWorker<String,String> {
 
         double value = Double.NaN;
         while(rs.next()){
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 temp = data.get(v);
                 if(temp==null){
                     temp = new DescriptiveStatistics();
@@ -130,14 +130,14 @@ public class DescriptiveAnalysis extends SwingWorker<String,String> {
         rs.close();
         stmt.close();
 
-        for(VariableInfo v : data.keySet()){
+        for(VariableAttributes v : data.keySet()){
             publishTable(v);
         }
 
 
     }
 
-    public void publishTable(VariableInfo v){
+    public void publishTable(VariableAttributes v){
         TextTable table = null;
         TextTableColumnFormat[] cformats = new TextTableColumnFormat[2];
         cformats[0] = new TextTableColumnFormat();
@@ -233,7 +233,6 @@ public class DescriptiveAnalysis extends SwingWorker<String,String> {
             this.summarize();
             firePropertyChange("status", "", "Done: " + sw.getElapsedTime());
             firePropertyChange("progress-off", null, null); //make statusbar progress not visible
-            logger.info(command.paste());
         }catch(Throwable t){
             theException=t;
         }
@@ -272,6 +271,7 @@ public class DescriptiveAnalysis extends SwingWorker<String,String> {
             }
             textFile.addText(get());
             textFile.setCaretPosition(0);
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(theException.getMessage(), theException);
             firePropertyChange("error", "", "Error - Check log for details.");

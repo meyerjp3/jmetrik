@@ -33,9 +33,9 @@ import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
 import com.itemanalysis.psychometrics.irt.estimation.JointMaximumLikelihoodEstimation;
 import com.itemanalysis.psychometrics.irt.estimation.RaschScaleQualityOutput;
 import com.itemanalysis.psychometrics.irt.model.Irm3PL;
@@ -50,8 +50,9 @@ import org.apache.log4j.Logger;
 public class RaschAnalysis extends SwingWorker<String, String>{
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private RaschCommand command = null;
     private JmetrikTextFile tfa = null;
     private Throwable theException = null;
@@ -114,7 +115,7 @@ public class RaschAnalysis extends SwingWorker<String, String>{
     public void addResidualsToDb(JointMaximumLikelihoodEstimation jmle)throws SQLException{
         String residualTableName = command.getFreeOption("residout").getString();
         residualOutputTable = dao.getUniqueTableName(conn, residualTableName);
-        RaschResidualOut rOut = new RaschResidualOut(conn, dao, jmle, tableName, residualOutputTable);
+        IrtResidualOut rOut = new IrtResidualOut(conn, dao, jmle, tableName, residualOutputTable);
 
         try{
             rOut.outputToDb();
@@ -131,8 +132,8 @@ public class RaschAnalysis extends SwingWorker<String, String>{
         double[] threshold = null;
         int index = 0;
         String group = "";
-        for(VariableInfo v : variables){
-            if(v.getType().getItemType()== VariableType.BINARY_ITEM){
+        for(VariableAttributes v : variables){
+            if(v.getType().getItemType()== ItemType.BINARY_ITEM){
                 irm[index] = new Irm3PL(0.0, 1.0);
             }else{
                 int ncat = v.getItemScoring().numberOfScoreLevels();
@@ -144,7 +145,7 @@ public class RaschAnalysis extends SwingWorker<String, String>{
                 irm[index] = new IrmPCM(0.0, threshold, 1.0);
             }
             irm[index].setName(new VariableName(v.getName().toString()));
-            group = v.getSubscale();
+            group = v.getItemGroup();
             if("".equals(group)) group = v.getName().toString();
             irm[index].setGroupId(group);
             index++;
@@ -181,7 +182,7 @@ public class RaschAnalysis extends SwingWorker<String, String>{
 
         Table sqlTable = new Table(tableName.getNameForDatabase());
         SelectQuery select = new SelectQuery();
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             select.addColumn(sqlTable, v.getName().nameForDatabase());
         }
         stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -191,7 +192,7 @@ public class RaschAnalysis extends SwingWorker<String, String>{
         int c = 0;
         while(rs.next()){
             c = 0;
-            for(VariableInfo v : variables){//columns in data will be in same order as variables
+            for(VariableAttributes v : variables){//columns in data will be in same order as variables
                 response = rs.getObject(v.getName().nameForDatabase());
                 if((response==null || response.equals("") || response.equals("NA")) && ignoreMissingData){
                     data[r][c] = -1;//code for omitted responses
@@ -336,7 +337,6 @@ public class RaschAnalysis extends SwingWorker<String, String>{
 
         String s = "";
         try{
-            logger.info(command.paste());
             processCommand();
 
             runEstimation(command.getPairedOptionList("transform").getDoubleAt("intercept"),
@@ -380,6 +380,7 @@ public class RaschAnalysis extends SwingWorker<String, String>{
                 tfa.addText(get());
                 tfa.addText("Elapsed time: " + sw.getElapsedTime());
                 tfa.setCaretPosition(0);
+                scriptLogger.info(command.paste());
             }
 
 		}catch(Exception ex){

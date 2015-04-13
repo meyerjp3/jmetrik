@@ -24,9 +24,10 @@ import com.itemanalysis.jmetrik.selector.MultipleSelectionPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -136,12 +137,30 @@ public class ItemParameterTableDialog extends JDialog {
         pack();
     }
 
-    public void addSelectedListFilterType(VariableType variableType){
-        vsp.addSelectedFilterType(variableType);
+    public void addSelectedListFilterDataType(DataType dataType){
+        vsp.addSelectedFilterDataType(dataType);
     }
 
-    public void addUnSelectedListFilterType(VariableType variableType){
-        vsp.addUnselectedFilterType(variableType);
+    public void addSelectedListFilterItemType(ItemType itemType){
+        vsp.addSelectedFilterItemType(itemType);
+    }
+
+    public void addSelectedListFilterType(DataType dataType, ItemType itemType){
+        vsp.addSelectedFilterDataType(dataType);
+        vsp.addSelectedFilterItemType(itemType);
+    }
+
+    public void addUnSelectedListFilterDataType(DataType dataType){
+        vsp.addUnselectedFilterDataType(dataType);
+    }
+
+    public void addUnSelectedListFilterItemType(ItemType itemType){
+        vsp.addUnselectedFilterItemType(itemType);
+    }
+
+    public void addUnSelectedListFilterType(DataType dataType, ItemType itemType){
+        vsp.addUnselectedFilterDataType(dataType);
+        vsp.addUnselectedFilterItemType(itemType);
     }
 
     public DatabaseName getDatabaseName() throws SQLException{
@@ -153,12 +172,12 @@ public class ItemParameterTableDialog extends JDialog {
         return currentTable;
     }
 
-    public ArrayList<VariableInfo> getSelectedVariables(){
+    public ArrayList<VariableAttributes> getSelectedVariables(){
         if(currentTable==null) return null;
 
-        ArrayList<VariableInfo> varInfo = new ArrayList<VariableInfo>();
-        VariableInfo[] vInfo = vsp.getSelectedVariables();
-        for(VariableInfo v : vInfo){
+        ArrayList<VariableAttributes> varInfo = new ArrayList<VariableAttributes>();
+        VariableAttributes[] vInfo = vsp.getSelectedVariables();
+        for(VariableAttributes v : vInfo){
             varInfo.add(v);
         }
         return varInfo;
@@ -175,9 +194,9 @@ public class ItemParameterTableDialog extends JDialog {
         VariableListModel vlm = vsp.getUnselectedListModel();
 
         try{
-            ArrayList<VariableInfo> tempVar = dao.getVariableInfoFromColumn(conn, currentTable, nameColumn);
+            ArrayList<VariableAttributes> tempVar = dao.getVariableAttributesFromColumn(conn, currentTable, nameColumn);
 
-            for(VariableInfo v : tempVar){
+            for(VariableAttributes v : tempVar){
                 vlm.addElement(v);
             }
 

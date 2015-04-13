@@ -23,8 +23,7 @@ import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.SubsetVariableCommand;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,7 +36,7 @@ public class SubsetVariablesDialog extends JDialog implements VariableChangeList
     private MultipleSelectionPanel selectionPanel;
     private JTextField newTableNameTextField;
     private JLabel tableLabel;
-    private ArrayList<VariableInfo> variables;
+    private ArrayList<VariableAttributes> variables;
     private SubsetVariableCommand command;
     private DatabaseName dbName;
     private DataTableName tableName;
@@ -45,7 +44,7 @@ public class SubsetVariablesDialog extends JDialog implements VariableChangeList
     // End of variables declaration
 
     /** Creates new form SubsetVariablesDialog */
-    public SubsetVariablesDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables) {
+    public SubsetVariablesDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables) {
         super(parent, "Subset Variables", true);
         this.dbName = dbName;
         this.tableName = tableName;
@@ -69,9 +68,9 @@ public class SubsetVariablesDialog extends JDialog implements VariableChangeList
         tableLabel = new JLabel();
         newTableNameTextField = new JTextField();
         selectionPanel = new MultipleSelectionPanel();
-        VariableType filterType = new VariableType(VariableType.NO_FILTER, VariableType.NO_FILTER);
-        selectionPanel.addUnselectedFilterType(filterType);
-        selectionPanel.addSelectedFilterType(filterType);
+//        VariableType filterType = new VariableType(VariableType.NO_FILTER, VariableType.NO_FILTER);
+//        selectionPanel.addUnselectedFilterType(filterType);
+//        selectionPanel.addSelectedFilterType(filterType);
         selectionPanel.setVariables(variables);
 
         selectionPanel.showButton4(false);
@@ -176,8 +175,8 @@ public class SubsetVariablesDialog extends JDialog implements VariableChangeList
                 command.getFreeOption("newtable").add(newTableNameTextField.getText().trim());
                 command.getSelectAllOption("options").setSelected("display", true);
 
-                VariableInfo[] vars = selectionPanel.getSelectedVariables();
-                for(VariableInfo v : vars){
+                VariableAttributes[] vars = selectionPanel.getSelectedVariables();
+                for(VariableAttributes v : vars){
                     command.getFreeOptionList("variables").addValue(v.getName().toString());
                 }
                 canRun = true;

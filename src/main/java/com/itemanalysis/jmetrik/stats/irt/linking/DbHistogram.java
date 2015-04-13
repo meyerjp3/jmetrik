@@ -22,8 +22,6 @@ import com.itemanalysis.psychometrics.data.VariableName;
 import com.itemanalysis.psychometrics.histogram.*;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
-import org.apache.commons.math3.stat.descriptive.rank.Max;
-import org.apache.commons.math3.stat.descriptive.rank.Min;
 
 import java.sql.Connection;
 import java.sql.ResultSet;

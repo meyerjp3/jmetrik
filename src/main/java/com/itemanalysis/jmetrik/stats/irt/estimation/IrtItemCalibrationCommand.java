@@ -32,17 +32,39 @@ public class IrtItemCalibrationCommand extends MegaCommand {
         optimizer.setValueChecker(listChecker);
         this.addOption(optimizer);
 
-        MegaOption latent = new MegaOption("latent", "Latent distribution specification", OptionType.ARGUMENT_VALUE_OPTION_LIST);
+        MegaOption latent = new MegaOption("latent", "Latent distribution specification", OptionType.ARGUMENT_VALUE_OPTION_LIST, true);
         latent.addArgument("name", "Name of the distribution. Possible values are \"normal\" for normal distribution or \"GH\" for Gauss-Hermite", false);
         latent.addArgument("min", "Minimum value", false);
         latent.addArgument("max", "Maximum value", false);
         latent.addArgument("points", "Number of quadrature points", false);
+        latent.addArgument("groupby", "Name of grouping variable", false);
+        latent.addArgument("basegroup", "Code for the base group", false);
         this.addOption(latent);
 
-        MegaOption output = new MegaOption("itemout", "Name of item parameter estimate output table", OptionType.ARGUMENT_VALUE_OPTION_LIST);
+        MegaOption output = new MegaOption("output", "Name of output tables", OptionType.ARGUMENT_VALUE_OPTION_LIST, false);
         output.addArgument("db", "Database name", false);
-        output.addArgument("table", "Database table name", false);
+        output.addArgument("item", "Database table name for item parameter output", false);
+        output.addArgument("latent", "Database table name for latent distribution output", false);
+        output.addArgument("residual", "Database table name for residual output", false);
         this.addOption(output);
+
+        MegaOption scoring = new MegaOption("scoring", "Person scoring option", OptionType.ARGUMENT_VALUE_OPTION_LIST, false);
+        scoring.addArgument("name", "Name of output variable", false);
+        scoring.addArgument("type", "Type of estimate", false);//Either EAP, MAP, or MLE
+        scoring.addArgument("mean", "Mean of normal distribution", false);
+        scoring.addArgument("sd", "Standard deviation of normal distribution", false);
+        scoring.addArgument("min", "Minimum value", false);
+        scoring.addArgument("max", "Maximum value", false);
+        scoring.addArgument("points", "Number of quadrature points", false);
+        scoring.addArgument("tol", "Convergence criterion for MAP and MLE.", false);
+        scoring.addArgument("maxiter", "Maximum number of iterations for MAP and MLE.", false);
+        this.addOption(scoring);
+
+
+//        MegaOption output = new MegaOption("itemout", "Name of item parameter estimate output table", OptionType.ARGUMENT_VALUE_OPTION_LIST);
+//        output.addArgument("db", "Database name", false);
+//        output.addArgument("table", "Database table name", false);
+//        this.addOption(output);
 
         MegaOption missing = new MegaOption("missing", "Treatment of missing data", OptionType.SELECT_ONE_OPTION);
         listChecker = new SelectFromListValueChecker();
@@ -51,8 +73,10 @@ public class IrtItemCalibrationCommand extends MegaCommand {
         missing.setValueChecker(listChecker);
         this.addOption(missing);
 
-        MegaOption groupVariable = new MegaOption("groupvar", "An examinee grouping variable such as gender", OptionType.FREE_OPTION);
-        this.addOption(groupVariable);
+        MegaOption itemFit = new MegaOption("itemfit", "Item fit statistic", OptionType.ARGUMENT_VALUE_OPTION_LIST);
+        itemFit.addArgument("mincell", "Minimum average expected cell count", false);
+        itemFit.addArgument("fitplot", "Show fit plots", false);//EITHER TRUE or FALSE
+        this.addOption(itemFit);
 
         MegaOption numberOfGroups = new MegaOption("groups", "Number of item groups", OptionType.FREE_OPTION);
         this.addOption(numberOfGroups);

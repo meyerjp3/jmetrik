@@ -40,8 +40,8 @@ import com.itemanalysis.jmetrik.selector.MultipleSelectionPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 
@@ -62,7 +62,7 @@ public class CorrelationDialog extends JDialog{
     JCheckBox stdErrorBox = null;
     private boolean showStdError = false;
 
-    public CorrelationDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableInfo> variables){
+    public CorrelationDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableAttributes> variables){
         super(parent,"Correlation Analysis",true);
         setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
         this.dbName = dbName;
@@ -78,18 +78,21 @@ public class CorrelationDialog extends JDialog{
 
         vsp = new MultipleSelectionPanel();
         //filter out strings
-        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
-        VariableType filterType3 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        vsp.addUnselectedFilterType(filterType1);
-        vsp.addUnselectedFilterType(filterType2);
-        vsp.addUnselectedFilterType(filterType3);
-        vsp.addUnselectedFilterType(filterType4);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType2);
-        vsp.addSelectedFilterType(filterType3);
-        vsp.addSelectedFilterType(filterType4);
+//        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
+//        VariableType filterType2 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
+//        VariableType filterType3 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
+//        VariableType filterType4 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
+//        vsp.addUnselectedFilterType(filterType1);
+//        vsp.addUnselectedFilterType(filterType2);
+//        vsp.addUnselectedFilterType(filterType3);
+//        vsp.addUnselectedFilterType(filterType4);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType2);
+//        vsp.addSelectedFilterType(filterType3);
+//        vsp.addSelectedFilterType(filterType4);
+
+        vsp.addUnselectedFilterDataType(DataType.STRING);
+        vsp.addSelectedFilterDataType(DataType.STRING);
         vsp.setVariables(variables);
         vsp.showButton4(false);
 
@@ -314,7 +317,7 @@ public class CorrelationDialog extends JDialog{
                     command = new CorrelationCommand();
                     Object[] v = vsp.getSelectedVariables();
                     for(int i=0;i<v.length;i++){
-                        command.getFreeOptionList("variables").addValue(((VariableInfo) v[i]).getName().toString());
+                        command.getFreeOptionList("variables").addValue(((VariableAttributes) v[i]).getName().toString());
                     }
                     command.getPairedOptionList("data").addValue("db", dbName.toString());
                     command.getPairedOptionList("data").addValue("table", tableName.toString());

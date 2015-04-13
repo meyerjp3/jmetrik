@@ -25,9 +25,7 @@ import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.*;
 import com.itemanalysis.psychometrics.distribution.UserSuppliedDistributionApproximation;
 import com.itemanalysis.psychometrics.irt.estimation.IrtExaminee;
 import com.itemanalysis.psychometrics.irt.model.ItemResponseModel;
@@ -47,7 +45,7 @@ import java.util.*;
 public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
 
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private IrtPersonScoringCommand command = null;
     private Throwable theException = null;
     private Connection conn = null;
@@ -74,12 +72,12 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
     private int maxIter = 100;
     private double converge = 1e-5;
     private double maxProgress = 0;
-    private VariableInfo mleVar = null;
-    private VariableInfo mapVar = null;
-    private VariableInfo eapVar = null;
-    private VariableInfo mleVarSe = null;
-    private VariableInfo mapVarSe = null;
-    private VariableInfo eapVarSe = null;
+    private VariableAttributes mleVar = null;
+    private VariableAttributes mapVar = null;
+    private VariableAttributes eapVar = null;
+    private VariableAttributes mleVarSe = null;
+    private VariableAttributes mapVarSe = null;
+    private VariableAttributes eapVarSe = null;
     private StorelessDescriptiveStatistics mleStats = null;
     private StorelessDescriptiveStatistics mapStats = null;
     private StorelessDescriptiveStatistics eapStats = null;
@@ -122,7 +120,7 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
         ArrayList<String> selectVariables = command.getFreeOptionList("variables").getString();
         variables = dao.getSelectedVariables(conn, variableTableName, selectVariables);
         selectedItems = new ArrayList<VariableName>();
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             selectedItems.add(v.getName());
         }
 
@@ -191,23 +189,23 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
         int colCount = dao.getColumnCount(conn, tableName);
 
         if(useMle){
-            mleVar = new VariableInfo(nameBase + "_ml", "MLE Estimate", VariableType.NOT_ITEM, VariableType.DOUBLE, colCount++, "");
+            mleVar = new VariableAttributes(nameBase + "_ml", "MLE Estimate", ItemType.NOT_ITEM, DataType.DOUBLE, colCount++, "");
             dao.addColumnToDb(conn, tableName, mleVar);
-            mleVarSe = new VariableInfo(nameBase + "_mlse", "MLE Estimate standard error", VariableType.NOT_ITEM, VariableType.DOUBLE, colCount++, "");
+            mleVarSe = new VariableAttributes(nameBase + "_mlse", "MLE Estimate standard error", ItemType.NOT_ITEM, DataType.DOUBLE, colCount++, "");
             dao.addColumnToDb(conn, tableName, mleVarSe);
             mleStats = new StorelessDescriptiveStatistics();
         }
         if(useMap){
-            mapVar = new VariableInfo(nameBase + "_mp", "MAP Estimate", VariableType.NOT_ITEM, VariableType.DOUBLE, colCount++, "");
+            mapVar = new VariableAttributes(nameBase + "_mp", "MAP Estimate", ItemType.NOT_ITEM, DataType.DOUBLE, colCount++, "");
             dao.addColumnToDb(conn, tableName, mapVar);
-            mapVarSe = new VariableInfo(nameBase + "_mpse", "MAP Estimate standard error", VariableType.NOT_ITEM, VariableType.DOUBLE, colCount++, "");
+            mapVarSe = new VariableAttributes(nameBase + "_mpse", "MAP Estimate standard error", ItemType.NOT_ITEM, DataType.DOUBLE, colCount++, "");
             dao.addColumnToDb(conn, tableName, mapVarSe);
             mapStats = new StorelessDescriptiveStatistics();
         }
         if(useEap){
-            eapVar = new VariableInfo(nameBase + "_ep", "EAP Estimate", VariableType.NOT_ITEM, VariableType.DOUBLE, colCount++, "");
+            eapVar = new VariableAttributes(nameBase + "_ep", "EAP Estimate", ItemType.NOT_ITEM, DataType.DOUBLE, colCount++, "");
             dao.addColumnToDb(conn, tableName, eapVar);
-            eapVarSe = new VariableInfo(nameBase + "_epse", "EAP Estimate standard error", VariableType.NOT_ITEM, VariableType.DOUBLE, colCount++, "");
+            eapVarSe = new VariableAttributes(nameBase + "_epse", "EAP Estimate standard error", ItemType.NOT_ITEM, DataType.DOUBLE, colCount++, "");
             dao.addColumnToDb(conn, tableName, eapVarSe);
             eapStats = new StorelessDescriptiveStatistics();
         }
@@ -227,7 +225,7 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
             //connect to db
             Table sqlTable = new Table(tableName.getNameForDatabase());
             SelectQuery select = new SelectQuery();
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 select.addColumn(sqlTable, v.getName().nameForDatabase());
             }
             if(useMle){
@@ -259,9 +257,9 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
             while(rs.next()){
                 col = 0;
 //                index = 0;
-                personScoring.clearResponseVector();
+//                personScoring.clearResponseVector();
                 responseVector = new byte[variables.size()];
-                for(VariableInfo v : variables){//columns in data will be in same order as variables
+                for(VariableAttributes v : variables){//columns in data will be in same order as variables
                     response = rs.getObject(v.getName().nameForDatabase());
                     if((response==null || response.equals("") || response.equals("NA")) && ignoreMissing){
                         responseScore = (byte)-1;

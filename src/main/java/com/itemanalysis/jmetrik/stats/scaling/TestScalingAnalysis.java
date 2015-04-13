@@ -33,10 +33,11 @@ import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.polycor.CovarianceMatrix;
-import com.itemanalysis.psychometrics.reliability.CronbachAlpha;
+import com.itemanalysis.psychometrics.reliability.CoefficientAlpha;
 import com.itemanalysis.psychometrics.scaling.*;
 import com.itemanalysis.psychometrics.statistics.StorelessDescriptiveStatistics;
 import com.itemanalysis.psychometrics.tools.StopWatch;
@@ -51,12 +52,13 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
     private Connection conn = null;
     private DatabaseAccessObject dao = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
-    private ArrayList<VariableInfo> variables = null;
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
+    private ArrayList<VariableAttributes> variables = null;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
     private DataTableName tableName = null;
     private Throwable theException = null;
     private StopWatch sw = null;
-    private VariableInfo addedVariableInfo = null;
+    private VariableAttributes addedVariableInfo = null;
     private ScoreBounds sumScoreBounds = null;
     private ScoreBounds scaleScoreBounds = null;
     private int precision = 2;
@@ -118,7 +120,7 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
         try{
             Table sqlTable = new Table(tableName.getNameForDatabase());
             SelectQuery select = new SelectQuery();
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 select.addColumn(sqlTable, v.getName().nameForDatabase());
             }
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -133,9 +135,9 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
                 //loop over items to compute RawScore
                 tempSum = 0.0;
                 validItems = 0.0;
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     response = rs.getObject(v.getName().nameForDatabase());
-                    responseScore = v.getItemScoring().computeItemScore(response, v.getType(), false);
+                    responseScore = v.getItemScoring().computeItemScore(response);
                     if(!Double.isNaN(responseScore)){
                         tempSum += responseScore;
                         validItems++;
@@ -251,7 +253,7 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
 
             Table sqlTable = new Table(tableName.getNameForDatabase());
             SelectQuery select = new SelectQuery();
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 select.addColumn(sqlTable, v.getName().nameForDatabase());
             }
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -274,9 +276,9 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
 
                 //compute sum score and create response vector
                 xIndex = 0;
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     response = rs.getObject(v.getName().nameForDatabase());
-                    responseScore = v.getItemScoring().computeItemScore(response, v.getType(), true);
+                    responseScore = v.getItemScoring().computeItemScore(response);
                     responseVector[xIndex] = responseScore;
                     tempSum += responseScore;
                     xIndex++;
@@ -296,7 +298,7 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
             }
 
             //compute reliability estimate
-            CronbachAlpha alpha = new CronbachAlpha(matrix);
+            CoefficientAlpha alpha = new CoefficientAlpha(matrix, false);
             KelleyRegressedScore kelley = new KelleyRegressedScore(rawScoreDescriptives.getMean(), alpha);
 
             //close statement and result set from first pass
@@ -349,7 +351,7 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
             Formatter f = new Formatter(sb);
             f.format(publishHeader());
 
-            f.format("%-20s", "Coefficient alpha = " ); f.format("%1.2f", + alpha.value(false));
+            f.format("%-20s", "Coefficient alpha = " ); f.format("%1.2f", + alpha.value());
             f.format("%n");
             f.format("%n");
             f.format("%n");
@@ -534,27 +536,27 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
 
     public String getResults()throws SQLException{
         if(scoreType==PERCENTILE_RANK){
-            addedVariableInfo = new VariableInfo(newVariableName, "Percentile Rank", VariableType.NOT_ITEM, VariableType.DOUBLE, columnNumber++, "");
+            addedVariableInfo = new VariableAttributes(newVariableName, "Percentile Rank", ItemType.NOT_ITEM, DataType.DOUBLE, columnNumber++, "");
             dao.addColumnToDb(conn, tableName,  addedVariableInfo);
             title = "TEST SCALING: PERCENTILE RANKS";
             return computePercentileRankOrNormalizedScore();
         }else if(scoreType==KELLEY_SCORE){
-            addedVariableInfo = new VariableInfo(newVariableName, "Kelley Regressed Score", VariableType.NOT_ITEM, VariableType.DOUBLE, columnNumber++, "");
+            addedVariableInfo = new VariableAttributes(newVariableName, "Kelley Regressed Score", ItemType.NOT_ITEM, DataType.DOUBLE, columnNumber++, "");
             dao.addColumnToDb(conn, tableName,  addedVariableInfo);
             title = "TEST SCALING: KELLEY SCORES";
             return computeKelleyScore();
         }else if(scoreType==NORMALIZED_SCORE){
-            addedVariableInfo = new VariableInfo(newVariableName, "Normalized Score", VariableType.NOT_ITEM, VariableType.DOUBLE, columnNumber++, "");
+            addedVariableInfo = new VariableAttributes(newVariableName, "Normalized Score", ItemType.NOT_ITEM, DataType.DOUBLE, columnNumber++, "");
             dao.addColumnToDb(conn, tableName,  addedVariableInfo);
             title = "TEST SCALING: NORMALIZED SCORES";
             return computePercentileRankOrNormalizedScore();
         }else if(scoreType==MEAN_SCORE){
-            addedVariableInfo = new VariableInfo(newVariableName, "Average Score", VariableType.NOT_ITEM, VariableType.DOUBLE, columnNumber++, "");
+            addedVariableInfo = new VariableAttributes(newVariableName, "Average Score", ItemType.NOT_ITEM, DataType.DOUBLE, columnNumber++, "");
             dao.addColumnToDb(conn, tableName,  addedVariableInfo);
             title = "TEST SCALING: MEAN SCORES";
             return addRawScore(true);
         }else{
-            addedVariableInfo = new VariableInfo(newVariableName, "Sum Score", VariableType.NOT_ITEM, VariableType.DOUBLE, columnNumber++, "");
+            addedVariableInfo = new VariableAttributes(newVariableName, "Sum Score", ItemType.NOT_ITEM, DataType.DOUBLE, columnNumber++, "");
             dao.addColumnToDb(conn, tableName,  addedVariableInfo);
             title = "TEST SCALING: SUM SCORES";
             return addRawScore(false);
@@ -603,7 +605,6 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
         this.firePropertyChange("progress-on", null, null);
         String results = "";
         try{
-            logger.info(command.paste());
             //get variable info from db
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             VariableTableName variableTableName = new VariableTableName(tableName.toString());
@@ -634,6 +635,7 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
                 textFile.addText(get());
                 textFile.addText("Elapsed time: " + sw.getElapsedTime());
                 textFile.setCaretPosition(0);
+                scriptLogger.info(command.paste());
                 fireVariableChanged(new VariableChangeEvent(this, tableName, addedVariableInfo, VariableChangeType.VARIABLE_ADDED));
             }
         }catch(Exception ex){

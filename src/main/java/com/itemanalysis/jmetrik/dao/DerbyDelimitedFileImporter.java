@@ -22,7 +22,10 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.utils.DerbyCSVWriter;
 import com.itemanalysis.jmetrik.workspace.ImportCommand;
-import com.itemanalysis.psychometrics.data.*;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
+import com.itemanalysis.psychometrics.data.VariableName;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import org.apache.log4j.Logger;
 
@@ -57,7 +60,7 @@ public class DerbyDelimitedFileImporter  extends SwingWorker<String,Void> implem
 
     private Throwable theException = null;
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
     private StopWatch timer = null;
 
@@ -66,11 +69,12 @@ public class DerbyDelimitedFileImporter  extends SwingWorker<String,Void> implem
     private DerbyDatabaseAccessObject dao = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public DerbyDelimitedFileImporter(Connection conn, ImportCommand command){
         this.conn = conn;
         this.command = command;
-        variables = new ArrayList<VariableInfo>();
+        variables = new ArrayList<VariableAttributes>();
         dao = new DerbyDatabaseAccessObject();
     }
 
@@ -182,11 +186,11 @@ public class DerbyDelimitedFileImporter  extends SwingWorker<String,Void> implem
 
             varName = new VariableName(tempVarName);
 
-            VariableInfo var = new VariableInfo(
+            VariableAttributes var = new VariableAttributes(
                     varName.toString(),
                     "",
-                    VariableType.NOT_ITEM,
-                    VariableType.DOUBLE,
+                    ItemType.NOT_ITEM,
+                    DataType.DOUBLE,
                     (i+1),
                     "");
 
@@ -220,7 +224,7 @@ public class DerbyDelimitedFileImporter  extends SwingWorker<String,Void> implem
         int firstDimensionMismatch = 0;
         String[] line;
         String tempString = "";
-        VariableInfo tempVar;
+        VariableAttributes tempVar;
         int ncol = 0;
         int count = 0;
         int colWidth = 50;
@@ -254,7 +258,7 @@ public class DerbyDelimitedFileImporter  extends SwingWorker<String,Void> implem
                                 tempVar = variables.get(i);
 
                                 //if number format exception is encountered, data type is set to string
-                                tempVar.getType().setDataType(VariableType.STRING);
+                                tempVar.getType().setDataType(DataType.STRING);
 
                                 //set varChar size to be between 50 and 255
                                 colWidth = Math.max(tempVar.getVarcharSize(), tempString.length());
@@ -297,7 +301,7 @@ public class DerbyDelimitedFileImporter  extends SwingWorker<String,Void> implem
         String[] line = null;
         int count = 0;
         int colWidth = 50;
-        VariableInfo tempVar = null;
+        VariableAttributes tempVar = null;
         String tempString = "";
         int ncol = 0;
 
@@ -336,7 +340,7 @@ public class DerbyDelimitedFileImporter  extends SwingWorker<String,Void> implem
                                 tempVar = variables.get(i);
 
                                 //if number format exception is encountered, data type is set to string
-                                tempVar.getType().setDataType(VariableType.STRING);
+                                tempVar.getType().setDataType(DataType.STRING);
 
                                 //set varChar size to be between 50 and 255
                                 colWidth = Math.max(tempVar.getVarcharSize(), tempString.length());
@@ -414,6 +418,7 @@ public class DerbyDelimitedFileImporter  extends SwingWorker<String,Void> implem
         if(theException==null){
             this.firePropertyChange("status", "", "Ready");//will display status in statusBar
             if(display) this.firePropertyChange("import", "", dataTableName);//will display data table in dialogs
+            scriptLogger.info(command.paste());
         }else{
             logger.fatal(theException.getMessage(), theException);
             this.firePropertyChange("error", "", "Error - Check log for details.");

@@ -25,7 +25,7 @@ import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.statistics.TwoWayTable;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
@@ -46,10 +46,11 @@ public class PieChartAnalysis extends SwingWorker<PieChartPanel, Void> {
     private Connection conn = null;
     public StopWatch sw = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
     private DataTableName tableName = null;
     private boolean hasGroupingVariable = false;
-    private VariableInfo variable = null;
-    private VariableInfo groupVar = null;
+    private VariableAttributes variable = null;
+    private VariableAttributes groupVar = null;
     private int progressValue = 0;
     private int lineNumber = 0;
     private double maxProgress = 100.0;
@@ -132,15 +133,13 @@ public class PieChartAnalysis extends SwingWorker<PieChartPanel, Void> {
         this.firePropertyChange("status", "", "Running Pie Chart...");
         this.firePropertyChange("progress-on", null, null);
         try{
-            logger.info(command.paste());
-
             //get variable info from db
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             String selectVariable = command.getFreeOption("variable").getString();
-            variable = dao.getVariableInfo(conn, new VariableTableName(tableName.toString()), selectVariable);
+            variable = dao.getVariableAttributes(conn, new VariableTableName(tableName.toString()), selectVariable);
             if(command.getFreeOption("groupvar").hasValue()){
                 String groupByName=command.getFreeOption("groupvar").getString();
-                groupVar = dao.getVariableInfo(conn, new VariableTableName(tableName.toString()), groupByName);
+                groupVar = dao.getVariableAttributes(conn, new VariableTableName(tableName.toString()), groupByName);
                 hasGroupingVariable = true;
             }
 
@@ -176,7 +175,6 @@ public class PieChartAnalysis extends SwingWorker<PieChartPanel, Void> {
     }
 
     public void fireVariableChanged(VariableChangeEvent event){
-        System.out.println("TestSclingAnalysis: firing variable changed=" + event.getVariable().getName().toString());
         for(VariableChangeListener l : variableChangeListeners){
             l.variableChanged(event);
         }
@@ -191,6 +189,7 @@ public class PieChartAnalysis extends SwingWorker<PieChartPanel, Void> {
                 logger.fatal(theException.getMessage(), theException);
                 firePropertyChange("error", "", "Error - Check log for details.");
             }
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(ex.getMessage(), ex);
             firePropertyChange("error", "", "Error - Check log for details.");

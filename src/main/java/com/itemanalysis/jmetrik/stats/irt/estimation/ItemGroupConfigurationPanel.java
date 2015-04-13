@@ -2,14 +2,13 @@ package com.itemanalysis.jmetrik.stats.irt.estimation;
 
 import com.itemanalysis.jmetrik.commandbuilder.MegaOption;
 import com.itemanalysis.jmetrik.model.VariableListModel;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class ItemGroupConfigurationPanel extends JPanel{
 
@@ -32,7 +31,7 @@ public class ItemGroupConfigurationPanel extends JPanel{
     private JTextField guessingPriorTextField;
     private JLabel guessingStartLabel;
     private JTextField guessingStartTextField;
-    private JList<VariableInfo> itemList;
+    private JList<VariableAttributes> itemList;
     private JScrollPane itemScrollPane;
     private JLabel modelLabel;
     private JPanel modelPanel;
@@ -81,7 +80,7 @@ public class ItemGroupConfigurationPanel extends JPanel{
 
     private JDialog parent = null;
     private VariableListModel variableListModel = null;
-    private ArrayList<VariableInfo> selectedVariables = null;
+    private ArrayList<VariableAttributes> selectedVariables = null;
     private int ncat = 0;
     private double scalingConstant = 1.0;
     private boolean fixedDiscrimination = false;
@@ -90,21 +89,21 @@ public class ItemGroupConfigurationPanel extends JPanel{
     private boolean fixedSlipping = false;
     private boolean fixedStep = false;
 
-    private ArrayList<VariableInfo> selectedVariableMasterList = null;
+    private ArrayList<VariableAttributes> selectedVariableMasterList = null;
 
-    public ItemGroupConfigurationPanel(JDialog parent, VariableListModel variableListModel, ArrayList<VariableInfo> selectedVariableMasterList){
+    public ItemGroupConfigurationPanel(JDialog parent, VariableListModel variableListModel, ArrayList<VariableAttributes> selectedVariableMasterList){
         this.parent = parent;
         this.variableListModel = variableListModel;
         this.selectedVariableMasterList = selectedVariableMasterList;
         initComponents();
-        selectedVariables = new ArrayList<VariableInfo>();
+        selectedVariables = new ArrayList<VariableAttributes>();
     }
 
 
     private void initComponents() {
 
         itemScrollPane = new JScrollPane();
-        itemList = new JList<VariableInfo>();
+        itemList = new JList<VariableAttributes>();
         priorPanel = new JPanel();
         discriminationPriorTextField = new JTextField();
         discriminationPriorLabel = new JLabel();
@@ -245,6 +244,17 @@ public class ItemGroupConfigurationPanel extends JPanel{
 
             }
         });
+
+        //Initialize values in text fields
+        discriminationPriorTextField.setText("beta, 1.75, 3.0, 0.0, 3.0");
+        difficultyPriorTextField.setText("beta, 1.01, 1.01, -6.0, 6.0");
+        guessingPriorTextField.setText("beta, 3.5, 4.0, 0.0, 0.5");
+        slippingPriorTextField.setText("");
+
+        discriminationPriorTextField.setCaretPosition(0);
+        difficultyPriorTextField.setCaretPosition(0);
+        guessingPriorTextField.setCaretPosition(0);
+        slippingPriorTextField.setCaretPosition(0);
 
         stepPriorLabel.setText("Step/Threshold");
 
@@ -543,6 +553,16 @@ public class ItemGroupConfigurationPanel extends JPanel{
                     guessingStartTextField.setEnabled(true);
                     slippingStartTextField.setEnabled(true);
 
+                    discriminationPriorTextField.setText("beta, 1.75, 3.0, 0.0, 3.0");
+                    difficultyPriorTextField.setText("beta, 1.01, 1.01, -6.0, 6.0");
+                    guessingPriorTextField.setText("beta, 3.5, 4.0, 0.0, 0.5");
+                    slippingPriorTextField.setText("beta, 6.0, 3.0, 0.7, 1.0");
+                    stepPriorTextField.setText("");
+
+                    discriminationPriorTextField.setCaretPosition(0);
+                    difficultyPriorTextField.setCaretPosition(0);
+                    guessingPriorTextField.setCaretPosition(0);
+                    slippingPriorTextField.setCaretPosition(0);
 
                     discriminationPriorButton.setEnabled(true);
                     difficultyPriorButton.setEnabled(true);
@@ -561,6 +581,17 @@ public class ItemGroupConfigurationPanel extends JPanel{
                     guessingStartTextField.setEnabled(true);
                     slippingStartTextField.setEnabled(true);
 
+                    discriminationPriorTextField.setText("beta, 1.75, 3.0, 0.0, 3.0");
+                    difficultyPriorTextField.setText("beta, 1.01, 1.01, -6.0, 6.0");
+                    guessingPriorTextField.setText("beta, 3.5, 4.0, 0.0, 0.5");
+                    slippingPriorTextField.setText("");
+                    stepPriorTextField.setText("");
+
+                    discriminationPriorTextField.setCaretPosition(0);
+                    difficultyPriorTextField.setCaretPosition(0);
+                    guessingPriorTextField.setCaretPosition(0);
+                    slippingPriorTextField.setCaretPosition(0);
+
                     discriminationPriorButton.setEnabled(true);
                     difficultyPriorButton.setEnabled(true);
                     guessingPriorButton.setEnabled(true);
@@ -577,6 +608,17 @@ public class ItemGroupConfigurationPanel extends JPanel{
                     difficultyStartTextField.setEnabled(true);
                     guessingStartTextField.setEnabled(true);
                     slippingStartTextField.setEnabled(true);
+
+                    discriminationPriorTextField.setText("beta, 1.75, 3.0, 0.0, 3.0");
+                    difficultyPriorTextField.setText("beta, 1.01, 1.01, -6.0, 6.0");
+                    guessingPriorTextField.setText("");
+                    slippingPriorTextField.setText("");
+                    stepPriorTextField.setText("");
+
+                    discriminationPriorTextField.setCaretPosition(0);
+                    difficultyPriorTextField.setCaretPosition(0);
+                    guessingPriorTextField.setCaretPosition(0);
+                    slippingPriorTextField.setCaretPosition(0);
 
                     discriminationPriorButton.setEnabled(true);
                     difficultyPriorButton.setEnabled(true);
@@ -595,6 +637,17 @@ public class ItemGroupConfigurationPanel extends JPanel{
                     guessingStartTextField.setEnabled(true);
                     slippingStartTextField.setEnabled(true);
 
+                    discriminationPriorTextField.setText("");
+                    difficultyPriorTextField.setText("beta, 1.01, 1.01, -6.0, 6.0");
+                    guessingPriorTextField.setText("");
+                    slippingPriorTextField.setText("");
+                    stepPriorTextField.setText("");
+
+                    discriminationPriorTextField.setCaretPosition(0);
+                    difficultyPriorTextField.setCaretPosition(0);
+                    guessingPriorTextField.setCaretPosition(0);
+                    slippingPriorTextField.setCaretPosition(0);
+
                     discriminationPriorButton.setEnabled(false);
                     difficultyPriorButton.setEnabled(true);
                     guessingPriorButton.setEnabled(false);
@@ -612,15 +665,21 @@ public class ItemGroupConfigurationPanel extends JPanel{
                     guessingStartTextField.setEnabled(false);
                     slippingStartTextField.setEnabled(false);
 
+                    difficultyPriorTextField.setText("");
+                    discriminationPriorTextField.setText("");
+                    guessingPriorTextField.setText("");
+                    slippingPriorTextField.setText("");
+                    stepPriorTextField.setText("");
+
                     discriminationPriorButton.setEnabled(true);
-                    difficultyPriorButton.setEnabled(false);
+                    difficultyPriorButton.setEnabled(true);
                     guessingPriorButton.setEnabled(false);
                     slippingPriorButton.setEnabled(false);
                     stepPriorButton.setEnabled(true);
 
                 }else if(itemResponseModelStringArray[5].equals(selectedItem)){
                     discriminationPriorTextField.setEnabled(false);
-                    difficultyPriorTextField.setEnabled(false);
+                    difficultyPriorTextField.setEnabled(true);
                     guessingPriorTextField.setEnabled(false);
                     slippingPriorTextField.setEnabled(false);
                     stepPriorTextField.setEnabled(true);
@@ -628,6 +687,12 @@ public class ItemGroupConfigurationPanel extends JPanel{
                     difficultyStartTextField.setEnabled(false);
                     guessingStartTextField.setEnabled(false);
                     slippingStartTextField.setEnabled(false);
+
+                    difficultyPriorTextField.setText("");
+                    discriminationPriorTextField.setText("");
+                    guessingPriorTextField.setText("");
+                    slippingPriorTextField.setText("");
+                    stepPriorTextField.setText("");
 
                     discriminationPriorButton.setEnabled(false);
                     difficultyPriorButton.setEnabled(false);
@@ -722,7 +787,7 @@ public class ItemGroupConfigurationPanel extends JPanel{
     public boolean hasSameNumberOfCategories(){
         int[] selectedIndices = itemList.getSelectedIndices();
 
-        VariableInfo v = null;
+        VariableAttributes v = null;
         for(int i=0;i<selectedIndices.length;i++){
             v = variableListModel.getElementAt(selectedIndices[i]);
             if(i==0){
@@ -741,12 +806,12 @@ public class ItemGroupConfigurationPanel extends JPanel{
         return true;
     }
 
-    public ArrayList<VariableInfo> getSelectedVariables(){
+    public ArrayList<VariableAttributes> getSelectedVariables(){
         return selectedVariables;
     }
 
     public void resetPanel(){
-        for(VariableInfo v : selectedVariables){
+        for(VariableAttributes v : selectedVariables){
             if(selectedVariableMasterList.contains(v)) selectedVariableMasterList.remove(v);
         }
 
@@ -804,7 +869,7 @@ public class ItemGroupConfigurationPanel extends JPanel{
         if(selectedIndices.length==0) return false;//No items selected therefore no option to set
 
         //Set selected items (required)
-        VariableInfo v = null;
+        VariableAttributes v = null;
         for(int i = 0; i<selectedIndices.length;i++){
             v = variableListModel.getElementAt(selectedIndices[i]);
             if(i==0) ncat = v.getItemScoring().numberOfScoreLevels();//number of categories set by first item in group
@@ -942,7 +1007,7 @@ public class ItemGroupConfigurationPanel extends JPanel{
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus){
             Font labelFont = UIManager.getFont("Label.font");
             JLabel label = (JLabel)super.getListCellRendererComponent(list,value,index,isSelected,cellHasFocus);
-            VariableInfo v = (VariableInfo)value;
+            VariableAttributes v = (VariableAttributes)value;
             if(selectedVariableMasterList.contains(v)){
                 label.setFont(labelFont.deriveFont(Font.BOLD)) ;
             }else{

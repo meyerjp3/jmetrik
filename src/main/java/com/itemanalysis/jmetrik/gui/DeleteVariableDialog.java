@@ -21,7 +21,7 @@ import com.itemanalysis.jmetrik.selector.MultipleSelectionPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.DeleteVariableCommand;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -36,17 +36,17 @@ public class DeleteVariableDialog extends JDialog {
 
     private MultipleSelectionPanel vsp;
 	private JPanel mainPanel, blankPanel;
-	private ArrayList<VariableInfo> variables;
+	private ArrayList<VariableAttributes> variables;
 	boolean canRun=false;
     private DatabaseName dbName = null;
     private DataTableName tableName = null;
     private DeleteVariableCommand command = null;
     private int numberOfSelectedVariables = 0;
-    private VariableInfo selectedVariable = null;
+    private VariableAttributes selectedVariable = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
-    public DeleteVariableDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableInfo> variables){
+    public DeleteVariableDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableAttributes> variables){
         super(parent,"Delete Variables",true);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		this.variables=variables;
@@ -116,7 +116,7 @@ public class DeleteVariableDialog extends JDialog {
         return  numberOfSelectedVariables;
     }
 
-    public VariableInfo getSelectedVariable(){
+    public VariableAttributes getSelectedVariable(){
         return selectedVariable;
     }
 
@@ -124,7 +124,7 @@ public class DeleteVariableDialog extends JDialog {
 
 		public void actionPerformed(ActionEvent e){
 
-            VariableInfo[] v = vsp.getSelectedVariables();
+            VariableAttributes[] v = vsp.getSelectedVariables();
 
             if(vsp.getSelectedVariables().length>0){
                 numberOfSelectedVariables = v.length;

@@ -25,7 +25,7 @@ import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.distribution.UniformDistributionApproximation;
 import com.itemanalysis.psychometrics.kernel.*;
 import com.itemanalysis.psychometrics.tools.StopWatch;
@@ -55,9 +55,10 @@ public class DensityAnalysis  extends SwingWorker<DensityPanel, Void> {
     private static int KERNEL_POINTS = 500;
     public StopWatch sw = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
     public boolean hasGroupingVariable = false;
-    private VariableInfo variable = null;
-    VariableInfo groupVar = null;
+    private VariableAttributes variable = null;
+    private VariableAttributes groupVar = null;
     private DataTableName tableName = null;
     private int progressValue = 0;
     private int lineNumber = 0;
@@ -174,14 +175,13 @@ public class DensityAnalysis  extends SwingWorker<DensityPanel, Void> {
         this.firePropertyChange("status", "", "Running Density Analysis...");
         this.firePropertyChange("progress-on", null, null);
         try{
-            logger.info(command.paste());
             //get variable info from db
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             String selectVariable = command.getFreeOption("variable").getString();
-            variable = dao.getVariableInfo(conn, new VariableTableName(tableName.toString()), selectVariable);
+            variable = dao.getVariableAttributes(conn, new VariableTableName(tableName.toString()), selectVariable);
             if(command.getFreeOption("groupvar").hasValue()){
                 String groupByName=command.getFreeOption("groupvar").getString();
-                groupVar = dao.getVariableInfo(conn, new VariableTableName(tableName.toString()), groupByName);
+                groupVar = dao.getVariableAttributes(conn, new VariableTableName(tableName.toString()), groupByName);
                 hasGroupingVariable = true;
             }
 
@@ -226,6 +226,7 @@ public class DensityAnalysis  extends SwingWorker<DensityPanel, Void> {
                 logger.fatal(theException.getMessage(), theException);
                 firePropertyChange("error", "", "Error - Check log for details.");
             }
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(theException.getMessage(), theException);
             firePropertyChange("error", "", "Error - Check log for details.");

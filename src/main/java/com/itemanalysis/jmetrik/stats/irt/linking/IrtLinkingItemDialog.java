@@ -23,8 +23,9 @@ import com.itemanalysis.jmetrik.model.VariableListFilter;
 import com.itemanalysis.jmetrik.model.VariableListModel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -73,9 +74,9 @@ public class IrtLinkingItemDialog extends JDialog{
     private boolean selectThreshold = true;
     private boolean selectDiscrimination = true;
     private boolean selectGuessing = true;
-    private VariableInfo difficultyVariable = null;
-    private VariableInfo discriminationVariable = null;
-    private VariableInfo guessingVariable = null;
+    private VariableAttributes difficultyVariable = null;
+    private VariableAttributes discriminationVariable = null;
+    private VariableAttributes guessingVariable = null;
     private DataTableName currentTable = null;
     private int numberOfParameters;
     static Logger logger = Logger.getLogger("jmetrik-logger");
@@ -189,14 +190,21 @@ public class IrtLinkingItemDialog extends JDialog{
 
 
         //filter out items and strings
+//        VariableListFilter listFilter = new VariableListFilter();
+//        listFilter.addFilteredType(new VariableType(ItemType.BINARY_ITEM, DataType.STRING));
+//        listFilter.addFilteredType(new VariableType(ItemType.BINARY_ITEM, DataType.DOUBLE));
+//        listFilter.addFilteredType(new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.STRING));
+//        listFilter.addFilteredType(new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.DOUBLE));
+//        listFilter.addFilteredType(new VariableType(ItemType.CONTINUOUS_ITEM, DataType.STRING));
+//        listFilter.addFilteredType(new VariableType(ItemType.CONTINUOUS_ITEM, DataType.DOUBLE));
+//        listFilter.addFilteredType(new VariableType(ItemType.NOT_ITEM, DataType.STRING));
+
+
         VariableListFilter listFilter = new VariableListFilter();
-        listFilter.addFilteredType(new VariableType(VariableType.BINARY_ITEM, VariableType.STRING));
-        listFilter.addFilteredType(new VariableType(VariableType.BINARY_ITEM, VariableType.DOUBLE));
-        listFilter.addFilteredType(new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING));
-        listFilter.addFilteredType(new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.DOUBLE));
-        listFilter.addFilteredType(new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING));
-        listFilter.addFilteredType(new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.DOUBLE));
-        listFilter.addFilteredType(new VariableType(VariableType.NOT_ITEM, VariableType.STRING));
+        listFilter.addFilteredItemType(ItemType.BINARY_ITEM);
+        listFilter.addFilteredItemType(ItemType.POLYTOMOUS_ITEM);
+        listFilter.addFilteredItemType(ItemType.CONTINUOUS_ITEM);
+        listFilter.addFilteredDataType(DataType.STRING);
         variableListModel = new VariableListModel(listFilter);
         variableList.setModel(variableListModel);
 
@@ -212,14 +220,21 @@ public class IrtLinkingItemDialog extends JDialog{
         thresholdScrollPane.setMinimumSize(new Dimension(150, 100));
         thresholdScrollPane.setPreferredSize(new Dimension(150, 100));
 
+//        VariableListFilter listFilter2 = new VariableListFilter();
+//        listFilter2.addFilteredType(new VariableType(ItemType.BINARY_ITEM, DataType.STRING));
+//        listFilter2.addFilteredType(new VariableType(ItemType.BINARY_ITEM, DataType.DOUBLE));
+//        listFilter2.addFilteredType(new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.STRING));
+//        listFilter2.addFilteredType(new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.DOUBLE));
+//        listFilter2.addFilteredType(new VariableType(ItemType.CONTINUOUS_ITEM, DataType.STRING));
+//        listFilter2.addFilteredType(new VariableType(ItemType.CONTINUOUS_ITEM, DataType.DOUBLE));
+//        listFilter2.addFilteredType(new VariableType(ItemType.NOT_ITEM, DataType.STRING));
+
         VariableListFilter listFilter2 = new VariableListFilter();
-        listFilter2.addFilteredType(new VariableType(VariableType.BINARY_ITEM, VariableType.STRING));
-        listFilter2.addFilteredType(new VariableType(VariableType.BINARY_ITEM, VariableType.DOUBLE));
-        listFilter2.addFilteredType(new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING));
-        listFilter2.addFilteredType(new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.DOUBLE));
-        listFilter2.addFilteredType(new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING));
-        listFilter2.addFilteredType(new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.DOUBLE));
-        listFilter2.addFilteredType(new VariableType(VariableType.NOT_ITEM, VariableType.STRING));
+        listFilter2.addFilteredItemType(ItemType.BINARY_ITEM);
+        listFilter2.addFilteredItemType(ItemType.POLYTOMOUS_ITEM);
+        listFilter2.addFilteredItemType(ItemType.CONTINUOUS_ITEM);
+        listFilter2.addFilteredDataType(DataType.STRING);
+
         thresholdListModel = new VariableListModel(listFilter2);
         thresholdList.setModel(thresholdListModel);
         thresholdScrollPane.setViewportView(thresholdList);
@@ -454,7 +469,7 @@ public class IrtLinkingItemDialog extends JDialog{
         try{
             if(currentTable!=null && currentTable.equals(tableName)) return;
             VariableTableName variableTableName = new VariableTableName(tableName.toString());
-            ArrayList<VariableInfo> v = dao.getAllVariables(conn, variableTableName);
+            ArrayList<VariableAttributes> v = dao.getAllVariables(conn, variableTableName);
             setVariables(v);
             currentTable = tableName;
         }catch(SQLException ex){
@@ -467,11 +482,11 @@ public class IrtLinkingItemDialog extends JDialog{
 
     }
 
-    private void setVariables(ArrayList<VariableInfo> variables){
+    private void setVariables(ArrayList<VariableAttributes> variables){
         reset();
         variableListModel.clear();
 
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             variableListModel.addElement(v);
         }
     }
@@ -488,19 +503,19 @@ public class IrtLinkingItemDialog extends JDialog{
         return numberOfParameters;
     }
 
-    public VariableInfo getDifficultyVariable(){
+    public VariableAttributes getDifficultyVariable(){
         return difficultyVariable;
     }
 
-    public VariableInfo[] getThresholdVariables(){
+    public VariableAttributes[] getThresholdVariables(){
         return thresholdListModel.getAll();
     }
 
-    public VariableInfo getDiscriminationVariable(){
+    public VariableAttributes getDiscriminationVariable(){
         return discriminationVariable;
     }
 
-    public VariableInfo getGuessingVariable(){
+    public VariableAttributes getGuessingVariable(){
         return guessingVariable;
     }
 

@@ -416,8 +416,8 @@ public class MegaOption{
         return Double.parseDouble(value);
     }
 
-    public int getValueAtAsInteger(String argName, double defaultValue)throws IllegalArgumentException{
-        String value = getValueAt(argName, Double.valueOf(defaultValue).toString());
+    public int getValueAtAsInteger(String argName, int defaultValue)throws IllegalArgumentException{
+        String value = getValueAt(argName, Integer.valueOf(defaultValue).toString());
         return Integer.parseInt(value);
     }
 

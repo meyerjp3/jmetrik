@@ -30,7 +30,7 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.swing.ChartTitlesDialog;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 public class BarChartDialog extends JDialog {
@@ -60,7 +60,7 @@ public class BarChartDialog extends JDialog {
     private JPanel yaxisPanel;
     // End of variables declaration
 
-    public BarChartDialog(JFrame parent, DatabaseName dbName, DataTableName table, ArrayList <VariableInfo> variables){
+    public BarChartDialog(JFrame parent, DatabaseName dbName, DataTableName table, ArrayList <VariableAttributes> variables){
         super(parent,"Bar Chart",true);
         this.dbName=dbName;
         this.table=table;
@@ -88,6 +88,8 @@ public class BarChartDialog extends JDialog {
         b3.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                VariableAttributes v = vsp.getSelectedVariable();
+                if((v!=null)) chartTitle = v.getName().toString();
                 ChartTitlesDialog chartTitlesDialog = new ChartTitlesDialog(BarChartDialog.this, chartTitle, chartSubtitle);
                 chartTitlesDialog.setVisible(true);
                 chartTitle = chartTitlesDialog.getChartTitle();
@@ -308,7 +310,7 @@ public class BarChartDialog extends JDialog {
             if(ready){
                 try{
                     command = new BarChartCommand();
-                    VariableInfo v = vsp.getSelectedVariable();
+                    VariableAttributes v = vsp.getSelectedVariable();
                     command.getFreeOption("variable").add(v.getName().toString());
 
                     command.getPairedOptionList("data").addValue("db", dbName.toString());
@@ -319,12 +321,14 @@ public class BarChartDialog extends JDialog {
                     command.getSelectOneOption("layout").setSelected(groupingButtonGroup.getSelection().getActionCommand());
 
                     if("".equals(chartTitle)) chartTitle = v.getName().toString();
-
                     command.getFreeOption("title").add(chartTitle);
+                    chartTitle = "";//reset to avoid keeping old name when dialog reopened
+
                     if(!"".equals(chartSubtitle)) command.getFreeOption("subtitle").add(chartSubtitle);
+                    chartSubtitle = ""; //reset to avoid keeping old name when dialog reopened
 
                     if(vsp.hasGroupingVariable()){
-                        VariableInfo groupVar = vsp.getGroupByVariable();
+                        VariableAttributes groupVar = vsp.getGroupByVariable();
                         command.getFreeOption("groupvar").add(groupVar.getName().toString());
                     }
 

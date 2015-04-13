@@ -32,8 +32,9 @@ import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.statistics.NormalScores;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
@@ -50,14 +51,14 @@ public class RankingAnalysis extends SwingWorker<String, Void> {
     private Connection conn = null;
     private DatabaseAccessObject dao = null;
     private RankingCommand command = null;
-    private VariableInfo variable = null;
+    private VariableAttributes variable = null;
     private DataTableName tableName = null;
     private Throwable theException = null;
     private StopWatch sw = null;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
     private TiesStrategy tiesStrategy = TiesStrategy.MAXIMUM;
     private boolean ascending = true;
-    private VariableInfo newVariable = null;
+    private VariableAttributes newVariable = null;
     private String newVariableType = "rank";
     private NormalScores normScore = null;
     private int numGroups = 0;
@@ -78,6 +79,7 @@ public class RankingAnalysis extends SwingWorker<String, Void> {
     private boolean rank = false;
     private boolean ntiles = false;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public RankingAnalysis(Connection conn, DatabaseAccessObject dao, RankingCommand command, JmetrikTextFile textFile){
         this.conn = conn;
@@ -157,7 +159,7 @@ public class RankingAnalysis extends SwingWorker<String, Void> {
             if(tukey) newVariableLabel = "Tukey Normal Score";
             if(vdw) newVariableLabel = "van der Waerden Normal Score";
             if(ntiles) newVariableLabel = "Quantiles: " + numGroups + " groups";
-            newVariable = new VariableInfo(newVariableName, newVariableLabel, VariableType.NOT_ITEM, VariableType.DOUBLE, columnNumber++, "");
+            newVariable = new VariableAttributes(newVariableName, newVariableLabel, ItemType.NOT_ITEM, DataType.DOUBLE, columnNumber++, "");
 
             dao.addColumnToDb(conn, tableName, newVariable);
 
@@ -257,8 +259,6 @@ public class RankingAnalysis extends SwingWorker<String, Void> {
 
     protected String doInBackground() {
         sw = new StopWatch();
-        logger.info(command.paste());
-
         this.firePropertyChange("status", "", "Running Ranking...");
         this.firePropertyChange("progress-on", null, null);
         String results = "";
@@ -268,7 +268,7 @@ public class RankingAnalysis extends SwingWorker<String, Void> {
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             VariableTableName variableTableName = new VariableTableName(tableName.toString());
             String selectVariable = command.getFreeOption("variable").getString();
-            variable = dao.getVariableInfo(conn, variableTableName, selectVariable);
+            variable = dao.getVariableAttributes(conn, variableTableName, selectVariable);
 
             newVariableName = command.getFreeOption("name").getString();
 
@@ -333,6 +333,7 @@ public class RankingAnalysis extends SwingWorker<String, Void> {
                 textFile.addText(get());
                 textFile.addText("Elapsed time: " + sw.getElapsedTime());
                 textFile.setCaretPosition(0);
+                scriptLogger.info(command.paste());
 
                 fireVariableChanged(new VariableChangeEvent(this, tableName, newVariable, VariableChangeType.VARIABLE_ADDED));
 

@@ -18,8 +18,8 @@
 package com.itemanalysis.jmetrik.workspace;
 
 import au.com.bytecode.opencsv.CSVWriter;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import java.io.Writer;
 import java.sql.ResultSet;
@@ -52,17 +52,17 @@ public class JmetrikCsvWriter extends CSVWriter {
         super(writer, separator, quotechar, lineEnd);
     }
 
-    public void writeHeader(ArrayList<VariableInfo> variables){
+    public void writeHeader(ArrayList<VariableAttributes> variables){
         String[] line = new String[variables.size()];
         int index = 0;
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             line[index] = v.getName().toString();
             index++;
         }
         this.writeNext(line);
     }
 
-    public void writeDatabase(ResultSet rs, ArrayList<VariableInfo> variables)throws SQLException{
+    public void writeDatabase(ResultSet rs, ArrayList<VariableAttributes> variables)throws SQLException{
         String[] line = null;
         Object response = null;
         int index = 0;
@@ -71,7 +71,7 @@ public class JmetrikCsvWriter extends CSVWriter {
             while(rs.next()){
                 line = new String[cols];
                 index = 0;
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     response = rs.getObject(v.getName().nameForDatabase());
                     if(response==null){
                         line[index] = "";
@@ -89,7 +89,7 @@ public class JmetrikCsvWriter extends CSVWriter {
 
     }
 
-    public void writeScoredDatabase(ResultSet rs, ArrayList<VariableInfo> variables)throws SQLException{
+    public void writeScoredDatabase(ResultSet rs, ArrayList<VariableAttributes> variables)throws SQLException{
         String[] line = null;
         Object response = null;
         Double score = null;
@@ -99,8 +99,8 @@ public class JmetrikCsvWriter extends CSVWriter {
             while(rs.next()){
                 line = new String[cols];
                 index = 0;
-                for(VariableInfo v : variables){
-                    if(v.getType().getItemType()== VariableType.BINARY_ITEM || v.getType().getItemType()==VariableType.POLYTOMOUS_ITEM){
+                for(VariableAttributes v : variables){
+                    if(v.getType().getItemType()== ItemType.BINARY_ITEM || v.getType().getItemType()==ItemType.POLYTOMOUS_ITEM){
                         response = rs.getObject(v.getName().nameForDatabase());
                         score = v.getItemScoring().computeItemScore(response);
                         line[index] = score.toString();

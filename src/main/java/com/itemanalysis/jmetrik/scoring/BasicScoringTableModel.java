@@ -17,18 +17,18 @@
 
 package com.itemanalysis.jmetrik.scoring;
 
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 
 public class BasicScoringTableModel  extends AbstractTableModel {
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private Object[][] data = null;
     int ncol = 0;
 
-    public BasicScoringTableModel(ArrayList<VariableInfo> variables){
+    public BasicScoringTableModel(ArrayList<VariableAttributes> variables){
         this.variables = variables;
         ncol = variables.size();
         data = new Object[2][variables.size()];

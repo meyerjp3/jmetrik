@@ -22,8 +22,8 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.histogram.*;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.Column;
@@ -57,9 +57,9 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
 
     private boolean hasGroupingVariable = false;
 
-    private VariableInfo groupVar = null;
+    private VariableAttributes groupVar = null;
 
-    private VariableInfo variable = null;
+    private VariableAttributes variable = null;
 
     private ArrayList<Object> groupbyValues = null;
 
@@ -74,6 +74,7 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public HistogramAnalysis(Connection conn, DatabaseAccessObject dao, HistogramCommand command, HistogramPanel histogramPanel){
         this.command = command;
@@ -254,7 +255,7 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
                 //add where clause if groupby variable provided
                 if(hasGroupingVariable && groupVar !=null){
                     select.addColumn(table, groupVar.getName().nameForDatabase());
-                    if(groupVar.getType().getDataType()==VariableType.DOUBLE){
+                    if(groupVar.getType().getDataType()== DataType.DOUBLE){
                         select.addCriteria((new MatchCriteria(
                                 new Column(table, groupVar.getName().nameForDatabase()),
                                 MatchCriteria.EQUALS,
@@ -367,14 +368,13 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
         this.firePropertyChange("status", "", "Running Histogram...");
         this.firePropertyChange("progress-on", null, null);
         try{
-            logger.info(command.paste());
             //get variable info from db
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             String selectVariable = command.getFreeOption("variable").getString();
-            variable = dao.getVariableInfo(conn, new VariableTableName(tableName.toString()), selectVariable);
+            variable = dao.getVariableAttributes(conn, new VariableTableName(tableName.toString()), selectVariable);
             if(command.getFreeOption("groupvar").hasValue()){
                 String groupByName=command.getFreeOption("groupvar").getString();
-                groupVar = dao.getVariableInfo(conn, new VariableTableName(tableName.toString()), groupByName);
+                groupVar = dao.getVariableAttributes(conn, new VariableTableName(tableName.toString()), groupByName);
                 hasGroupingVariable = true;
             }
 
@@ -396,6 +396,7 @@ public class HistogramAnalysis extends SwingWorker<HistogramPanel, Void> {
                 logger.fatal(theException.getMessage(), theException);
                 firePropertyChange("error", "", "Error - Check log for details.");
             }
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(ex.getMessage(), ex);
             firePropertyChange("error", "", "Error - Check log for details.");

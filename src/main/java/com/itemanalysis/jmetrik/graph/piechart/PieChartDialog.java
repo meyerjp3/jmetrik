@@ -31,7 +31,7 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.swing.ChartTitlesDialog;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 public class PieChartDialog extends JDialog{
@@ -57,7 +57,7 @@ public class PieChartDialog extends JDialog{
     private boolean canRun=false;
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
-    public PieChartDialog(JFrame parent, DatabaseName dbName, DataTableName table, ArrayList <VariableInfo> variables){
+    public PieChartDialog(JFrame parent, DatabaseName dbName, DataTableName table, ArrayList <VariableAttributes> variables){
         super(parent,"Pie Chart",true);
         this.dbName=dbName;
         this.table=table;
@@ -84,6 +84,8 @@ public class PieChartDialog extends JDialog{
         b3.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                VariableAttributes v = vsp.getSelectedVariable();
+                if((v!=null)) chartTitle = v.getName().toString();
                 ChartTitlesDialog chartTitlesDialog = new ChartTitlesDialog(PieChartDialog.this, chartTitle, chartSubtitle);
                 chartTitlesDialog.setVisible(true);
                 chartTitle = chartTitlesDialog.getChartTitle();
@@ -263,7 +265,7 @@ public class PieChartDialog extends JDialog{
             try{
                 if(vsp.selectionMade()){
                     command = new PieChartCommand();
-                    VariableInfo v = vsp.getSelectedVariable();
+                    VariableAttributes v = vsp.getSelectedVariable();
                     command.getFreeOption("variable").add(v.getName().toString());
                     command.getPairedOptionList("data").addValue("db", dbName.toString());
                     command.getPairedOptionList("data").addValue("table", table.toString());
@@ -272,10 +274,13 @@ public class PieChartDialog extends JDialog{
 
                     if("".equals(chartTitle)) chartTitle = v.getName().toString();
                     command.getFreeOption("title").add(chartTitle);
+                    chartTitle = "";
+
                     if(!"".equals(chartSubtitle)) command.getFreeOption("subtitle").add(chartSubtitle);
+                    chartSubtitle = "";
 
                     if(vsp.hasGroupingVariable()){
-                        VariableInfo groupVar = vsp.getGroupByVariable();
+                        VariableAttributes groupVar = vsp.getGroupByVariable();
                         command.getFreeOption("groupvar").add(groupVar.getName().toString());
                     }
 

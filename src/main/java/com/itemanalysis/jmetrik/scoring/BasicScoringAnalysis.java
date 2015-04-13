@@ -25,8 +25,8 @@ import com.itemanalysis.jmetrik.utils.Alphabet;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -45,7 +45,7 @@ public class BasicScoringAnalysis extends SwingWorker<String, Void>{
     private ArrayList<String> key = null;
     private ArrayList<Integer> ncat = null;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private Throwable theException = null;
     private String omitCode = "";
     private String notReachedCode = "";
@@ -215,16 +215,15 @@ public class BasicScoringAnalysis extends SwingWorker<String, Void>{
         nvar = Math.min(nvar, nopt);
 
         String scoreString = "";
-        VariableInfo tempVar;
+        VariableAttributes tempVar;
         for(int i=0;i<nvar;i++){
             scoreString = getScoreString(key.get(i), ncat.get(i));
             tempVar = variables.get(i);
             tempVar.clearCategory();
-            tempVar.clearSpecialDataCodes();
             tempVar.addAllCategories(scoreString);
-            if(tempVar.getType().getItemType()!=VariableType.NOT_ITEM){
-                if(omitCode!=null) tempVar.setOmitCode(omitCode);
-                if(notReachedCode!=null) tempVar.setNotReachedCode(notReachedCode);
+            if(tempVar.getType().getItemType()!= ItemType.NOT_ITEM){
+                if(omitCode!=null) tempVar.getSpecialDataCodes().setOmittedCode(omitCode);
+                if(notReachedCode!=null) tempVar.getSpecialDataCodes().setNotReachedCode(notReachedCode);
             }
 
         }
@@ -255,7 +254,7 @@ public class BasicScoringAnalysis extends SwingWorker<String, Void>{
         try{
             if(theException==null){
                 firePropertyChange("table-updated", null, tableName);//updates display of data table
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     //updates variables in dialogs
                     fireVariableChanged(new VariableChangeEvent(this, variableTableName, v, VariableChangeType.VARIABLE_MODIFIED));
                 }

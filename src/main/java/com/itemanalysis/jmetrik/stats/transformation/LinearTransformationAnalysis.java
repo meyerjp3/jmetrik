@@ -25,11 +25,10 @@ import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.scaling.DefaultLinearTransformation;
-import com.itemanalysis.psychometrics.scaling.LinearTransformation;
 import com.itemanalysis.psychometrics.scaling.ScoreBounds;
 import com.itemanalysis.psychometrics.statistics.StorelessDescriptiveStatistics;
 import com.itemanalysis.psychometrics.tools.StopWatch;
@@ -62,8 +61,8 @@ public class LinearTransformationAnalysis  extends SwingWorker<String, Void> {
     private StopWatch sw = null;
     private DatabaseName dbName = null;
     private DataTableName tableName = null;
-    private VariableInfo selectedVariable = null;
-    private VariableInfo addedVariableInfo = null;
+    private VariableAttributes selectedVariable = null;
+    private VariableAttributes addedVariableInfo = null;
     private int lineNumber=0;
     private int progressValue=0;
     private int columnNumber = 0;
@@ -77,6 +76,7 @@ public class LinearTransformationAnalysis  extends SwingWorker<String, Void> {
     private boolean type1 = true;
     private StorelessDescriptiveStatistics descriptiveStatistics = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public LinearTransformationAnalysis(Connection conn, DatabaseAccessObject dao, LinearTransformationCommand command, JmetrikTextFile textFile){
         this.conn = conn;
@@ -115,11 +115,11 @@ public class LinearTransformationAnalysis  extends SwingWorker<String, Void> {
         columnNumber = numberOfColumns+1;
 
         String newVariableName = command.getFreeOption("name").getString();
-        addedVariableInfo = new VariableInfo(
+        addedVariableInfo = new VariableAttributes(
                 newVariableName,
                 "Linear transformation of " + selectedVariable.getName().toString(),
-                VariableType.NOT_ITEM,
-                VariableType.DOUBLE,
+                ItemType.NOT_ITEM,
+                DataType.DOUBLE,
                 columnNumber,
                 "");
 
@@ -273,13 +273,12 @@ public class LinearTransformationAnalysis  extends SwingWorker<String, Void> {
         this.firePropertyChange("progress-on", null, null);
         String results = "";
         try{
-            logger.info(command.paste());
             //get variable info from db
             dbName = new DatabaseName(command.getPairedOptionList("data").getStringAt("db"));
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             VariableTableName variableTableName = new VariableTableName(tableName.toString());
             ArrayList<String> selectVariables = command.getFreeOptionList("variables").getString();
-            ArrayList<VariableInfo> variables = dao.getSelectedVariables(conn, variableTableName, selectVariables);
+            ArrayList<VariableAttributes> variables = dao.getSelectedVariables(conn, variableTableName, selectVariables);
             selectedVariable = variables.get(0);
 
             processCommand();
@@ -305,6 +304,7 @@ public class LinearTransformationAnalysis  extends SwingWorker<String, Void> {
                 textFile.addText(get());
                 textFile.addText("Elapsed time: " + sw.getElapsedTime());
                 textFile.setCaretPosition(0);
+                scriptLogger.info(command.paste());
                 fireVariableChanged(new VariableChangeEvent(this, tableName, addedVariableInfo, VariableChangeType.VARIABLE_ADDED));
             }
         }catch(Exception ex){

@@ -21,8 +21,8 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.swing.DataTable;
 import com.itemanalysis.jmetrik.swing.TableHeaderCellRenderer;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import javax.swing.*;
 import javax.swing.table.JTableHeader;
@@ -47,14 +47,14 @@ public class BasicScoringDialog extends JDialog {
     private JTextField omitTextField;
     // End of variables declaration
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private boolean canRun = false;
     private BasicScoringCommand command = null;
     private DatabaseName dbName = null;
     private DataTableName tableName = null;
     private BasicScoringTableModel tableModel = null;
 
-    public BasicScoringDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables){
+    public BasicScoringDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables){
         super(parent, "Basic Item Scoring", true);
         this.dbName = dbName;
         this.tableName = tableName;
@@ -83,8 +83,8 @@ public class BasicScoringDialog extends JDialog {
 
         tableModel = new BasicScoringTableModel(variables);
         int index = 0;
-        for(VariableInfo v : variables){
-            if(v.getType().getItemType()== VariableType.BINARY_ITEM || v.getType().getItemType()== VariableType.POLYTOMOUS_ITEM){
+        for(VariableAttributes v : variables){
+            if(v.getType().getItemType()== ItemType.BINARY_ITEM || v.getType().getItemType()== ItemType.POLYTOMOUS_ITEM){
                 tableModel.setValueAt(v.getItemScoring().getAnswerKey(), 0, index);
                 tableModel.setValueAt(v.getItemScoring().numberOfCategories(), 1, index);
             }
@@ -93,10 +93,10 @@ public class BasicScoringDialog extends JDialog {
         index = 0;
 
         //set omit and not reached codes. Codes are the same for all variables. Obtain values from firt variable
-        for(VariableInfo v : variables){
-            if(v.getType().getItemType()== VariableType.BINARY_ITEM || v.getType().getItemType()== VariableType.POLYTOMOUS_ITEM){
-                Object omitCode = v.getOmitCode();
-                Object nrCode = v.getNotReachedCode();
+        for(VariableAttributes v : variables){
+            if(v.getType().getItemType()== ItemType.BINARY_ITEM || v.getType().getItemType()== ItemType.POLYTOMOUS_ITEM){
+                Object omitCode = v.getSpecialDataCodes().getOmittedCode();
+                Object nrCode = v.getSpecialDataCodes().getNotReachedCode();
 
                 if(omitCode==null){
                     omitTextField.setText("");

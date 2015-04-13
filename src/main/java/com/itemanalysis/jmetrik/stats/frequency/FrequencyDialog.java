@@ -21,7 +21,8 @@ import com.itemanalysis.jmetrik.selector.MultipleSelectionPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -36,7 +37,7 @@ public class FrequencyDialog extends JDialog {
 
     private static final long serialVersionUID = 1L;
     private MultipleSelectionPanel vsp;
-    private ArrayList<VariableInfo> varInfo;
+    private ArrayList<VariableAttributes> varInfo;
     private boolean canRun = false;
     private FrequencyCommand command = null;
     private DatabaseName dbName = null;
@@ -44,7 +45,7 @@ public class FrequencyDialog extends JDialog {
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
-    public FrequencyDialog(JFrame parent, DatabaseName dbName, DataTableName table, ArrayList <VariableInfo> variables){
+    public FrequencyDialog(JFrame parent, DatabaseName dbName, DataTableName table, ArrayList <VariableAttributes> variables){
         super(parent,"Frequency Analysis",true);
         this.dbName = dbName;
         this.table = table;
@@ -60,6 +61,7 @@ public class FrequencyDialog extends JDialog {
         });
 
         vsp = new MultipleSelectionPanel();
+        vsp.addUnselectedFilterDataType(DataType.NO_DATATYPE_FILTER);
         vsp.setVariables(variables);
         vsp.showButton4(false);
         JButton b1 = vsp.getButton1();
@@ -99,7 +101,7 @@ public class FrequencyDialog extends JDialog {
         return command;
     }
 
-    public VariableInfo[] getSelectedVariables(){
+    public VariableAttributes[] getSelectedVariables(){
         return vsp.getSelectedVariables();
     }
 
@@ -107,7 +109,7 @@ public class FrequencyDialog extends JDialog {
         varInfo.remove(column);
     }
 
-    public void addVariable(VariableInfo variable){
+    public void addVariable(VariableAttributes variable){
         varInfo.add(variable);
     }
 
@@ -124,7 +126,7 @@ public class FrequencyDialog extends JDialog {
                     command = new FrequencyCommand();
 
                     for(int i=0;i<v.length;i++){
-                        command.getFreeOptionList("variables").addValue(((VariableInfo) v[i]).getName().toString());
+                        command.getFreeOptionList("variables").addValue(((VariableAttributes) v[i]).getName().toString());
                     }
                     command.getPairedOptionList("data").addValue("db", dbName.toString());
                     command.getPairedOptionList("data").addValue("table", table.toString());

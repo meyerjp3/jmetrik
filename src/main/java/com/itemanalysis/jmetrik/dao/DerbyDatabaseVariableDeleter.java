@@ -24,7 +24,7 @@ import com.itemanalysis.jmetrik.workspace.DeleteVariableCommand;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -43,10 +43,11 @@ public class DerbyDatabaseVariableDeleter extends SwingWorker<String, Void> impl
     private VariableTableName variableTableName = null;
     private DeleteVariableCommand command = null;
     private ArrayList<String> varList = null;
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private Throwable theException = null;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public DerbyDatabaseVariableDeleter(Connection conn, DatabaseAccessObject dao, DeleteVariableCommand command){
         this.conn = conn;
@@ -72,7 +73,7 @@ public class DerbyDatabaseVariableDeleter extends SwingWorker<String, Void> impl
             Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 
             String sqlString = "";
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 //remove column from data table
                 sqlString = "ALTER TABLE " + tableName.getNameForDatabase() + " DROP COLUMN " + v.getName().nameForDatabase();
                 stmt.execute(sqlString);
@@ -95,7 +96,7 @@ public class DerbyDatabaseVariableDeleter extends SwingWorker<String, Void> impl
         }
     }
 
-    public ArrayList<VariableInfo> getDroppedColumns(){
+    public ArrayList<VariableAttributes> getDroppedColumns(){
         return variables;
     }
 
@@ -122,10 +123,10 @@ public class DerbyDatabaseVariableDeleter extends SwingWorker<String, Void> impl
             firePropertyChange("error", "", "Error - Check log for details.");
         }else{
 
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 fireVariableChanged(new VariableChangeEvent(this, tableName, v, VariableChangeType.VARIABLE_DELETED));
             }
-
+            scriptLogger.info(command.paste());
             firePropertyChange("status", "", "Ready");
         }
         firePropertyChange("progress-off", null, null);

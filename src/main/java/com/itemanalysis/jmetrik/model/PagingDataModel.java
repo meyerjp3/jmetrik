@@ -19,7 +19,6 @@ package com.itemanalysis.jmetrik.model;
 
 import com.itemanalysis.jmetrik.dao.DatabaseAccessObject;
 import com.itemanalysis.jmetrik.sql.DataTableName;
-import com.itemanalysis.jmetrik.sql.SqlSafeTableName;
 import com.itemanalysis.jmetrik.workspace.StatusNotifier;
 import com.itemanalysis.psychometrics.data.VariableName;
 import com.itemanalysis.squiggle.base.SelectQuery;

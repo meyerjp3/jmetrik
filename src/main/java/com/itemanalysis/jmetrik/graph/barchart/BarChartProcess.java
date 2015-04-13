@@ -18,24 +18,17 @@
 package com.itemanalysis.jmetrik.graph.barchart;
 
 import com.itemanalysis.jmetrik.commandbuilder.Command;
-import com.itemanalysis.jmetrik.dao.DelimitedFileImporter;
 import com.itemanalysis.jmetrik.dao.JmetrikDatabaseFactory;
-import com.itemanalysis.jmetrik.gui.Jmetrik;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.swing.JmetrikTab;
 import com.itemanalysis.jmetrik.workspace.*;
-import com.itemanalysis.psychometrics.data.VariableInfo;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class BarChartProcess extends AbstractJmetrikProcess {

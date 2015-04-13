@@ -22,7 +22,7 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.ExportCommand;
 import com.itemanalysis.jmetrik.workspace.JmetrikCsvWriter;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import org.apache.log4j.Logger;
 
@@ -46,7 +46,7 @@ public class DerbyDelimitedFileExporter extends SwingWorker<String,Void> impleme
 
     private Throwable theException=null;
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
     private boolean exportScoredData = false;
 
@@ -61,6 +61,7 @@ public class DerbyDelimitedFileExporter extends SwingWorker<String,Void> impleme
     private String outputFileName ="";
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
     
     public DerbyDelimitedFileExporter(Connection conn, ExportCommand command){
         this.conn = conn;
@@ -157,6 +158,7 @@ public class DerbyDelimitedFileExporter extends SwingWorker<String,Void> impleme
     protected void done(){
         if(theException==null){
             this.firePropertyChange("status", "", "Ready");//will display status in statusBar
+            scriptLogger.info(command.paste());
         }else{
             logger.fatal(theException.getMessage(), theException);
             this.firePropertyChange("error", "", "Error - Check log for details.");

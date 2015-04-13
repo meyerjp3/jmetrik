@@ -22,8 +22,9 @@ import com.itemanalysis.jmetrik.selector.MultipleSelectionXYByGroupPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -62,7 +63,7 @@ public class CmhDialog extends JDialog {
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
 
-    public CmhDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables){
+    public CmhDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables){
         super(parent,"Cochran-Mantel-Haenszel DIF",true);
         this.dbName = dbName;
         this.tableName = tableName;
@@ -82,34 +83,45 @@ public class CmhDialog extends JDialog {
         vsp.setMaximumSize(new Dimension(410,272));
 
         //filter out nonitems from selected list
-        VariableType filterType1 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.NOT_ITEM, VariableType.DOUBLE);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType2);
+//        VariableType filterType1 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
+//        VariableType filterType2 = new VariableType(VariableType.NOT_ITEM, VariableType.DOUBLE);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType2);
+
+        vsp.addSelectedFilterItemType(ItemType.NOT_ITEM);
 
         //filter out items from groupby list
-        VariableType filterType3 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.BINARY_ITEM, VariableType.DOUBLE);
-        VariableType filterType5 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
-        VariableType filterType6 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.DOUBLE);
-        VariableType filterType7 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType8 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.DOUBLE);
-        vsp.addGroupByFilterType(filterType3);
-        vsp.addGroupByFilterType(filterType4);
-        vsp.addGroupByFilterType(filterType5);
-        vsp.addGroupByFilterType(filterType6);
-        vsp.addGroupByFilterType(filterType7);
-        vsp.addGroupByFilterType(filterType8);
+//        VariableType filterType3 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
+//        VariableType filterType4 = new VariableType(VariableType.BINARY_ITEM, VariableType.DOUBLE);
+//        VariableType filterType5 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
+//        VariableType filterType6 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.DOUBLE);
+//        VariableType filterType7 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
+//        VariableType filterType8 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.DOUBLE);
+//        vsp.addGroupByFilterType(filterType3);
+//        vsp.addGroupByFilterType(filterType4);
+//        vsp.addGroupByFilterType(filterType5);
+//        vsp.addGroupByFilterType(filterType6);
+//        vsp.addGroupByFilterType(filterType7);
+//        vsp.addGroupByFilterType(filterType8);
+
+        vsp.addGroupByFilterItemType(ItemType.BINARY_ITEM);
+        vsp.addGroupByFilterItemType(ItemType.POLYTOMOUS_ITEM);
+        vsp.addGroupByFilterItemType(ItemType.CONTINUOUS_ITEM);
 
         //filter out strings and items from matching variable
-        VariableType filterType9 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        vsp.addIndependentVariableFilterType(filterType3);
-        vsp.addIndependentVariableFilterType(filterType4);
-        vsp.addIndependentVariableFilterType(filterType5);
-        vsp.addIndependentVariableFilterType(filterType6);
-        vsp.addIndependentVariableFilterType(filterType7);
-        vsp.addIndependentVariableFilterType(filterType8);
-        vsp.addIndependentVariableFilterType(filterType9);
+//        VariableType filterType9 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
+//        vsp.addIndependentVariableFilterType(filterType3);
+//        vsp.addIndependentVariableFilterType(filterType4);
+//        vsp.addIndependentVariableFilterType(filterType5);
+//        vsp.addIndependentVariableFilterType(filterType6);
+//        vsp.addIndependentVariableFilterType(filterType7);
+//        vsp.addIndependentVariableFilterType(filterType8);
+//        vsp.addIndependentVariableFilterType(filterType9);
+
+        vsp.addIndependentVariableFilterDataType(DataType.STRING);
+        vsp.addIndependentVariableFilterItemType(ItemType.BINARY_ITEM);
+        vsp.addIndependentVariableFilterItemType(ItemType.POLYTOMOUS_ITEM);
+        vsp.addIndependentVariableFilterItemType(ItemType.CONTINUOUS_ITEM);
 
         vsp.setVariables(variables);
 
@@ -540,15 +552,15 @@ public class CmhDialog extends JDialog {
                         command = new CmhCommand();
                         Object[] v = vsp.getSelectedVariables();
                         for(int i=0;i<v.length;i++){
-                            command.getFreeOptionList("variables").addValue(((VariableInfo) v[i]).getName().toString());
+                            command.getFreeOptionList("variables").addValue(((VariableAttributes) v[i]).getName().toString());
                         }
                         command.getPairedOptionList("data").addValue("db", dbName.toString());
                         command.getPairedOptionList("data").addValue("table", tableName.toString());
 
-                        VariableInfo groupVar = vsp.getGroupByVariable();
+                        VariableAttributes groupVar = vsp.getGroupByVariable();
                         command.getFreeOption("groupvar").add(groupVar.getName().toString());
 
-                        VariableInfo matchVar = vsp.getIndependentVariable();
+                        VariableAttributes matchVar = vsp.getIndependentVariable();
                         command.getFreeOption("matchvar").add(matchVar.getName().toString());
 
                         command.getSelectOneOption("effectsize").setSelected(effectSizeButtonGroup.getSelection().getActionCommand());

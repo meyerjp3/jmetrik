@@ -20,7 +20,9 @@ package com.itemanalysis.jmetrik.dao;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.SubsetCasesCommand;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import org.apache.log4j.Logger;
 
@@ -38,7 +40,7 @@ public class DerbyCaseSubsetter extends SwingWorker<String,Void> implements Data
 
     private StopWatch timer = null;
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
     private DataTableName dataTableName = null;
 
@@ -64,7 +66,7 @@ public class DerbyCaseSubsetter extends SwingWorker<String,Void> implements Data
     public DerbyCaseSubsetter(Connection conn, SubsetCasesCommand command){
         this.conn = conn;
         this.command = command;
-        variables = new ArrayList<VariableInfo>();
+        variables = new ArrayList<VariableAttributes>();
     }
 
     public void parseCommand()throws IllegalArgumentException{
@@ -117,22 +119,28 @@ public class DerbyCaseSubsetter extends SwingWorker<String,Void> implements Data
             //Populate new variable table
             String updateString = "INSERT INTO " + newVariableTableName.getNameForDatabase() + " VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
             pstmt = conn.prepareStatement(updateString);
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 pstmt.setString(1, v.getName().toString());                 //name
-                pstmt.setString(2, v.getSubscale());                        //subscale/group
+                pstmt.setString(2, v.getItemGroup());                        //subscale/group
                 pstmt.setString(3, v.printOptionScoreKey());                //scoring
-                pstmt.setInt(4, v.getType().getItemType());                 //item type
-                pstmt.setInt(5, v.getType().getDataType());                 //data type
+
+                ItemType it = v.getType().getItemType();
+                int itemInt = it.toInt(it);
+                DataType dt = v.getType().getDataType();
+                int dataInt = dt.toInt(dt);
+
+                pstmt.setInt(4, itemInt);                 //item type
+                pstmt.setInt(5, dataInt);                 //data type
                 pstmt.setString(6, v.getLabel().toString());                //label
 
-                Object omit = v.getOmitCode();
+                Object omit = v.getSpecialDataCodes().getOmittedCode();
                 if(omit!=null && !omit.toString().trim().equals("")){
                     pstmt.setString(7, omit.toString().trim());                //omit code
                 }else{
                     pstmt.setNull(7, Types.VARCHAR);                           //omit code initially set to null
                 }
 
-                Object nr = v.getNotReachedCode();
+                Object nr = v.getSpecialDataCodes().getNotReachedCode();
                 if(nr!=null && !nr.toString().trim().equals("")){
                     pstmt.setString(8, nr.toString().trim());                //not reached code
                 }else{
@@ -200,7 +208,7 @@ public class DerbyCaseSubsetter extends SwingWorker<String,Void> implements Data
 
         for(String s : temp){
             nameOnly = s.replaceAll("\\(\\)", "").trim();
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 oldName = v.getName().toString();
                 newName = v.getName().nameForDatabase();
 

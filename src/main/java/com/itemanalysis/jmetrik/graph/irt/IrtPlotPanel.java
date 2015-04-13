@@ -25,6 +25,7 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleInsets;
 
@@ -65,6 +66,25 @@ public class IrtPlotPanel extends GraphPanel {
         plot.setDataset(dataset);
         XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
         setXYPlotRenderer(plot);
+    }
+
+    /**
+     * Same as updateDataset() but includes additional series for observed points. The dataset is twice
+     * the size as the number of lines because there is a line and set of points for each category.
+     *
+     * @param name name of chart
+     * @param dataset data set where the first half of the entries define the lines and the second half
+     *                of the series define the points. The series for lines and points are assumed to be
+     *                in the same order.
+     * @param showLegend show legend.
+     */
+    public void updateDatasetLinesAndPoints(String name, XYSeriesCollection dataset, boolean showLegend){
+        JFreeChart chart = charts.get(name);
+        if(!showLegend) chart.removeLegend();
+        XYPlot plot = (XYPlot)chart.getPlot();
+        plot.setDataset(dataset);
+        XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
+        setXYPlotRendererWithPoints(plot);
     }
 
     public void updateOrdinate(String name, double min, double max){

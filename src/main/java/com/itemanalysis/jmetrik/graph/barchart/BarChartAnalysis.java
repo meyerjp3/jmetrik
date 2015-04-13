@@ -22,18 +22,14 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.statistics.TwoWayTable;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
 import org.apache.log4j.Logger;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
 
 import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,14 +49,15 @@ public class BarChartAnalysis extends SwingWorker<BarChartPanel, Void> {
     private Connection conn = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public StopWatch sw = null;
 
     public boolean hasGroupingVariable = false;
 
-    private VariableInfo variable = null;
+    private VariableAttributes variable = null;
 
-    VariableInfo groupVar = null;
+    private VariableAttributes groupVar = null;
 
     private DataTableName tableName = null;
 
@@ -141,15 +138,13 @@ public class BarChartAnalysis extends SwingWorker<BarChartPanel, Void> {
         this.firePropertyChange("status", "", "Running Bar Chart...");
         this.firePropertyChange("progress-on", null, null);
         try{
-            logger.info(command.paste());
-
             //get variable info from db
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             String selectVariable = command.getFreeOption("variable").getString();
-            variable = dao.getVariableInfo(conn, new VariableTableName(tableName.toString()), selectVariable);
+            variable = dao.getVariableAttributes(conn, new VariableTableName(tableName.toString()), selectVariable);
             if(command.getFreeOption("groupvar").hasValue()){
                 String groupByName=command.getFreeOption("groupvar").getString();
-                groupVar = dao.getVariableInfo(conn, new VariableTableName(tableName.toString()), groupByName);
+                groupVar = dao.getVariableAttributes(conn, new VariableTableName(tableName.toString()), groupByName);
                 hasGroupingVariable = true;
             }
 
@@ -190,6 +185,7 @@ public class BarChartAnalysis extends SwingWorker<BarChartPanel, Void> {
     @Override
     protected void done(){
         try{
+            scriptLogger.info(command.paste());
             if(theException!=null){
                 logger.fatal(theException.getMessage(), theException);
                 firePropertyChange("error", "", "Error - Check log for details.");

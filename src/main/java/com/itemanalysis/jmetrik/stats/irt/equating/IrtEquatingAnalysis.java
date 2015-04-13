@@ -24,9 +24,10 @@ import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.stats.irt.linking.DbItemParameterSet;
 import com.itemanalysis.jmetrik.stats.irt.linking.DbThetaDistribution;
 import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
 import com.itemanalysis.psychometrics.distribution.DistributionApproximation;
 import com.itemanalysis.psychometrics.irt.equating.IrtTrueScoreEquating;
 import com.itemanalysis.psychometrics.irt.model.ItemResponseModel;
@@ -63,7 +64,7 @@ public class IrtEquatingAnalysis extends SwingWorker<String, String> {
     private VariableName thetaNameX = null;
     private VariableName weightNameX = null;
     private boolean hasWeightX = false;
-    private VariableInfo newTheta = null;
+    private VariableAttributes newTheta = null;
 
     private DataTableName tableNamePersonsY = null;
     private VariableName thetaNameY = null;
@@ -81,6 +82,7 @@ public class IrtEquatingAnalysis extends SwingWorker<String, String> {
     IrtTrueScoreEquating irtTrueScoreEquating = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public IrtEquatingAnalysis(Connection conn, DatabaseAccessObject dao, IrtEquatingCommand command, JmetrikTextFile textFile){
         this.conn = conn;
@@ -183,11 +185,11 @@ public class IrtEquatingAnalysis extends SwingWorker<String, String> {
             outputTable = dao.getUniqueTableName(conn, outputTable.toString());
             VariableTableName variableTableName = new VariableTableName(outputTable.toString());
 
-            VariableInfo score = new VariableInfo("score", "Score", VariableType.NOT_ITEM, VariableType.DOUBLE, 1, "");
-            VariableInfo theta = new VariableInfo("theta", "Form X theta", VariableType.NOT_ITEM, VariableType.DOUBLE, 2, "");
-            VariableInfo yequiv = new VariableInfo("yequiv", "Y Equivalent of score", VariableType.NOT_ITEM, VariableType.DOUBLE, 3, "");
-            VariableInfo conv = new VariableInfo("conv", "Newton-Rhapson convergence status", VariableType.NOT_ITEM, VariableType.STRING, 4, "");
-            ArrayList<VariableInfo> variables = new ArrayList();
+            VariableAttributes score = new VariableAttributes("score", "Score", ItemType.NOT_ITEM, DataType.DOUBLE, 1, "");
+            VariableAttributes theta = new VariableAttributes("theta", "Form X theta", ItemType.NOT_ITEM, DataType.DOUBLE, 2, "");
+            VariableAttributes yequiv = new VariableAttributes("yequiv", "Y Equivalent of score", ItemType.NOT_ITEM, DataType.DOUBLE, 3, "");
+            VariableAttributes conv = new VariableAttributes("conv", "Newton-Rhapson convergence status", ItemType.NOT_ITEM, DataType.STRING, 4, "");
+            ArrayList<VariableAttributes> variables = new ArrayList();
             variables.add(score);
             variables.add(theta);
             variables.add(yequiv);
@@ -251,7 +253,6 @@ public class IrtEquatingAnalysis extends SwingWorker<String, String> {
         this.firePropertyChange("progress-ind-on", null, null);
 
         try{
-            logger.info(command.paste());
             processCommand();
             publishHeader();
             getItemParameters();
@@ -280,6 +281,7 @@ public class IrtEquatingAnalysis extends SwingWorker<String, String> {
             }
             textFile.addText(get());
             textFile.setCaretPosition(0);
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(ex.getMessage(), ex);
             firePropertyChange("error", "", "Error - Check log for details.");

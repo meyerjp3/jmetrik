@@ -19,7 +19,7 @@ package com.itemanalysis.jmetrik.workspace;
 
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import java.util.EventObject;
 
@@ -27,27 +27,27 @@ public class VariableChangeEvent extends EventObject {
 
     private DataTableName tableName = null;
 
-    private VariableInfo variable = null;
+    private VariableAttributes variable = null;
 
-    private VariableInfo oldVariableInfo = null;
+    private VariableAttributes oldVariableInfo = null;
 
     private VariableChangeType changeType = VariableChangeType.VARIABLE_MODIFIED;
 
-    public VariableChangeEvent(Object source, DataTableName tableName, VariableInfo variable, VariableChangeType changeType){
+    public VariableChangeEvent(Object source, DataTableName tableName, VariableAttributes variable, VariableChangeType changeType){
         super(source);
         this.tableName = tableName;
         this.variable = variable;
         this.changeType = changeType;
     }
 
-    public VariableChangeEvent(Object source, VariableTableName tableName, VariableInfo variable, VariableChangeType changeType){
+    public VariableChangeEvent(Object source, VariableTableName tableName, VariableAttributes variable, VariableChangeType changeType){
         super(source);
         this.tableName = new DataTableName(tableName.toString());
         this.variable = variable;
         this.changeType = changeType;
     }
 
-    public VariableChangeEvent(Object source, DataTableName tableName, VariableInfo variable, VariableInfo oldVariable, VariableChangeType changeType){
+    public VariableChangeEvent(Object source, DataTableName tableName, VariableAttributes variable, VariableAttributes oldVariable, VariableChangeType changeType){
         super(source);
         this.tableName = tableName;
         this.variable = variable;
@@ -55,7 +55,7 @@ public class VariableChangeEvent extends EventObject {
         this.changeType = changeType;
     }
 
-    public VariableChangeEvent(Object source, VariableTableName tableName, VariableInfo variable, VariableInfo oldVariable, VariableChangeType changeType){
+    public VariableChangeEvent(Object source, VariableTableName tableName, VariableAttributes variable, VariableAttributes oldVariable, VariableChangeType changeType){
         super(source);
         this.tableName = new DataTableName(tableName.toString());
         this.variable = variable;
@@ -67,11 +67,11 @@ public class VariableChangeEvent extends EventObject {
         return tableName;
     }
 
-    public VariableInfo getVariable(){
+    public VariableAttributes getVariable(){
         return variable;
     }
 
-    public VariableInfo getOldVariable(){
+    public VariableAttributes getOldVariable(){
         return oldVariableInfo;
     }
 

@@ -23,7 +23,6 @@ import com.itemanalysis.psychometrics.irt.model.*;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 public class DbItemParameterSet {

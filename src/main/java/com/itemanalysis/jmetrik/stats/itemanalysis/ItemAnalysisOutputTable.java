@@ -24,8 +24,9 @@ import com.itemanalysis.jmetrik.dao.JmetrikDatabaseFactory;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.measurement.ClassicalItem;
 
 import java.sql.*;
@@ -50,9 +51,9 @@ public class ItemAnalysisOutputTable {
         variableTableName = new VariableTableName(tableName.toString());
     }
 
-    public void saveOutput(TreeMap<Integer, ClassicalItem> itemTreeMap, boolean allCategories)throws SQLException {
+    public void saveOutput(TreeMap<Integer, ClassicalItem> itemTreeMap, boolean allCategories, boolean addDIndex)throws SQLException {
 
-        ArrayList<VariableInfo> variables = new ArrayList<VariableInfo>();
+        ArrayList<VariableAttributes> variables = new ArrayList<VariableAttributes>();
         int nItems = itemTreeMap.size();
 
         int maxCategory = 0;
@@ -63,26 +64,39 @@ public class ItemAnalysisOutputTable {
         }
         int totalColumns = 4+3*maxCategory;
 
-        VariableInfo var1 = new VariableInfo("name", "Item Name", VariableType.NOT_ITEM, VariableType.STRING, 1, "");
-        VariableInfo var2 = new VariableInfo("difficulty", "Item Difficulty", VariableType.NOT_ITEM, VariableType.DOUBLE, 2, "");
-        VariableInfo var3 = new VariableInfo("stdev", "Item Standard Deviation", VariableType.NOT_ITEM, VariableType.DOUBLE, 3, "");
-        VariableInfo var4 = new VariableInfo("discrimination", "Item Discrimination", VariableType.NOT_ITEM, VariableType.DOUBLE, 4, "");
+        VariableAttributes var1 = new VariableAttributes("name", "Item Name", ItemType.NOT_ITEM, DataType.STRING, 1, "");
+        VariableAttributes var2 = new VariableAttributes("difficulty", "Item Difficulty", ItemType.NOT_ITEM, DataType.DOUBLE, 2, "");
+        VariableAttributes var3 = new VariableAttributes("stdev", "Item Standard Deviation", ItemType.NOT_ITEM, DataType.DOUBLE, 3, "");
+        VariableAttributes var4 = new VariableAttributes("discrimination", "Item Discrimination", ItemType.NOT_ITEM, DataType.DOUBLE, 4, "");
         variables.add(var1);
         variables.add(var2);
         variables.add(var3);
         variables.add(var4);
 
-        VariableInfo vProp = null;
-        VariableInfo vSD = null;
-        VariableInfo vCor = null;
+        VariableAttributes lower = null;
+        VariableAttributes upper = null;
+        VariableAttributes dIndex = null;
+        if(addDIndex){
+            lower = new VariableAttributes("lower", "Difficulty for lower 27%", ItemType.NOT_ITEM, DataType.DOUBLE, 5, "");
+            upper = new VariableAttributes("upper", "Difficulty for upper 27%", ItemType.NOT_ITEM, DataType.DOUBLE, 6, "");
+            dIndex = new VariableAttributes("D_index", "Discrimination index", ItemType.NOT_ITEM, DataType.DOUBLE, 7, "");
+            variables.add(lower);
+            variables.add(upper);
+            variables.add(dIndex);
+        }
+
+        VariableAttributes vProp = null;
+        VariableAttributes vSD = null;
+        VariableAttributes vCor = null;
 
         int colNumber = 5;
+        if(addDIndex) colNumber = 8;
 
         if(allCategories){
             for(int k=0;k<maxCategory;k++){
-                vProp = new VariableInfo("prop"+(k+1), "Proportion endorsing option " + (k+1), VariableType.NOT_ITEM, VariableType.DOUBLE, colNumber++, "");
-                vSD = new VariableInfo("stdev"+(k+1), "Std. Dev. for option " + (k+1), VariableType.NOT_ITEM, VariableType.DOUBLE, colNumber++, "");
-                vCor = new VariableInfo("cor"+(k+1), "Distractor-total correlation for option " + (k+1), VariableType.NOT_ITEM, VariableType.DOUBLE, colNumber++, "");
+                vProp = new VariableAttributes("prop"+(k+1), "Proportion endorsing option " + (k+1), ItemType.NOT_ITEM, DataType.DOUBLE, colNumber++, "");
+                vSD = new VariableAttributes("stdev"+(k+1), "Std. Dev. for option " + (k+1), ItemType.NOT_ITEM, DataType.DOUBLE, colNumber++, "");
+                vCor = new VariableAttributes("cor"+(k+1), "Distractor-total correlation for option " + (k+1), ItemType.NOT_ITEM, DataType.DOUBLE, colNumber++, "");
 
                 variables.add(vProp);
                 variables.add(vSD);
@@ -103,6 +117,10 @@ public class ItemAnalysisOutputTable {
 
             String sqlString = "INSERT INTO " + tableName.getNameForDatabase() + " VALUES(?,?,?,?";
 
+            if(addDIndex){
+                sqlString += ",?,?,?";
+            }
+
             if(allCategories){
                 for(int k=0;k<maxCategory;k++){
                     sqlString += ",?,?,?";//three variables per category
@@ -113,7 +131,7 @@ public class ItemAnalysisOutputTable {
 
             int itemCat = 0;
             int index = 1;
-            double df = 0, sd = 0, ds = 0;
+            double df = 0, sd = 0, ds = 0, dL = 0, dU = 0, D = 0;
             for(Integer i : itemTreeMap.keySet()){
                 index=1;
 
@@ -140,6 +158,31 @@ public class ItemAnalysisOutputTable {
                 }else{
                     pstmt.setDouble(index++, ds);
                 }
+
+                if(addDIndex){
+                    dL = item.getDindexLower();
+
+                    if(Double.isNaN(dL)){
+                        pstmt.setNull(index++, Types.DOUBLE);
+                    }else{
+                        pstmt.setDouble(index++, dL);
+                    }
+
+                    dU = item.getDindexUpper();
+                    if(Double.isNaN(dU)){
+                        pstmt.setNull(index++, Types.DOUBLE);
+                    }else{
+                        pstmt.setDouble(index++, dU);
+                    }
+
+                    D = dU-dL;
+                    if(Double.isNaN(D)){
+                        pstmt.setNull(index++, Types.DOUBLE);
+                    }else{
+                        pstmt.setDouble(index++, D);
+                    }
+                }
+
 
                 if(allCategories){
                     Object temp;
@@ -207,7 +250,7 @@ public class ItemAnalysisOutputTable {
         dao.setTableInformation(conn, tableName, n, desc);
     }
 
-    private void createTables(ArrayList<VariableInfo> variables)throws SQLException{
+    private void createTables(ArrayList<VariableAttributes> variables)throws SQLException{
 
         //get type of database according to properties
         JmetrikPreferencesManager preferencesManager = new JmetrikPreferencesManager();

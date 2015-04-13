@@ -21,7 +21,9 @@ import com.itemanalysis.jmetrik.dao.DatabaseAccessObject;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.*;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableType;
 import org.apache.log4j.Logger;
 
@@ -41,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class VariableModel extends AbstractTableModel {
 
     private String[] columnNames = {"Variable", "Type", "Scoring", "Group", "Label", "Omit", "Not Reached"};
-    private ArrayList<VariableInfo> variables = new ArrayList<VariableInfo>();
+    private ArrayList<VariableAttributes> variables = new ArrayList<VariableAttributes>();
     private int numCols=columnNames.length,numRows=0;
     private int dataModified=0;
     private Connection conn = null;
@@ -86,10 +88,10 @@ public class VariableModel extends AbstractTableModel {
 
     private void loadData(){
 
-        Runnable task = new SwingWorker<ArrayList<VariableInfo>, Void>(){
+        Runnable task = new SwingWorker<ArrayList<VariableAttributes>, Void>(){
             
             //connect to db and populate newData
-            protected ArrayList<VariableInfo> doInBackground()throws Exception{
+            protected ArrayList<VariableAttributes> doInBackground()throws Exception{
                 return dao.getAllVariables(conn, tableName);
             }
 
@@ -111,11 +113,11 @@ public class VariableModel extends AbstractTableModel {
 
     private void updateTestItemOrder(){
         int order = 0;
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             VariableType vType = v.getType();
-            if(vType.getItemType()== VariableType.BINARY_ITEM ||
-                    vType.getItemType()==VariableType.POLYTOMOUS_ITEM ||
-                    vType.getItemType()==VariableType.CONTINUOUS_ITEM){
+            if(vType.getItemType()== ItemType.BINARY_ITEM ||
+                    vType.getItemType()==ItemType.POLYTOMOUS_ITEM ||
+                    vType.getItemType()==ItemType.CONTINUOUS_ITEM){
                 order++;
                 v.setTestItemOrder(order);
             }
@@ -134,10 +136,10 @@ public class VariableModel extends AbstractTableModel {
                 for(int i=0;i<variables.size();i++){
                     rs.absolute(i+1);
                     rs.updateObject(1, variables.get(i).getName().toString());          //name
-                    rs.updateObject(2, variables.get(i).getSubscale());                 //group (i.e. subscale)
+                    rs.updateObject(2, variables.get(i).getItemGroup());                 //group (i.e. subscale)
                     rs.updateObject(3, variables.get(i).printOptionScoreKey());         //scoring
-                    rs.updateObject(4, variables.get(i).getType().getItemType());       //item type
-                    rs.updateObject(5, variables.get(i).getType().getDataType());       //data type
+                    rs.updateObject(4, ItemType.toInt(variables.get(i).getType().getItemType()));       //item type
+                    rs.updateObject(5, DataType.toInt(variables.get(i).getType().getDataType()));       //data type
                     rs.updateObject(6, variables.get(i).getLabel().toString());         //label
                     rs.updateRow();
                 }
@@ -155,7 +157,7 @@ public class VariableModel extends AbstractTableModel {
     }
 
     public Object getValueAt(int r, int c){
-        VariableInfo varInfo = variables.get(r);
+        VariableAttributes varInfo = variables.get(r);
         if(c==0){
             return varInfo.getName().toString();
         }else if(c==1){//convert integer to string for display
@@ -163,13 +165,13 @@ public class VariableModel extends AbstractTableModel {
         }else if(c==2){
             return varInfo.printOptionScoreKey();
         }else if(c==3){
-            return varInfo.getSubscale();
+            return varInfo.getItemGroup();
         }else if(c==4){
             return varInfo.getLabel().toString();
         }else if(c==5){
-            return varInfo.getOmitCode();
+            return varInfo.getSpecialDataCodes().getOmittedCode();
         }else if(c==6){
-            return varInfo.getNotReachedCode();
+            return varInfo.getSpecialDataCodes().getNotReachedCode();
         }
         return null;//c is too big
     }
@@ -178,7 +180,7 @@ public class VariableModel extends AbstractTableModel {
     @Override
     public void setValueAt(Object value, int r, int c){
         //c==0 not editable
-        VariableInfo varInfo = variables.get(r);
+        VariableAttributes varInfo = variables.get(r);
 
         String valueString = value.toString();
 
@@ -187,7 +189,7 @@ public class VariableModel extends AbstractTableModel {
             if(!varInfo.getType().getItemTypeString().equals(valueString)){
                 dataModified++;
 
-                if(valueString.equals(VariableType.CONTINUOUS_ITEM_STRING) ) {
+                if(valueString.equals(ItemType.CONTINUOUS_ITEM.toString()) ) {
                     varInfo.clearCategory();
                     varInfo.getType().setItemType(valueString);
                 }else{
@@ -201,17 +203,17 @@ public class VariableModel extends AbstractTableModel {
             if(!varInfo.printOptionScoreKey().equals(valueString)){
                 dataModified++;
                 varInfo.clearCategory();
-                if((valueString==null || value.toString().equals("")) && varInfo.getType().getItemType()!=VariableType.CONTINUOUS_ITEM){
-                    setValueAt(VariableType.CONTINUOUS_ITEM_STRING, r, 1);
+                if((valueString==null || value.toString().equals("")) && varInfo.getType().getItemType()!=ItemType.CONTINUOUS_ITEM){
+                    setValueAt(ItemType.CONTINUOUS_ITEM.toString(), r, 1);
                 }else{
                     varInfo.addAllCategories(value.toString());//Type changed in VarInfo here by call to addAllCategories()
                 }
             }
 
         }else if(c==3){
-            if(!varInfo.getSubscale().equals(valueString)){
+            if(!varInfo.getItemGroup().equals(valueString)){
                 dataModified++;
-                varInfo.setSubscale(valueString);
+                varInfo.setItemGroup(valueString);
             }
 
         }else if(c==4){
@@ -251,11 +253,11 @@ public class VariableModel extends AbstractTableModel {
     }
 
 
-    public ArrayList<VariableInfo> getVariables(){
+    public ArrayList<VariableAttributes> getVariables(){
         return variables;
     }
 
-    public VariableInfo getVariableAt(int index){
+    public VariableAttributes getVariableAt(int index){
         return variables.get(index);
     }
 

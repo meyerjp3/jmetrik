@@ -106,6 +106,7 @@ public class IrtItemCalibrationProcess extends AbstractJmetrikProcess {
         tabbedPane.setTabComponentAt(tabCount-1, jTab);
         tabbedPane.setSelectedIndex(tabCount-1);
 
+
         //instantiate and execute analysis
         IrtItemCalibrationAnalysis irtItemCalibrationAnalysis = new IrtItemCalibrationAnalysis(conn, dbFactory.getDatabaseAccessObject(), command, textFile);
 

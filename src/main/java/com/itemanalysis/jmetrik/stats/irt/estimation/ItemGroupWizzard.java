@@ -2,7 +2,7 @@ package com.itemanalysis.jmetrik.stats.irt.estimation;
 
 import com.itemanalysis.jmetrik.commandbuilder.MegaOption;
 import com.itemanalysis.jmetrik.model.VariableListModel;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,14 +31,14 @@ public class ItemGroupWizzard extends JDialog {
     private int numberOfGroups = 0;
     private boolean canRun = false;
 //    private IrtItemCalibrationCommand command = null;
-    private ArrayList<VariableInfo> selectedVariableMasterList = null;
+    private ArrayList<VariableAttributes> selectedVariableMasterList = null;
 
     public ItemGroupWizzard(JDialog parent, VariableListModel variableListModel){
         super(parent, "Item Group Configuration", true);
         this.variableListModel = variableListModel;
 //        this.command = new IrtItemCalibrationCommand();
         groupPanels = new ArrayList<ItemGroupConfigurationPanel>();
-        selectedVariableMasterList = new ArrayList<VariableInfo>();
+        selectedVariableMasterList = new ArrayList<VariableAttributes>();
         initComponents();
 
         setResizable(false);
@@ -61,7 +61,7 @@ public class ItemGroupWizzard extends JDialog {
         cancelButton = new JButton();
 
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        setTitle("Item Group Wizzard");
+        setTitle("Item Group Wizzard: Group " + groupIndex);
         setMinimumSize(new Dimension(800, 400));
         setPreferredSize(new Dimension(800, 400));
 
@@ -213,6 +213,7 @@ public class ItemGroupWizzard extends JDialog {
             groupPanels.add(groupConfigurationPanel);
             mainPanel.add(groupConfigurationPanel, groupName);
 //            System.out.println("ADDED");
+
         }
 
         //Advanced to next card if not at teh end and the selected items all have the same number of categories
@@ -220,13 +221,14 @@ public class ItemGroupWizzard extends JDialog {
             cl.next(mainPanel);
             currentCard = getCurrentCard();
             groupIndex++;
+            setTitle("Item Group Wizzard: Group " + groupIndex);
 //            System.out.println("ADVANCED TO NEXT CARD: " + currentCard.getName());
         }
     }
 
     private void updateListSelections(){
         ItemGroupConfigurationPanel card = null;
-        JList<VariableInfo> tempList;
+        JList<VariableAttributes> tempList;
         int[] selectedIndices;
         selectedVariableMasterList.clear();
 
@@ -265,6 +267,7 @@ public class ItemGroupWizzard extends JDialog {
             cl.previous(mainPanel);
             currentCard = getCurrentCard();
             groupIndex--;
+            setTitle("Item Group Wizzard: Group " + groupIndex);
         }
     }
 

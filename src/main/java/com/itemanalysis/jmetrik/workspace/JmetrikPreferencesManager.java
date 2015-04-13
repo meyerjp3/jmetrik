@@ -63,7 +63,8 @@ public class JmetrikPreferencesManager {
     private static final String USER_HOME = System.getProperty("user.home").replaceAll("\\\\", "/");
     
     private static final String DEFAULT_LOG_HOME = (USER_HOME + "/jmetrik/log");
-    private static final String DEFAULT_LOG_NAME = "jmetrik-log";//cannot be changed by user
+    public static final String DEFAULT_LOG_NAME = "jmetrik-logger";//cannot be changed by user
+    public static final String DEFAULT_SCRIPT_LOG_NAME = "jmetrik-script-log";//cannot be changed by user
     private static final String DEFAULT_LOG_PROPERTY_FILE = "jmetrik-log.props";//cannot be changed by user
     private static final String DEFAULT_APP_DATA_HOME = USER_HOME + "/jmetrik/jmk";//not editable by user
 
@@ -237,6 +238,7 @@ public class JmetrikPreferencesManager {
         String header = "#DO NOT EDIT - JMETRIK LOG PROPERTIES FILE - DO NOT EDIT";
         String fullPropertiesName = (logHome + "/" + DEFAULT_LOG_PROPERTY_FILE);
         String fullLogFileName = (logHome + "/" + DEFAULT_LOG_NAME);
+        String fullScriptLogFileName = (logHome + "/" + DEFAULT_SCRIPT_LOG_NAME);
         File f = new File(fullPropertiesName);
         if(!f.exists()){
             try{
@@ -244,12 +246,36 @@ public class JmetrikPreferencesManager {
                 f.createNewFile();
                 BufferedWriter bw = new BufferedWriter(new FileWriter(f));
                 bw.append(header); bw.newLine();
-                bw.append("log4j.rootLogger=ALL, A2"); bw.newLine();
-                bw.append("log4j.appender.A2.layout=org.apache.log4j.PatternLayout"); bw.newLine();
-                bw.append("log4j.appender.A2.File=" + fullLogFileName); bw.newLine();
-                bw.append("log4j.appender.A2.Append=false"); bw.newLine();
-                bw.append("log4j.appender.A2=org.apache.log4j.FileAppender"); bw.newLine();
-                bw.append("log4j.appender.A2.layout.ConversionPattern=[%p] %d{DATE} %n%m%n%n"); bw.newLine();
+//                bw.append("log4j.rootLogger=ALL, A2"); bw.newLine();
+//                bw.append("log4j.appender.A2.layout=org.apache.log4j.PatternLayout"); bw.newLine();
+//                bw.append("log4j.appender.A2.File=" + fullLogFileName); bw.newLine();
+//                bw.append("log4j.appender.A2.Append=false"); bw.newLine();
+//                bw.append("log4j.appender.A2=org.apache.log4j.FileAppender"); bw.newLine();
+//                bw.append("log4j.appender.A2.layout.ConversionPattern=[%p] %d{DATE} %n%m%n%n"); bw.newLine();
+
+                bw.append("log4j.logger.jmetrik-logger=ALL, adminAppender"); bw.newLine();
+                bw.append("log4j.logger.jmetrik-script-logger=INFO, scriptAppender"); bw.newLine();
+                bw.append("log4j.additivity.jmetrik-logger=false"); bw.newLine();
+                bw.append("log4j.additivity.jmetrik-script-logger=false"); bw.newLine();
+
+                //Main appender processes all levels
+                bw.append("log4j.appender.adminAppender=org.apache.log4j.FileAppender"); bw.newLine();
+                bw.append("log4j.appender.adminAppender.layout=org.apache.log4j.PatternLayout"); bw.newLine();
+                bw.append("log4j.appender.adminAppender.File=" + fullLogFileName); bw.newLine();
+                bw.append("log4j.appender.adminAppender.Append=false"); bw.newLine();
+                bw.append("log4j.appender.adminAppender.layout.ConversionPattern=[%p] %d{DATE} %n%m%n%n"); bw.newLine();
+
+                //Script appender processes scripts only
+                bw.append("log4j.appender.scriptAppender=org.apache.log4j.FileAppender"); bw.newLine();
+                bw.append("log4j.appender.scriptAppender.layout=org.apache.log4j.PatternLayout"); bw.newLine();
+                bw.append("log4j.appender.scriptAppender.File=" + fullScriptLogFileName); bw.newLine();
+                bw.append("log4j.appender.scriptAppender.Append=false"); bw.newLine();
+                bw.append("log4j.appender.scriptAppender.layout.ConversionPattern=%m%n%n"); bw.newLine();
+
+
+
+
+
                 bw.close();
             }catch(IOException ex){
                 firePropertyChange("error", "", "Error - Log properties file could not be created.");
@@ -262,6 +288,7 @@ public class JmetrikPreferencesManager {
         String header = "#DO NOT EDIT - JMETRIK LOG PROPERTIES FILE - DO NOT EDIT";
         String fullPropertiesName = (logHome + "/" + DEFAULT_LOG_PROPERTY_FILE);
         String fullLogFileName = (logHome + "/" + DEFAULT_LOG_NAME);
+        String fullScriptLogFileName = (logHome + "/" + DEFAULT_SCRIPT_LOG_NAME);
 
         //create log properties file, if it does not exist
         createLogProperties(logHome);
@@ -276,7 +303,9 @@ public class JmetrikPreferencesManager {
             FileInputStream in = new FileInputStream(f);
             p.load(in);
             in.close();
-            p.setProperty("log4j.appender.A2.File", fullLogFileName);
+//            p.setProperty("log4j.appender.A2.File", fullLogFileName);
+            p.setProperty("log4j.appender.jmetrik-logger.File", fullLogFileName);
+            p.setProperty("log4j.appender.jmetrik-script-logger.File", fullScriptLogFileName);
 
             FileOutputStream out = new FileOutputStream(new File(fullLogFileName));
             p.store(out, header);

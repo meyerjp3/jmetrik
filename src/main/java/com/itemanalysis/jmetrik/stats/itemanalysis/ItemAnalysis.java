@@ -23,7 +23,7 @@ import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.measurement.ClassicalItem;
 import com.itemanalysis.psychometrics.measurement.TestSummary;
 import com.itemanalysis.psychometrics.scaling.RawScore;
@@ -53,12 +53,13 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
     private DatabaseAccessObject dao = null;
     private StopWatch sw = null;
     private TestSummary testSummary = null;
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private boolean showItemStats = true;
     private boolean unbiased = false;
     private boolean pearsonCorrelation = true;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
     private DataTableName tableName = null;
     private int progressValue = 0;
     private int lineNumber = 0;
@@ -76,6 +77,8 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
     private boolean deletedReliability = false;
     private boolean tableCreated = false;
 
+    private boolean dIndex = false;//TODO make a command option
+
     public ItemAnalysis(Connection conn, DatabaseAccessObject dao, ItemAnalysisCommand command, JmetrikTextFile textFile){
         this.conn = conn;
         this.dao = dao;
@@ -87,6 +90,7 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
 
     private void initializeProgress()throws SQLException {
         int nrow = dao.getRowCount(conn, tableName);
+        if(dIndex) nrow = 2*nrow;
         maxProgress = (double)nrow;
     }
 
@@ -121,29 +125,13 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
         Statement stmt = null;
         ResultSet rs=null;
         int missingCount = 0;
-
-
         int numberOfSubscales = this.numberOfSubscales();
-//        numberOfItems = command.getFreeOptionList("variables").getNumberOfValues();
-//
-//        deletedReliability = command.getSelectAllOption("options").isArgumentSelected("delrel");
-//        biasCorrection = command.getSelectAllOption("options").isArgumentSelected("spur");
-//        unbiased = command.getSelectAllOption("options").isArgumentSelected("unbiased");
-//        allCategories = command.getSelectAllOption("options").isArgumentSelected("all");
-//        listwiseDeletion = command.getSelectOneOption("missing").isArgumentSelected("listwise");
-//        showCsem = command.getSelectAllOption("options").isArgumentSelected("csem");
-//        showItemStats = command.getSelectAllOption("options").isArgumentSelected("istats");
-//        pearsonCorrelation = command.getSelectOneOption("correlation").isArgumentSelected("pearson");
-
-//        if(command.getFreeOptionList("cut").getNumberOfValues()>0){
-//            cutScores = command.getFreeOptionList("cut").getInteger();
-//        }
 
         try{
             //connect to db
             Table sqlTable = new Table(tableName.getNameForDatabase());
             SelectQuery select = new SelectQuery();
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 select.addColumn(sqlTable, v.getName().nameForDatabase());
             }
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -174,10 +162,10 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
                 rawScore = new RawScore(numberOfItems);
 
                 missingCount = 0;
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     tempItem = item.get(v.positionInDb());
                     if(tempItem==null){
-                        tempItem = new ClassicalItem(v, biasCorrection, allCategories, pearsonCorrelation);
+                        tempItem = new ClassicalItem(v, biasCorrection, allCategories, pearsonCorrelation, dIndex);
                         item.put(v.positionInDb(), tempItem);
                     }
                     response = rs.getObject(v.getName().nameForDatabase());
@@ -186,10 +174,10 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
                     if(response==null || response.equals("")){//FIXME need to allow a space " " or other special codes to be viewed as missing data
                         missingCount++;
                     }
-                    responseScore = v.getItemScoring().computeItemScore(response, v.getType());
+                    responseScore = v.getItemScoring().computeItemScore(response);
                     rawScore.increment(responseScore);
                     rawScore.incrementResponseVector(v.positionInDb(), response, responseScore);
-                    rawScore.incrementSubScaleScore(v.getSubscale(), responseScore);
+                    rawScore.incrementSubScaleScore(v.getItemGroup(), responseScore);
 
                 }
 
@@ -219,6 +207,13 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
                 }
                 updateProgress();
             }//end loop over examinees
+
+            if(dIndex){
+                double[] bounds = testSummary.getDIndexBounds();
+                computeDindex(bounds[0], bounds[1]);
+            }
+
+
         }catch(SQLException ex){
             throw ex;
         }finally{
@@ -231,18 +226,92 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
 
     }
 
+    private void computeDindex(double lowerCut, double upperCut)throws SQLException {
+
+        //TODO if requested Dindex, begin another loop over database
+        //Compute 27th and 73rd percentile
+        //loop over items and people and compute d indexes.
+        //TODO do this in separate method.
+
+        Statement stmt = null;
+        ResultSet rs=null;
+        int missingCount = 0;
+
+        try{
+            //connect to db
+            Table sqlTable = new Table(tableName.getNameForDatabase());
+            SelectQuery select = new SelectQuery();
+            for(VariableAttributes v : variables){
+                select.addColumn(sqlTable, v.getName().nameForDatabase());
+            }
+            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            rs=stmt.executeQuery(select.toString());
+
+            Object response = null;
+            RawScore rawScore = null;
+            Double responseScore=null;
+            int[] responseVectorIndex = null;
+            Object[] responseVector = null;
+            ClassicalItem tempItem = null;
+
+            //loop over examinees
+            while(rs.next()){
+
+                //loop over items to compute RawScore
+                rawScore = new RawScore(numberOfItems);
+
+                missingCount = 0;
+                for(VariableAttributes v : variables){
+                     tempItem = item.get(v.positionInDb());
+                     response = rs.getObject(v.getName().nameForDatabase());
+
+                    //count missing responses per examinee
+                    if(response==null || response.equals("")){//FIXME need to allow a space " " or other special codes to be viewed as missing data
+                        missingCount++;
+                    }
+                    responseScore = v.getItemScoring().computeItemScore(response);
+                    rawScore.increment(responseScore);
+                    rawScore.incrementResponseVector(v.positionInDb(), response, responseScore);
+                }
+
+                //only use complete cases if listwise deletion is specified
+                //otherwise a missing item response is scored as 0
+
+                if((listwiseDeletion && missingCount==0) || !listwiseDeletion){
+                    //loop over items to compute item analysis
+                    responseVector = rawScore.getResponseVector();
+                    responseVectorIndex = rawScore.getResponseVectorIndex();
+
+                    for(int i=0;i<responseVector.length;i++){
+                        item.get(responseVectorIndex[i]).incrementDindex(responseVector[i], rawScore.value(), lowerCut, upperCut);
+                    }
+                }
+                updateProgress();
+            }//end loop over examinees
+
+        }catch(SQLException ex){
+            throw ex;
+        }finally{
+            if(rs!=null) rs.close();
+            if(stmt!=null) stmt.close();
+            conn.setAutoCommit(true);
+        }
+
+
+    }
+
     public int numberOfSubscales(){
         Frequency table = new Frequency();
-        for(VariableInfo v : variables){
-            table.addValue(v.getSubscale());
+        for(VariableAttributes v : variables){
+            table.addValue(v.getItemGroup());
         }
         return table.getUniqueCount();
     }
 
     public int numberOfItemsInSubScaleAt(String subscaleKey){
         int items = 0;
-        for(VariableInfo v : variables){
-            if(v.getSubscale().equals(subscaleKey)){
+        for(VariableAttributes v : variables){
+            if(v.getItemGroup().equals(subscaleKey)){
                 items++;
             }
         }
@@ -273,6 +342,7 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
         buffer.append(f.toString());
 
         int counter=0;
+        int nItems = item.size();
         ClassicalItem temp ;
         if(showItemStats){
             for(Integer i : item.keySet()){
@@ -284,14 +354,15 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
 
                 if(command.getSelectAllOption("options").isArgumentSelected("all") ||
                         command.getSelectAllOption("options").isArgumentSelected("header")){
-                    buffer.append("\n");
+                    if(counter<(nItems-1)) buffer.append("\n");
                 }
 
                 counter++;
             }
         }
-
-        buffer.append(testSummary.print(unbiased));
+        buffer.append("======================================================================");
+        buffer.append("\n\n");
+        buffer.append(testSummary.print());
         return buffer.toString();
 
     }
@@ -301,7 +372,6 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
         this.firePropertyChange("status", "", "Running Item Analysis...");
         this.firePropertyChange("progress-on", null, null);
         String results = "";
-        logger.info(command.paste());
         try{
             //get variable info from db
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
@@ -319,7 +389,7 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
                 this.firePropertyChange("progress-ind-on", null, null);
                 outputTable = dao.getUniqueTableName(conn, outputTableString);
                 ItemAnalysisOutputTable dbOutput = new ItemAnalysisOutputTable(conn, tableName, outputTable);
-                dbOutput.saveOutput(item, allCategories);
+                dbOutput.saveOutput(item, allCategories, dIndex);
                 tableCreated = true;
             }
 
@@ -342,6 +412,7 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
                 textFile.addText(get());
                 textFile.addText("Elapsed time: " + sw.getElapsedTime());
                 textFile.setCaretPosition(0);
+                scriptLogger.info(command.paste());
             }
         }catch(Exception ex){
             logger.fatal(ex.getMessage(), ex);

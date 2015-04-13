@@ -18,35 +18,27 @@
 package com.itemanalysis.jmetrik.stats.ranking;
 
 import javax.swing.*;
-import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
-import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
-import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
-import javax.swing.border.TitledBorder;
 
 import com.itemanalysis.jmetrik.selector.SingleSelectionPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
 import org.apache.log4j.Logger;
 
 public class RankingDialog extends JDialog {
@@ -81,7 +73,7 @@ public class RankingDialog extends JDialog {
     private HashMap<String, String> tiesMap = null;
     private HashMap<String, String> scoreNameMap = null;
 
-    public RankingDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableInfo> variables){
+    public RankingDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableAttributes> variables){
         super(parent,"Rank Values",true);
         setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
         this.dbName = dbName;
@@ -98,18 +90,22 @@ public class RankingDialog extends JDialog {
         vsp = new SingleSelectionPanel();
 
         //filter out strings from unselected list and selected list
-        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
-        VariableType filterType3 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        vsp.addUnselectedFilterType(filterType1);
-        vsp.addUnselectedFilterType(filterType2);
-        vsp.addUnselectedFilterType(filterType3);
-        vsp.addUnselectedFilterType(filterType4);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType2);
-        vsp.addSelectedFilterType(filterType3);
-        vsp.addSelectedFilterType(filterType4);
+//        VariableType filterType1 = new VariableType(ItemType.BINARY_ITEM, DataType.STRING);
+//        VariableType filterType2 = new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.STRING);
+//        VariableType filterType3 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.STRING);
+//        VariableType filterType4 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        vsp.addUnselectedFilterType(filterType1);
+//        vsp.addUnselectedFilterType(filterType2);
+//        vsp.addUnselectedFilterType(filterType3);
+//        vsp.addUnselectedFilterType(filterType4);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType2);
+//        vsp.addSelectedFilterType(filterType3);
+//        vsp.addSelectedFilterType(filterType4);
+
+        vsp.addUnselectedFilterDataType(DataType.STRING);
+        vsp.addSelectedFilterDataType(DataType.STRING);
+
         vsp.setVariables(variables);
         vsp.showButton4(false);
 
@@ -380,7 +376,7 @@ public class RankingDialog extends JDialog {
         public void actionPerformed(ActionEvent e){
             try{
                 command = new RankingCommand();
-                VariableInfo v = vsp.getSelectedVariables();
+                VariableAttributes v = vsp.getSelectedVariables();
 
                 command.getFreeOption("variable").add(v.getName().toString());
                 command.getFreeOption("label").add(v.getLabel().toString());

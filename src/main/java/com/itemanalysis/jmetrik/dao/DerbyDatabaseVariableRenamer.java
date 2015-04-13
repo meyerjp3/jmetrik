@@ -24,7 +24,7 @@ import com.itemanalysis.jmetrik.workspace.RenameVariableCommand;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
 import org.apache.log4j.Logger;
 
@@ -43,14 +43,15 @@ public class DerbyDatabaseVariableRenamer extends SwingWorker<String, Void> impl
     private Throwable theException = null;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     VariableName oldName = null;
     VariableName newName = null;
     DatabaseName dbName = null;
     DataTableName tableName = null;
     VariableTableName variableTableName = null;
-    VariableInfo oldVariableInfo = null;
-    VariableInfo newVariableInfo = null;
+    VariableAttributes oldVariableInfo = null;
+    VariableAttributes newVariableInfo = null;
 
     public DerbyDatabaseVariableRenamer(Connection conn, DatabaseAccessObject dao, RenameVariableCommand command){
         this.conn = conn;
@@ -81,7 +82,7 @@ public class DerbyDatabaseVariableRenamer extends SwingWorker<String, Void> impl
             conn.setAutoCommit(false);
 
             //get old variable info from db
-            oldVariableInfo = dao.getVariableInfo(conn, variableTableName, oldName.toString());
+            oldVariableInfo = dao.getVariableAttributes(conn, variableTableName, oldName.toString());
 
             //rename variable in data table
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
@@ -117,7 +118,7 @@ public class DerbyDatabaseVariableRenamer extends SwingWorker<String, Void> impl
     }
 
     private void getNewVariableInfo()throws SQLException{
-        newVariableInfo = dao.getVariableInfo(conn, variableTableName, newName.toString());
+        newVariableInfo = dao.getVariableAttributes(conn, variableTableName, newName.toString());
     }
 
     @Override
@@ -146,6 +147,7 @@ public class DerbyDatabaseVariableRenamer extends SwingWorker<String, Void> impl
         }else{
             fireVariableChanged(new VariableChangeEvent(this, tableName, newVariableInfo, oldVariableInfo, VariableChangeType.VARIABLE_RENAMED));
             firePropertyChange("status", "", "Ready");
+            scriptLogger.info(command.paste());
         }
         firePropertyChange("progress-off", null, null);
     }

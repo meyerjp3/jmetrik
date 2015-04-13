@@ -23,8 +23,8 @@ import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.polycor.CovarianceMatrix;
 import com.itemanalysis.psychometrics.polycor.MixedCorrelationMatrix;
 import com.itemanalysis.psychometrics.tools.StopWatch;
@@ -64,8 +64,9 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
     private boolean listwise=true;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
 
@@ -136,7 +137,7 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
 
         Table sqlTable = new Table(tableName.getNameForDatabase());
         SelectQuery select = new SelectQuery();
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             select.addColumn(sqlTable, v.getName().nameForDatabase());
         }
         stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -150,14 +151,14 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
             index=0;
             missingDataForCase=0;
 
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 response = rs.getObject(v.getName().nameForDatabase());
                 if(listwise && (response==null || response.equals(""))) missingDataForCase++;
 
-                if(v.getType().getItemType()== VariableType.NOT_ITEM){
+                if(v.getType().getItemType()== ItemType.NOT_ITEM){
                     responseVector[index] = (Double)response;
                 }else{
-                    responseScore = v.getItemScoring().computeItemScore(response, v.getType());
+                    responseScore = v.getItemScoring().computeItemScore(response);
                     responseVector[index] = responseScore;
                 }
                 index++;
@@ -262,8 +263,6 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
         this.firePropertyChange("status", "", "Running Correlation...");
         this.firePropertyChange("progress-on", null, null);
         try{
-            logger.info(command.paste());
-
             //get variable info from db
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             VariableTableName variableTableName = new VariableTableName(tableName.toString());
@@ -325,6 +324,7 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
             textFile.addText(get());
             textFile.addText("Elapsed time: " + sw.getElapsedTime());
             textFile.setCaretPosition(0);
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(theException.getMessage(), theException);
             firePropertyChange("error", "", "Error - Check log for details.");

@@ -22,8 +22,8 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.swing.ChartTitlesDialog;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -54,7 +54,7 @@ public class DensityDialog extends JDialog {
     private JLabel typeLabel;
     // End of variables declaration
 
-    public DensityDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables){
+    public DensityDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables){
         super(parent,"Kernel Density",true);
         setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
         this.dbName=dbName;
@@ -71,14 +71,16 @@ public class DensityDialog extends JDialog {
         vsp = new SingleSelectionByGroupPanel();
 
         //filter out strings
-        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
-        VariableType filterType3 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType2);
-        vsp.addSelectedFilterType(filterType3);
-        vsp.addSelectedFilterType(filterType4);
+//        VariableType filterType1 = new VariableType(ItemType.BINARY_ITEM, DataType.STRING);
+//        VariableType filterType2 = new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.STRING);
+//        VariableType filterType3 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.STRING);
+//        VariableType filterType4 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType2);
+//        vsp.addSelectedFilterType(filterType3);
+//        vsp.addSelectedFilterType(filterType4);
+
+        vsp.addSelectedFilterDataType(DataType.STRING);
         vsp.setVariables(variables);
 
         JButton b1 = vsp.getButton1();
@@ -100,6 +102,8 @@ public class DensityDialog extends JDialog {
         b3.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                VariableAttributes v = vsp.getSelectedVariable();
+                if((v!=null)) chartTitle = v.getName().toString();
                 ChartTitlesDialog chartTitlesDialog = new ChartTitlesDialog(DensityDialog.this, chartTitle, chartSubtitle);
                 chartTitlesDialog.setVisible(true);
                 chartTitle = chartTitlesDialog.getChartTitle();
@@ -228,16 +232,18 @@ public class DensityDialog extends JDialog {
 
             try{
                 command = new DensityCommand();
-                VariableInfo v = vsp.getSelectedVariable();
+                VariableAttributes v = vsp.getSelectedVariable();
                 command.getFreeOption("variable").add(v.getName().toString());
 
                 command.getPairedOptionList("data").addValue("db", dbName.toString());
                 command.getPairedOptionList("data").addValue("table", tableName.toString());
 
                 if("".equals(chartTitle)) chartTitle = v.getName().toString();
-
                 command.getFreeOption("title").add(chartTitle);
+                chartTitle = "";
+
                 if(!"".equals(chartSubtitle)) command.getFreeOption("subtitle").add(chartSubtitle);
+                chartSubtitle = "";
 
                 command.getSelectOneOption("kernel").setSelected(kernelType.toLowerCase());
 
@@ -248,7 +254,7 @@ public class DensityDialog extends JDialog {
 
 
                 if(vsp.hasGroupingVariable()){
-                    VariableInfo groupVar = vsp.getGroupByVariable();
+                    VariableAttributes groupVar = vsp.getGroupByVariable();
                     command.getFreeOption("groupvar").add(groupVar.getName().toString());
                 }
 

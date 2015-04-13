@@ -30,8 +30,8 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.swing.ChartTitlesDialog;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 public class HistogramDialog extends JDialog {
@@ -57,7 +57,7 @@ public class HistogramDialog extends JDialog {
     private ButtonGroup yaxisButtonGroup;
     // End of variables declaration
 
-    public HistogramDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableInfo> variables){
+    public HistogramDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableAttributes> variables){
         super(parent,"Histogram",true);
         this.dbName=dbName;
         this.tableName=tableName;
@@ -67,14 +67,16 @@ public class HistogramDialog extends JDialog {
         initComponents();
 
         //filter out strings
-        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
-        VariableType filterType3 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType2);
-        vsp.addSelectedFilterType(filterType3);
-        vsp.addSelectedFilterType(filterType4);
+//        VariableType filterType1 = new VariableType(ItemType.BINARY_ITEM, DataType.STRING);
+//        VariableType filterType2 = new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.STRING);
+//        VariableType filterType3 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.STRING);
+//        VariableType filterType4 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType2);
+//        vsp.addSelectedFilterType(filterType3);
+//        vsp.addSelectedFilterType(filterType4);
+
+        vsp.addSelectedFilterDataType(DataType.STRING);
         vsp.setVariables(variables);
 
         JButton b1 = vsp.getButton1();
@@ -96,6 +98,8 @@ public class HistogramDialog extends JDialog {
         b3.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                VariableAttributes v = vsp.getSelectedVariable();
+                if((v!=null)) chartTitle = v.getName().toString();
                 ChartTitlesDialog titlesDialog = new ChartTitlesDialog(HistogramDialog.this, chartTitle, chartSubtitle);
                 titlesDialog.setVisible(true);
                 chartTitle = titlesDialog.getChartTitle();
@@ -112,7 +116,7 @@ public class HistogramDialog extends JDialog {
                 chartTitle = "";
                 chartSubtitle = "";
                 densityRadioButton.setSelected(true);
-                scottRadioButton.setSelected(true);
+                sturgesRadioButton.setSelected(true);
             }
         });
 
@@ -268,7 +272,7 @@ public class HistogramDialog extends JDialog {
             try{
                 if(vsp.selectionMade()){
                     command = new HistogramCommand();
-                    VariableInfo v = vsp.getSelectedVariable();
+                    VariableAttributes v = vsp.getSelectedVariable();
                     command.getFreeOption("variable").add(v.getName().toString());
 
                     command.getPairedOptionList("data").addValue("db", dbName.toString());
@@ -278,12 +282,14 @@ public class HistogramDialog extends JDialog {
                     command.getSelectOneOption("bintype").setSelected(binwidthGroup.getSelection().getActionCommand());
 
                     if("".equals(chartTitle)) chartTitle = v.getName().toString();
-
                     command.getFreeOption("title").add(chartTitle);
+                    chartTitle = "";
+
                     if(!"".equals(chartSubtitle)) command.getFreeOption("subtitle").add(chartSubtitle);
+                    chartSubtitle = "";
 
                     if(vsp.hasGroupingVariable()){
-                        VariableInfo groupVar = vsp.getGroupByVariable();
+                        VariableAttributes groupVar = vsp.getGroupByVariable();
                         command.getFreeOption("groupvar").add(groupVar.getName().toString());
                     }
 

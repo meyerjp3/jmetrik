@@ -28,23 +28,15 @@ import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.*;
 import com.itemanalysis.psychometrics.distribution.DistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.NormalDistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.UniformDistributionApproximation;
 import com.itemanalysis.psychometrics.irt.equating.*;
 import com.itemanalysis.psychometrics.irt.model.ItemResponseModel;
-import com.itemanalysis.psychometrics.optimization.BOBYQAOptimizer;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
-import org.apache.commons.math3.optim.*;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.nonlinear.scalar.MultiStartMultivariateOptimizer;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.random.*;
 import org.apache.log4j.Logger;
 
 public class IrtLinkingAnalysis extends SwingWorker<String, String> {
@@ -101,7 +93,7 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
     private VariableName thetaNameX = null;
     private VariableName weightNameX = null;
     private boolean hasWeightX = false;
-    private VariableInfo newTheta = null;
+    private VariableAttributes newTheta = null;
 
     private DataTableName tableNamePersonsY = null;
     private VariableName thetaNameY = null;
@@ -120,6 +112,7 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
     private IrtScaleLinking irtScaleLinking = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
 
     public IrtLinkingAnalysis(Connection conn, DatabaseAccessObject dao, IrtLinkingCommand command, JmetrikTextFile textFile){
@@ -343,7 +336,7 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
         ResultSet rs = null;
         try{
             String tName = "t_" + thetaNameX.toString();
-            newTheta = new VariableInfo(tName, "Form X theta on Form Y scale", VariableType.NOT_ITEM, VariableType.DOUBLE, 0, "");
+            newTheta = new VariableAttributes(tName, "Form X theta on Form Y scale", ItemType.NOT_ITEM, DataType.DOUBLE, 0, "");
             dao.addColumnToDb(conn, tableNamePersonsX, newTheta);
 
             Table sqlTable = new Table(tableNamePersonsX.getNameForDatabase());
@@ -501,7 +494,6 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
         this.firePropertyChange("progress-ind-on", null, null);
 
         try{
-            logger.info(command.paste());
             processCommand();
             publishHeader();
             getItemParameters();
@@ -553,6 +545,7 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
             }
             textFile.addText(get());
             textFile.setCaretPosition(0);
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(ex.getMessage(), ex);
             firePropertyChange("error", "", "Error - Check log for details.");

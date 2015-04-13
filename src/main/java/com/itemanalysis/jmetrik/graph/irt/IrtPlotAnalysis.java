@@ -24,17 +24,26 @@ import javax.swing.SwingWorker;
 
 import com.itemanalysis.jmetrik.dao.DatabaseAccessObject;
 import com.itemanalysis.jmetrik.sql.DataTableName;
+import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.stats.irt.linking.DbItemParameterSet;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
+import com.itemanalysis.psychometrics.distribution.NormalDistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.UniformDistributionApproximation;
-import com.itemanalysis.psychometrics.irt.model.Irm3PL;
-import com.itemanalysis.psychometrics.irt.model.IrmPCM;
+import com.itemanalysis.psychometrics.irt.estimation.IrtObservedScoreDistribution;
+import com.itemanalysis.psychometrics.irt.estimation.ItemResponseVector;
 import com.itemanalysis.psychometrics.irt.model.ItemResponseModel;
+import com.itemanalysis.psychometrics.kernel.*;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
+import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
+import org.apache.commons.math3.stat.descriptive.rank.Max;
+import org.apache.commons.math3.stat.descriptive.rank.Min;
 import org.apache.log4j.Logger;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -50,6 +59,7 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
     private int lineNumber=0;
     private StopWatch sw = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
     private DataTableName tableName = null;
     private ArrayList<String> variables = null;
     private boolean categoryProbability = true;
@@ -67,8 +77,17 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
     private DatabaseAccessObject dao = null;
     private boolean savePlots = false;
     private String savePath = "";
+    private ItemResponseModel[] itemResponseModels = null;
+    private DataTableName responseTableName = null;
+    private boolean hasResponseData = false;
+    private IrtObservedScoreDistribution irtDist = null;
+    private ItemResponseVector[] responseVector = null;
+    private double[] eapScore = null;
+    private int nscores = 0;
+    private LinkedHashMap<String, ItemResponseModel> itemParameterSet = null;
 
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
+    private int thin = 1;
 
     public IrtPlotAnalysis(Connection conn, DatabaseAccessObject dao, IrtPlotCommand command, IrtPlotPanel irtPanel){
         this.command = command;
@@ -81,6 +100,7 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
     }
 
     private void initializeProgress()throws SQLException {
+        this.firePropertyChange("progress-on", null, null);
         int nrow = dao.getRowCount(conn, tableName);
         maxProgress = (double)nrow;
     }
@@ -91,29 +111,37 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         lineNumber++;
     }
 
-    //NOTE: The scaling constant 1 or 1.7 is only incorporated if it is contained in the item parameter table.
-    //There is no default for the scaling constant that is set here.
-
-    public void summarize()throws SQLException{
-//        Statement stmt = null;
-//        ResultSet rs=null;
-
-
-        initializeProgress();
-
+    private void getItemResponseModels()throws SQLException{
         ArrayList<VariableName> selectedVariableNames = new ArrayList<VariableName>();
         for(String s : variables){
             selectedVariableNames.add(new VariableName(s));
         }
 
         DbItemParameterSet dbItemParameterSet = new DbItemParameterSet();
-        LinkedHashMap<String, ItemResponseModel> itemParameterSet = dbItemParameterSet.getItemParameters(
+        itemParameterSet = dbItemParameterSet.getItemParameters(
                 conn, tableName, selectedVariableNames, true
         );
+
+        itemResponseModels = new ItemResponseModel[itemParameterSet.size()];
+
+        int j=0;
+        for(String s : itemParameterSet.keySet()){
+            itemResponseModels[j] = itemParameterSet.get(s);
+            j++;
+        }
+
+    }
+
+    //NOTE: The scaling constant 1 or 1.7 is only incorporated if it is contained in the item parameter table.
+    //There is no default for the scaling constant that is set here.
+
+    public void summarize()throws SQLException{
+        initializeProgress();
 
         if(plotTcc) tcc = new double[theta.length];
         if(plotTestInfo || plotTestStdError) tinfo = new double[theta.length];
 
+        int j=0;
         double maxPossibleTestScore = 0.0;
         double maxItemScore = 1;
         XYSeriesCollection collection = null;
@@ -151,7 +179,13 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
                     irtPanel.setOrdinateAutoRange(s, true);
                 }
             }
-            irtPanel.updateDataset(s, collection, collection.getSeriesCount()>1);
+
+            if(hasResponseData){
+                addObservedPoints(j, irm.getNcat(), collection);
+                irtPanel.updateDatasetLinesAndPoints(s, collection, collection.getSeriesCount()>2);
+            }else{
+                irtPanel.updateDataset(s, collection, collection.getSeriesCount()>1);
+            }
 
 
             if(plotTcc){
@@ -162,129 +196,9 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
                 incrementTestInfo(irm);
             }
 
+
+            j++;
         }
-
-
-//        Table sqlTable = new Table(tableName.getNameForDatabase());
-//        SelectQuery select = new SelectQuery();
-//        select.addColumn(sqlTable, "*");
-//        stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-//        rs=stmt.executeQuery(select.toString());
-
-//        VariableName name = new VariableName("name");
-//        VariableName ncat = new VariableName("ncat");
-//        VariableName model = new VariableName("model");
-//        VariableName aparam = new VariableName("aparam");
-//        VariableName bparam = new VariableName("bparam");
-//        VariableName cparam = new VariableName("cparam");
-//        VariableName uparam = new VariableName("uparam");
-//        VariableName tau = null;
-
-//        if(plotTcc) tcc = new double[theta.length];
-//        if(plotTestInfo || plotTestStdError) tinfo = new double[theta.length];
-
-//        String itemName = "";
-//        String modelName = "";
-//        int nCat = 2;
-//        double a = 1.0;
-//        double b = 0.0;
-//        double c = 0.0;
-//        double u = 0.0;
-////        int binaryModelParam = 1;
-//        double[] step = null;
-//
-//        Double cats = 0.0;
-//        XYSeriesCollection collection = null;
-//        double maxItemScore = 1;
-//
-//        //get meta data to check for variable names -- could be slow for some drivers
-//        ResultSetMetaData rsmd = rs.getMetaData();
-//        int ncols = rsmd.getColumnCount();
-//        ArrayList<VariableName> colNames = new ArrayList<VariableName>();
-//        for(int i=0;i<ncols;i++){
-//            VariableName vName = new VariableName(rsmd.getColumnName(i+1));
-//            colNames.add(vName);
-//        }
-//
-//        ItemResponseModel irm = null;
-//        while(rs.next()){
-//            collection = new XYSeriesCollection();
-//            itemName = rs.getString(name.nameForDatabase());
-//            modelName = rs.getString(model.nameForDatabase());
-//            if(variables.contains(itemName)){
-//                cats = rs.getDouble(ncat.nameForDatabase());
-//                maxPossibleTestScore += cats-1.0;//Assumes all scoring begins at zero
-//                nCat = cats.intValue();
-//                b = rs.getDouble(bparam.nameForDatabase());
-//
-//                //discrimination parameter -- optional
-//                if(colNames.contains(aparam)){
-//                    a = rs.getDouble(aparam.nameForDatabase());
-//                    if(rs.wasNull()){
-//                        a = 1.0;
-//                    }else{
-//                        binaryModelParam = 2;
-//                    }
-//                }else{
-//                    a = 1.0;
-//                }
-//
-//                if(nCat>2){
-//                    step = new double[nCat-1];
-//                    for(int i=0;i<nCat-1;i++){
-//                        tau = new VariableName("step" + (i+1));
-//                        step[i] = rs.getDouble(tau.nameForDatabase());
-//                    }
-//                    irm = new IrmPCM(b, step, 1.0);
-//                }else{
-//                    irm = new Irm3PL(b, 1.0);
-//                }
-
-
-
-//                //plot icc
-//                if(plotIcc){
-//                    if(nCat>2){
-//                        if(categoryProbability){
-//                            //plot all category probabilities for polytomous item
-//                            for(int i=0;i<nCat;i++){
-//                                collection.addSeries(getCategoryProbability(irm, i));
-//                            }
-//                        }else{
-//                            maxItemScore = (double)(nCat-1);
-//                            //plot expected value for polytomous item
-//                            collection.addSeries(getExpectedValue(irm));
-//                        }
-//                    }else{
-//                        //plot probability of a correct response for binary item
-//                        collection.addSeries(getCategoryProbability(irm, 1));
-//                    }
-//                }
-//
-//                irtPanel.updateOrdinate(itemName, 0.0, maxItemScore);
-//                if(plotItemInfo){
-//                    collection.addSeries(getItemInformation(irm));
-//                    if(!plotIcc){
-//                        irtPanel.setOrdinateLabel(itemName, "Item Information");
-//                        irtPanel.setOrdinateAutoRange(itemName, true);
-//                    }
-//                }
-//                irtPanel.updateDataset(itemName, collection, collection.getSeriesCount()>1);
-//
-//
-//                if(plotTcc){
-//                    incrementTcc(irm);
-//                }
-//
-//                if(plotTestInfo || plotTestStdError){
-//                    incrementTestInfo(irm);
-//                }
-//
-//            }//end check for selected items
-//            updateProgress();
-//        }//end while
-//        rs.close();
-//        stmt.close();
 
         if(plotTcc || plotTestInfo || plotTestStdError) {
             collection = new XYSeriesCollection();
@@ -305,8 +219,152 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
             if(plotTestStdError) addTestStdError(collection);
             irtPanel.updateDataset("jmetrik-tcc-tif-tse", collection, collection.getSeriesCount()>1);
 
-
         }
+
+    }
+
+    private void summarizeResponseData()throws SQLException{
+        this.firePropertyChange("progress-ind-on", null, null);
+
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        //IRT observed score distribution
+        NormalDistributionApproximation latentDist = new NormalDistributionApproximation(min, max, points);
+        irtDist = new IrtObservedScoreDistribution(itemResponseModels, latentDist);
+        irtDist.compute();
+        nscores = irtDist.getNumberOfScores();
+        eapScore = new double[nscores];
+        for(int i=0;i<nscores;i++){
+            eapScore[i] = irtDist.getEAP(i);
+        }
+
+        //Summarize item response vectors
+        try{
+            int nrow = dao.getRowCount(conn, responseTableName);
+            responseVector = new ItemResponseVector[nrow];
+
+            VariableTableName variableTableName = new VariableTableName(responseTableName.toString());
+            ArrayList<VariableAttributes> variableAttributes = dao.getSelectedVariables(conn, variableTableName, variables);
+
+            //Query the db. Variables include the select items and the grouping variable is one is available.
+            Table sqlTable = new Table(responseTableName.getNameForDatabase());
+            SelectQuery select = new SelectQuery();
+            for(VariableAttributes v : variableAttributes){
+                select.addColumn(sqlTable, v.getName().nameForDatabase());
+            }
+            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            rs=stmt.executeQuery(select.toString());
+
+            int i=0;
+            int c = 0;
+            int ncol = itemResponseModels.length;
+            byte[] rv = null;
+            Object response = null;
+            ItemResponseVector iVec = null;
+            while(rs.next()){
+                c = 0;
+                rv = new byte[ncol];
+
+                for(VariableAttributes v : variableAttributes){
+                    response = rs.getObject(v.getName().nameForDatabase());
+                    if((response==null || response.equals("") || response.equals("NA"))){
+                        rv[c] = -1;//code for omitted responses
+                    }else{
+                        rv[c] = (byte)v.getItemScoring().computeItemScore(response);
+                    }
+                    c++;
+                }
+                iVec = new ItemResponseVector(rv, 1.0);
+                responseVector[i] = iVec;
+                i++;
+            }//end data summary
+
+        }catch(SQLException ex){
+            throw(ex);
+        }finally{
+            if(rs!=null) rs.close();
+            if(stmt!=null) stmt.close();
+        }
+    }
+
+    private void addObservedPoints(int itemIndex, int ncat, XYSeriesCollection collection)throws SQLException{
+
+        //Initialize frequency table
+        //Assumes categories are scored 0, 1, ..., k
+        double[][] table = new double[nscores][ncat];
+        double[] rowMargin = new double[nscores];
+        byte response = 0;
+        int sumScore = 0;
+        for(int i=0;i<responseVector.length;i++){
+            sumScore = (int)responseVector[i].getSumScore();
+            response = responseVector[i].getResponseAt(itemIndex);
+            if(response!=-1){
+                table[sumScore][response]++;
+                rowMargin[sumScore]++;
+            }
+        }
+
+        if(ncat>2){
+            for(int k=0;k<ncat;k++){
+                collection.addSeries(getSmoothedProportions(table, rowMargin, k));
+//                collection.addSeries(getCategoryProportions(table, rowMargin, k));
+            }
+        }else{
+            collection.addSeries(getSmoothedProportions(table, rowMargin, 1));
+//            collection.addSeries(getCategoryProportions(table, rowMargin, 1));
+        }
+
+    }
+
+    private XYSeries getSmoothedProportions(double[][] table, double[] rowMargin, int category){
+        XYSeries series = new XYSeries(category+"p");
+
+        double N = 0;
+        for(int i=0;i<nscores;i++){
+            N+=rowMargin[i];
+        }
+
+        Max max = new Max();
+        Min min = new Min();
+        UniformDistributionApproximation dist = new UniformDistributionApproximation(min.evaluate(eapScore), max.evaluate(eapScore), thin);
+        NonparametricIccBandwidth bw = new NonparametricIccBandwidth(N, 1);
+        KernelRegression kreg = new KernelRegression(new GaussianKernel(), bw, dist);
+
+        for(int i=0;i<nscores;i++){
+            if(rowMargin[i]!=0){
+//                kreg.increment(eapScore[index], table[index][category]/rowMargin[index]);
+                kreg.increment(eapScore[i], 1, table[i][category]);
+                kreg.increment(eapScore[i], 0, rowMargin[i]-table[i][category]);
+            }
+        }
+
+        double[] x = kreg.getPoints();
+        double[] y = kreg.value();
+        for(int i=0;i<x.length;i++){
+            series.add(x[i], y[i]);
+        }
+
+        return series;
+    }
+
+    private XYSeries getCategoryProportions(double[][] table, double[] rowMargin, int category){
+        XYSeries series = new XYSeries(category+"p");
+
+        int index = 0;
+        while(index<table.length){
+            if(rowMargin[index]!=0){
+                series.add(eapScore[index], table[index][category]/rowMargin[index]);
+            }
+            index+=thin;
+        }
+
+//        for(int i=0;i<table.length;i++){
+//            if(rowMargin[i]!=0){
+//                series.add(eapScore[i], table[i][category]/rowMargin[i]);
+//            }
+//        }
+        return series;
 
     }
 
@@ -340,16 +398,6 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         collection.addSeries(tseSeries);
     }
 
-//    private XYSeries getCategoryProbability(double difficulty, double[] step, int category){
-//        XYSeries series = new XYSeries(category);
-//        double prob = 0.0;
-//        for(double t : theta){
-//            prob = rsm.value(t, difficulty, step, category);
-//            series.addArgument(t, prob);
-//        }
-//        return series;
-//    }
-
     private XYSeries getCategoryProbability(ItemResponseModel irm, int category){
         XYSeries series = new XYSeries(category);
 
@@ -361,16 +409,6 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         return series;
     }
 
-//    private XYSeries getExpectedValue(double difficulty, double[] step){
-//        XYSeries series = new XYSeries("Expected Value");
-//        double value = 0.0;
-//        for(double t : theta){
-//            value = rsm.expectedValue(t, difficulty, step);
-//            series.addArgument(t, value);
-//        }
-//        return series;
-//    }
-
     private XYSeries getExpectedValue(ItemResponseModel irm){
         XYSeries series = new XYSeries("Expected Value");
         double value = 0.0;
@@ -380,16 +418,6 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         }
         return series;
     }
-
-//    private void incrementTcc(double difficulty, double[] step){
-//        double value = 0.0;
-//        int index = 0;
-//        for(double t : theta){
-//            value = rsm.expectedValue(t, difficulty, step);
-//            tcc[index] += value;
-//            index++;
-//        }
-//    }
 
     private void incrementTcc(ItemResponseModel irm){
         double value = 0.0;
@@ -401,16 +429,6 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         }
     }
 
-//    private XYSeries getItemInformation(double difficulty, double[] step){
-//        XYSeries series = new XYSeries("Information");
-//        double info = 0.0;
-//        for(double t : theta){
-//            info = rsm.denomInf(t, difficulty, step);
-//            series.addArgument(t, info);
-//        }
-//        return series;
-//    }
-
     private XYSeries getItemInformation(ItemResponseModel irm){
         XYSeries series = new XYSeries("Information");
         double info = 0.0;
@@ -420,16 +438,6 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         }
         return series;
     }
-
-//    private void incrementTestInfo(double difficulty, double[] step){
-//        double value = 0.0;
-//        int index = 0;
-//        for(double t : theta){
-//            value = rsm.denomInf(t, difficulty, step);
-//            tinfo[index] += value;
-//            index++;
-//        }
-//    }
 
     private void incrementTestInfo(ItemResponseModel irm){
         double value = 0.0;
@@ -444,9 +452,6 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
     protected IrtPlotPanel doInBackground(){
         sw = new StopWatch();
         this.firePropertyChange("status", "", "Running Irt Plot...");
-        this.firePropertyChange("progress-on", null, null);
-
-        logger.info(command.paste());
 
         try{
             //database
@@ -467,12 +472,19 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
             savePlots = command.getFreeOption("output").hasValue();
             if(savePlots) savePath = command.getFreeOption("output").getString();
 
-//            deprecated class
-//            ThetaDistribution thetaDist = new ThetaDistribution();
-//            thetaDist.uniformPoints(points, min, max);
+            getItemResponseModels();
+
+            hasResponseData = command.getPairedOptionList("response").hasValue();
+            if(!categoryProbability) hasResponseData = false;//Do not add observed proportions when expected value selected
+            if(hasResponseData){
+                String tn = command.getPairedOptionList("response").getStringAt("table");
+                responseTableName = new DataTableName(tn);
+                thin = command.getPairedOptionList("response").getIntegerAt("thin");
+                summarizeResponseData();
+            }
+
             UniformDistributionApproximation thetaDist = new UniformDistributionApproximation(min, max, points);
             theta = thetaDist.getPoints();
-            thetaDist = null;
 
             summarize();
             if(savePlots){
@@ -506,7 +518,6 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
     }
 
     public void fireVariableChanged(VariableChangeEvent event){
-        System.out.println("TestSclingAnalysis: firing variable changed=" + event.getVariable().getName().toString());
         for(VariableChangeListener l : variableChangeListeners){
             l.variableChanged(event);
         }
@@ -520,6 +531,7 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
                 logger.fatal(theException.getMessage(), theException);
                 firePropertyChange("error", "", "Error - Check log for details.");
             }
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(theException.getMessage(), theException);
             firePropertyChange("error", "", "Error - Check log for details.");

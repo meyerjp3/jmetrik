@@ -17,15 +17,11 @@
 
 package com.itemanalysis.jmetrik.graph.linechart;
 
-import javax.swing.*;
 import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.TreeMap;
 import javax.swing.SwingWorker;
 
@@ -34,8 +30,7 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableName;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
@@ -59,11 +54,11 @@ public class LineChartAnalysis extends SwingWorker<LineChartPanel, Void> {
 
     public boolean hasGroupingVariable = false;
 
-    private VariableInfo xVar = null;
+    private VariableAttributes xVar = null;
 
-    private VariableInfo yVar = null;
+    private VariableAttributes yVar = null;
 
-    VariableInfo groupVar = null;
+    private VariableAttributes groupVar = null;
 
     private double maxProgress = 100.0;
 
@@ -72,6 +67,7 @@ public class LineChartAnalysis extends SwingWorker<LineChartPanel, Void> {
     private int lineNumber = 0;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     private DatabaseAccessObject dao = null;
 
@@ -166,21 +162,19 @@ public class LineChartAnalysis extends SwingWorker<LineChartPanel, Void> {
         this.firePropertyChange("status", "", "Running Line Chart...");
         this.firePropertyChange("progress-on", null, null);
         try{
-            logger.info(command.paste());
-
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             VariableTableName variableTableName = new VariableTableName(tableName.toString());
 
             initializeProgress();
 
             String xName = command.getFreeOption("xvar").getString();
-            xVar = dao.getVariableInfo(conn, variableTableName, xName);
+            xVar = dao.getVariableAttributes(conn, variableTableName, xName);
             String yName = command.getFreeOption("yvar").getString();
-            yVar = dao.getVariableInfo(conn, variableTableName, yName);
+            yVar = dao.getVariableAttributes(conn, variableTableName, yName);
 
             if(command.getFreeOption("groupvar").hasValue()){
                 String gName=command.getFreeOption("groupvar").getString();
-                groupVar = dao.getVariableInfo(conn, variableTableName, gName);
+                groupVar = dao.getVariableAttributes(conn, variableTableName, gName);
                 hasGroupingVariable = true;
             }
 
@@ -226,6 +220,7 @@ public class LineChartAnalysis extends SwingWorker<LineChartPanel, Void> {
                 logger.fatal(theException.getMessage(), theException);
                 firePropertyChange("error", "", "Error - Check log for details.");
             }
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(theException.getMessage(), theException);
             firePropertyChange("error", "", "Error - Check log for details.");

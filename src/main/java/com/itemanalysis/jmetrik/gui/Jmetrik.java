@@ -51,7 +51,7 @@ import com.itemanalysis.jmetrik.statusbar.StatusBar;
 import com.itemanalysis.jmetrik.utils.JmetrikFileUtils;
 import com.itemanalysis.jmetrik.utils.PrintUtilities;
 import com.itemanalysis.jmetrik.workspace.*;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
 import org.apache.commons.math3.util.Precision;
 import org.apache.log4j.Logger;
@@ -432,6 +432,13 @@ public class Jmetrik extends JFrame{
         logMenu.setMnemonic('l');
         logMenu.add(mItem);
 
+        urlString = "/org/tango-project/tango-icon-theme/16x16/mimetypes/text-x-generic.png";
+        url = this.getClass().getResource( urlString );
+        ImageIcon iconCommand = new ImageIcon(url, "Script Log");
+        mItem = new JMenuItem(new ViewScriptLogAction("Script Log",iconCommand));
+        logMenu.setMnemonic('c');
+        logMenu.add(mItem);
+
         menuBar.add(logMenu);
 
 
@@ -668,7 +675,7 @@ public class Jmetrik extends JFrame{
                                     JOptionPane.WARNING_MESSAGE,
                                     JOptionPane.YES_NO_OPTION);
                         }else{
-                            VariableInfo v = deleteVariableDialog.getSelectedVariable();
+                            VariableAttributes v = deleteVariableDialog.getSelectedVariable();
                             answer = JOptionPane.showConfirmDialog(Jmetrik.this,
                                     "Do you want to delete the variable " + v.getName().toString() + "? \n" +
                                             "All data will be permanently deleted. You cannot undo this action.",
@@ -809,8 +816,8 @@ public class Jmetrik extends JFrame{
                         DatabaseAccessObject dao = workspace.getDatabaseFactory().getDatabaseAccessObject();
 
                         try{
-                            ArrayList<VariableInfo> tempVar = dao.getVariableInfoFromColumn(workspace.getConnection(), workspace.getCurrentDataTable(), new VariableName("name"));
-                            irtPlotDialog = new IrtPlotDialog(Jmetrik.this, workspace.getDatabaseName(), tableName, tempVar);
+                            ArrayList<VariableAttributes> tempVar = dao.getVariableAttributesFromColumn(workspace.getConnection(), workspace.getCurrentDataTable(), new VariableName("name"));
+                            irtPlotDialog = new IrtPlotDialog(Jmetrik.this, workspace.getDatabaseName(), tableName, tempVar, (SortedListModel<DataTableName>)workspaceList.getModel());
                         }catch(SQLException ex){
                             logger.fatal(ex.getMessage(), ex);
                             firePropertyChange("error", "", "Error - Check log for details.");
@@ -1603,7 +1610,7 @@ public class Jmetrik extends JFrame{
 
             JmetrikPreferencesManager prefs = new JmetrikPreferencesManager();
             String logHome = prefs.getLogHome();
-            File f = new File(logHome + "/jmetrik-log");
+            File f = new File(logHome + "/"+JmetrikPreferencesManager.DEFAULT_LOG_NAME);
             JmetrikTextFile textFile = new JmetrikTextFile();
 
             JScrollPane p = new JScrollPane(textFile);
@@ -1617,6 +1624,47 @@ public class Jmetrik extends JFrame{
         }
 
     }//end View LogAction
+
+    public class ViewScriptLogAction extends AbstractAction{
+
+        private static final long serialVersionUID = 1L;
+        final static String TOOL_TIP = "View Script Log";
+
+        public ViewScriptLogAction(String text, ImageIcon icon, Integer mnemonic){
+            super(text, icon);
+            putValue(SHORT_DESCRIPTION, TOOL_TIP);
+            putValue(MNEMONIC_KEY, mnemonic);
+        }
+
+        public ViewScriptLogAction(String text, ImageIcon icon){
+            super(text, icon);
+            putValue(SHORT_DESCRIPTION, TOOL_TIP);
+        }
+
+        public ViewScriptLogAction(String text){
+            super(text);
+            putValue(SHORT_DESCRIPTION, TOOL_TIP);
+        }
+
+        public void actionPerformed(ActionEvent e){
+            this.firePropertyChange("status", null, "Opening Script log...");
+
+            JmetrikPreferencesManager prefs = new JmetrikPreferencesManager();
+            String logHome = prefs.getLogHome();
+            File f = new File(logHome + "/" + JmetrikPreferencesManager.DEFAULT_SCRIPT_LOG_NAME);
+            JmetrikTextFile textFile = new JmetrikTextFile();
+
+            JScrollPane p = new JScrollPane(textFile);
+            p.setPreferredSize(new Dimension(730,550));
+            addTab(f.getName(), p);
+
+            FileOpener fileOpener = new FileOpener(f, textFile);
+            fileOpener.addPropertyChangeListener(statusBar.getStatusListener());
+            fileOpener.addPropertyChangeListener(new ErrorOccurredPropertyChangeListener());
+            fileOpener.execute();//open in independent thread
+        }
+
+    }//end View Script LogAction
     
     public class UndoAction extends AbstractAction{
 

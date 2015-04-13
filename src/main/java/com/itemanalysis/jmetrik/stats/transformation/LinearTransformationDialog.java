@@ -21,9 +21,10 @@ import com.itemanalysis.jmetrik.selector.SingleSelectionPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -60,7 +61,7 @@ public class LinearTransformationDialog extends JDialog{
     private DataTableName tableName = null;
     static Logger logger = org.apache.log4j.Logger.getLogger("jmetrik-logger");
 
-    public LinearTransformationDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables){
+    public LinearTransformationDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables){
         super(parent, "Linear Transformation",true);
 
         this.dbName = dbName;
@@ -75,20 +76,27 @@ public class LinearTransformationDialog extends JDialog{
         });
 
         vsp = new SingleSelectionPanel();
-        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.BINARY_ITEM, VariableType.DOUBLE);
-        VariableType filterType3 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.DOUBLE);
-        VariableType filterType5 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType6 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.DOUBLE);
-        VariableType filterType7 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        vsp.addUnselectedFilterType(filterType1);
-        vsp.addUnselectedFilterType(filterType2);
-        vsp.addUnselectedFilterType(filterType3);
-        vsp.addUnselectedFilterType(filterType4);
-        vsp.addUnselectedFilterType(filterType5);
-        vsp.addUnselectedFilterType(filterType6);
-        vsp.addUnselectedFilterType(filterType7);
+
+        //Filter out items and strings
+//        VariableType filterType1 = new VariableType(ItemType.BINARY_ITEM, DataType.STRING);
+//        VariableType filterType2 = new VariableType(ItemType.BINARY_ITEM, DataType.DOUBLE);
+//        VariableType filterType3 = new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.STRING);
+//        VariableType filterType4 = new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.DOUBLE);
+//        VariableType filterType5 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.STRING);
+//        VariableType filterType6 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.DOUBLE);
+//        VariableType filterType7 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        vsp.addUnselectedFilterType(filterType1);
+//        vsp.addUnselectedFilterType(filterType2);
+//        vsp.addUnselectedFilterType(filterType3);
+//        vsp.addUnselectedFilterType(filterType4);
+//        vsp.addUnselectedFilterType(filterType5);
+//        vsp.addUnselectedFilterType(filterType6);
+//        vsp.addUnselectedFilterType(filterType7);
+
+        vsp.addUnselectedFilterItemType(ItemType.BINARY_ITEM);
+        vsp.addUnselectedFilterItemType(ItemType.POLYTOMOUS_ITEM);
+        vsp.addUnselectedFilterItemType(ItemType.CONTINUOUS_ITEM);
+        vsp.addUnselectedFilterDataType(DataType.STRING);
         vsp.setVariables(variables);
         vsp.showButton4(false);
 
@@ -286,7 +294,7 @@ public class LinearTransformationDialog extends JDialog{
         return command;
     }
 
-    public VariableInfo getSelectedVariables(){
+    public VariableAttributes getSelectedVariables(){
         return vsp.getSelectedVariables();
     }
 
@@ -298,7 +306,7 @@ public class LinearTransformationDialog extends JDialog{
     public class RunActionListener implements ActionListener{
 
         public void actionPerformed(ActionEvent e){
-            VariableInfo v = vsp.getSelectedVariables();
+            VariableAttributes v = vsp.getSelectedVariables();
             if(vsp.selectionMade()){
                 try{
                     command = new LinearTransformationCommand();

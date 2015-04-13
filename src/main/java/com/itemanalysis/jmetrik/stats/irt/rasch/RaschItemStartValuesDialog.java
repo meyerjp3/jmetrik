@@ -22,7 +22,7 @@ import com.itemanalysis.jmetrik.model.SortedListModel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
 import org.apache.log4j.Logger;
 
@@ -210,7 +210,7 @@ public class RaschItemStartValuesDialog extends JDialog{
         return startTableName;
     }
 
-    private void setVariables(ArrayList<VariableInfo> variables){
+    private void setVariables(ArrayList<VariableAttributes> variables){
         model = new RaschStartValueTableModel(variables);
         table.setModel(model);
         model.fireTableDataChanged();
@@ -220,7 +220,7 @@ public class RaschItemStartValuesDialog extends JDialog{
         try{
             if(currentTable!=null && currentTable.equals(tableName)) return;
             VariableTableName variableTableName = new VariableTableName(tableName.toString());
-            ArrayList<VariableInfo> v = dao.getAllVariables(conn, variableTableName);
+            ArrayList<VariableAttributes> v = dao.getAllVariables(conn, variableTableName);
             setVariables(v);
             currentTable = tableName;
         }catch(SQLException ex){

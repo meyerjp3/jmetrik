@@ -20,7 +20,9 @@ package com.itemanalysis.jmetrik.dao;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.SubsetVariableCommand;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import org.apache.log4j.Logger;
 
@@ -39,7 +41,7 @@ public class DerbyVariableSubsetter extends SwingWorker<String,Void> implements 
 
     private StopWatch timer = null;
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
     private DataTableName dataTableName = null;
 
@@ -61,10 +63,12 @@ public class DerbyVariableSubsetter extends SwingWorker<String,Void> implements 
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
+
     public DerbyVariableSubsetter(Connection conn, SubsetVariableCommand command){
         this.conn = conn;
         this.command = command;
-        variables = new ArrayList<VariableInfo>();
+        variables = new ArrayList<VariableAttributes>();
     }
 
 
@@ -120,22 +124,28 @@ public class DerbyVariableSubsetter extends SwingWorker<String,Void> implements 
             //Populate new variable table
             String updateString = "INSERT INTO " + newVariableTableName.getNameForDatabase() + " VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement pstmt = conn.prepareStatement(updateString);
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 pstmt.setString(1, v.getName().toString());                 //name
-                pstmt.setString(2, v.getSubscale());                        //subscale/group
+                pstmt.setString(2, v.getItemGroup());                        //subscale/group
                 pstmt.setString(3, v.printOptionScoreKey());                //scoring
-                pstmt.setInt(4, v.getType().getItemType());                 //item type
-                pstmt.setInt(5, v.getType().getDataType());                 //data type
+
+                ItemType it = v.getType().getItemType();
+                int itemInt = it.toInt(it);
+                DataType dt = v.getType().getDataType();
+                int dataInt = dt.toInt(dt);
+
+                pstmt.setInt(4, itemInt);                 //item type
+                pstmt.setInt(5, dataInt);                 //data type
                 pstmt.setString(6, v.getLabel().toString());                //label
 
-                Object omit = v.getOmitCode();
+                Object omit = v.getSpecialDataCodes().getOmittedCode();
                 if(omit!=null && !omit.toString().trim().equals("")){
                     pstmt.setString(7, omit.toString().trim());                //omit code
                 }else{
                     pstmt.setNull(7, Types.VARCHAR);                           //omit code initially set to null
                 }
 
-                Object nr = v.getNotReachedCode();
+                Object nr = v.getSpecialDataCodes().getNotReachedCode();
                 if(nr!=null && !nr.toString().trim().equals("")){
                     pstmt.setString(8, nr.toString().trim());                //not reached code
                 }else{
@@ -148,7 +158,7 @@ public class DerbyVariableSubsetter extends SwingWorker<String,Void> implements 
 
             //create new data table
             String newTableString = "CREATE TABLE " + newDataTableName.getNameForDatabase() + " AS SELECT ";
-            Iterator<VariableInfo> iter = variables.iterator();
+            Iterator<VariableAttributes> iter = variables.iterator();
             while(iter.hasNext()){
                 newTableString += iter.next().getName().nameForDatabase();
                 if(iter.hasNext()){
@@ -210,6 +220,7 @@ public class DerbyVariableSubsetter extends SwingWorker<String,Void> implements 
         if(theException==null){
             this.firePropertyChange("status", "", "Ready");//will display status in statusBar
             if(display) this.firePropertyChange("import", "", newDataTableName);//will display data table in dialogs
+            scriptLogger.info(command.paste());
         }else{
             logger.fatal(theException.getMessage(), theException);
             this.firePropertyChange("error", "", "Error - Check log for details.");

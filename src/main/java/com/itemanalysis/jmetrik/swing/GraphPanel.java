@@ -128,6 +128,45 @@ public class GraphPanel extends JPanel{
         plot.setRenderer(renderer);
     }
 
+    public void setXYPlotRendererWithPoints(XYPlot plot){
+        XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer)plot.getRenderer();
+        int n = plot.getSeriesCount();
+        int half = (int)(n/2.0);
+
+        //assume first half are series for lines and second half are series for points
+
+        for(int i=0;i<n;i++){
+            if(i<half){
+                //Add lines
+                Stroke stroke = new BasicStroke(lineWidth,
+                            BasicStroke.CAP_SQUARE,
+                            BasicStroke.JOIN_MITER,
+                            10.0f,
+                            getLineStyle(i),
+                            0.0f);
+                renderer.setSeriesStroke(i, stroke);
+                renderer.setSeriesPaint(i, getPaintColor(i));
+                renderer.setSeriesShapesFilled(i, false);
+                renderer.setSeriesShapesVisible(i, showMarkers);
+                renderer.setLegendLine(new Line2D.Double(0, 5, 40, 5));
+                renderer.setDrawSeriesLineAsPath(true);
+
+            }else{
+                //Add points
+                renderer.setSeriesLinesVisible(i, false);
+                renderer.setSeriesShapesFilled(i, false);
+                renderer.setSeriesShapesVisible(i, true);
+                renderer.setSeriesPaint(i, getPaintColor(i-half));
+            }
+        }
+
+
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+        plot.setRenderer(renderer);
+    }
+
     public void setLineChart(String title, String subtitle, String xlabel, String ylabel){
         XYSeriesCollection dataset = new XYSeriesCollection();
 

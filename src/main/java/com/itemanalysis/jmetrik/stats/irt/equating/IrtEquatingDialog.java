@@ -27,7 +27,7 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.stats.irt.linking.IrtLinkingThetaDialog;
 import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -461,8 +461,8 @@ public class IrtEquatingDialog extends JDialog {
                     command.getPairedOptionList("xitem").addValue("db", dbName.toString());
                     command.getPairedOptionList("xitem").addValue("table", tableX.toString());
 
-                    ArrayList<VariableInfo> varInfo = itemDialogX.getSelectedVariables();
-                    for(VariableInfo v: varInfo){
+                    ArrayList<VariableAttributes> varInfo = itemDialogX.getSelectedVariables();
+                    for(VariableAttributes v: varInfo){
                         command.getFreeOptionList("xvar").addValue(v.getName().toString());
                     }
 
@@ -478,8 +478,8 @@ public class IrtEquatingDialog extends JDialog {
                     command.getPairedOptionList("yitem").addValue("db", dbName.toString());
                     command.getPairedOptionList("yitem").addValue("table", tableY.toString());
 
-                    ArrayList<VariableInfo> varInfo = itemDialogY.getSelectedVariables();
-                    for(VariableInfo v: varInfo){
+                    ArrayList<VariableAttributes> varInfo = itemDialogY.getSelectedVariables();
+                    for(VariableAttributes v: varInfo){
                         command.getFreeOptionList("yvar").addValue(v.getName().toString());
                     }
 

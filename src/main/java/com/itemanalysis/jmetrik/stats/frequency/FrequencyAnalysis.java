@@ -23,8 +23,8 @@ import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.texttable.TextTable;
 import com.itemanalysis.psychometrics.texttable.TextTableColumnFormat;
 import com.itemanalysis.psychometrics.texttable.TextTablePosition;
@@ -54,13 +54,14 @@ public class FrequencyAnalysis extends SwingWorker<String,String> {
 
     private StopWatch sw = null;
 
-    private LinkedHashMap<VariableInfo, Frequency> frequencyTables = null;
+    private LinkedHashMap<VariableAttributes, Frequency> frequencyTables = null;
 
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
     private DataTableName tableName = null;
 
@@ -78,7 +79,7 @@ public class FrequencyAnalysis extends SwingWorker<String,String> {
         this.command = command;
         this.textFile = textFile;
         variableChangeListeners = new ArrayList<VariableChangeListener>();
-        variables = new ArrayList<VariableInfo>();
+        variables = new ArrayList<VariableAttributes>();
     }
 
     private void initializeProgress()throws SQLException {
@@ -96,12 +97,12 @@ public class FrequencyAnalysis extends SwingWorker<String,String> {
         Statement stmt = null;
         ResultSet rs=null;
 
-        frequencyTables = new LinkedHashMap<VariableInfo, Frequency>();
+        frequencyTables = new LinkedHashMap<VariableAttributes, Frequency>();
         Frequency temp = null;
 
         Table sqlTable = new Table(tableName.getNameForDatabase());
         SelectQuery select = new SelectQuery();
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             select.addColumn(sqlTable, v.getName().nameForDatabase());
         }
         stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -110,13 +111,13 @@ public class FrequencyAnalysis extends SwingWorker<String,String> {
         String strValue = "";
         double dblValue = 0;
         while(rs.next()){
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 temp = frequencyTables.get(v);
                 if(temp==null){
                     temp = new Frequency();
                     frequencyTables.put(v, temp);
                 }
-                if(v.getType().getDataType()== VariableType.STRING){
+                if(v.getType().getDataType()== DataType.STRING){
                     strValue = rs.getString(v.getName().nameForDatabase());
                     if(!rs.wasNull() && !"".equals(strValue)){
                         temp.addValue(strValue);
@@ -133,13 +134,13 @@ public class FrequencyAnalysis extends SwingWorker<String,String> {
         rs.close();
         stmt.close();
 
-        for(VariableInfo v: frequencyTables.keySet()){
+        for(VariableAttributes v: frequencyTables.keySet()){
             publishTable(v);
         }
 
     }
 
-    public void publishTable(VariableInfo v){
+    public void publishTable(VariableAttributes v){
         TextTableColumnFormat[] cformats = new TextTableColumnFormat[6];
         cformats[0] = new TextTableColumnFormat();
         cformats[0].setStringFormat(11, TextTableColumnFormat.OutputAlignment.LEFT);
@@ -250,8 +251,6 @@ public class FrequencyAnalysis extends SwingWorker<String,String> {
         this.firePropertyChange("status", "", "Running Frequencies...");
         this.firePropertyChange("progress-on", null, null);
         try{
-            logger.info(command.paste());
-
             //get variable info from db
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             VariableTableName variableTable = new VariableTableName(tableName.toString());
@@ -278,6 +277,7 @@ public class FrequencyAnalysis extends SwingWorker<String,String> {
             if(theException==null){
                 textFile.addText(get());
                 textFile.setCaretPosition(0);
+                scriptLogger.info(command.paste());
             }else{
                 logger.fatal(theException.getMessage(), theException);
                 firePropertyChange("error", "", "Error - Check log for details.");

@@ -2,37 +2,51 @@ package com.itemanalysis.jmetrik.dao;
 
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.irt.estimation.ItemFitStatistic;
 import com.itemanalysis.psychometrics.irt.model.*;
+import com.itemanalysis.squiggle.base.SelectQuery;
+import com.itemanalysis.squiggle.base.Table;
+import com.sun.org.apache.xpath.internal.operations.Variable;
 import org.apache.log4j.Logger;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 public class DerbyIrtItemOutput {
 
 //    int maxCat = 0;
     int maxCol = 0;
-    private ArrayList<VariableInfo> variables = null;
+    private LinkedHashMap<String, VariableAttributes> variableMap = null;
     private Connection conn = null;
     private DatabaseAccessObject dao = null;
     private DataTableName itemTableName = null;
     private DataTableName dataTableName = null;
-    private VariableInfo name = null;
-    private VariableInfo model = null;
-    private VariableInfo ncat = null;
-    private VariableInfo group = null;
-    private VariableInfo aparam = null;
-    private VariableInfo bparam = null;
-    private VariableInfo cparam = null;
-    private VariableInfo uparam = null;
-    private VariableInfo ase = null;
-    private VariableInfo bse = null;
-    private VariableInfo cse = null;
-    private VariableInfo use = null;
+    private VariableAttributes name = null;
+    private VariableAttributes model = null;
+    private VariableAttributes ncat = null;
+    private VariableAttributes scale = null;
+    private VariableAttributes group = null;
+    private VariableAttributes aparam = null;
+    private VariableAttributes bparam = null;
+    private VariableAttributes cparam = null;
+    private VariableAttributes uparam = null;
+    private VariableAttributes ase = null;
+    private VariableAttributes bse = null;
+    private VariableAttributes cse = null;
+    private VariableAttributes use = null;
+    private VariableAttributes fitValue = null;
+    private VariableAttributes fitDf = null;
+    private VariableAttributes fitPvalue = null;
     private ItemResponseModel[] irm = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    private int maxBinaryParam = 0;
+    private boolean hasDiscrimination = false;
+    private boolean hasDifficulty = false;
 
     public DerbyIrtItemOutput(Connection conn, DatabaseAccessObject dao, DataTableName dataTableName, DataTableName itemTableName, ItemResponseModel[] irm){
         this.conn = conn;
@@ -40,7 +54,7 @@ public class DerbyIrtItemOutput {
         this.dataTableName = dataTableName;
         this.itemTableName = itemTableName;
         this.irm = irm;
-        variables = new ArrayList<VariableInfo>();
+        variableMap = new LinkedHashMap<String, VariableAttributes>();
         initialize();
     }
 
@@ -48,12 +62,19 @@ public class DerbyIrtItemOutput {
         for(int j=0;j<irm.length;j++){
             if(irm[j].getType()==IrmType.L4 || irm[j].getType()==IrmType.L3){
                 maxCol = Math.max(1, maxCol);
+                maxBinaryParam = Math.max(maxBinaryParam, irm[j].getNumberOfParameters());
+                hasDifficulty = true;
+                if(maxBinaryParam>1) hasDiscrimination = true;
             }else if(irm[j].getType()==IrmType.GPCM || irm[j].getType()==IrmType.PCM2){
                 maxCol = Math.max(maxCol, irm[j].getNcat()-1);
             }else if(irm[j].getType()==IrmType.GPCM2 || irm[j].getType()==IrmType.PCM){
+                hasDifficulty = true;
                 maxCol = Math.max(maxCol, irm[j].getNcat());//Will change to ncat-1 after ItemPCM and IrmGPCM2 have been refactored to include zero step parameter for first category
             }
 
+            if(irm[j].getType()==IrmType.GPCM || irm[j].getType()==IrmType.GPCM2){
+                hasDiscrimination = true;
+            }
 
 //            else if(irm[j].getType()==IrmType.GPCM){
 //                maxCol = Math.max(maxCol, ncM1);
@@ -69,154 +90,174 @@ public class DerbyIrtItemOutput {
 
     private void createVariables(){
         int column = 0;
-        name = new VariableInfo("name", "Item Name", VariableType.NOT_ITEM, VariableType.STRING, ++column, "");
-        model = new VariableInfo("model", "IRT Model", VariableType.NOT_ITEM, VariableType.STRING, ++column, "");
-        ncat = new VariableInfo("ncat", "Number of categories", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        group = new VariableInfo("group", "Item group", VariableType.NOT_ITEM, VariableType.STRING, ++column, "");
-        aparam = new VariableInfo("aparam", "Item discrimination", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        bparam = new VariableInfo("bparam", "Item difficulty", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        cparam = new VariableInfo("cparam", "Item guessing", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        uparam = new VariableInfo("uparam", "Item slipping", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        ase = new VariableInfo("a_se", "Discrimination standard error", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        bse = new VariableInfo("b_se", "Difficulty standard error", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        cse = new VariableInfo("c_se", "Guessing standard error", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        use = new VariableInfo("u_se", "Slipping standard error", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        variables.add(name);
-        variables.add(model);
-        variables.add(ncat);
-        variables.add(group);
-        variables.add(aparam);
-        variables.add(ase);
-        variables.add(bparam);
-        variables.add(bse);
-        variables.add(cparam);
-        variables.add(cse);
-        variables.add(uparam);
-        variables.add(use);
+        name = new VariableAttributes("name", "Item Name", ItemType.NOT_ITEM, DataType.STRING, ++column, "");
+        model = new VariableAttributes("model", "IRT Model", ItemType.NOT_ITEM, DataType.STRING, ++column, "");
+        ncat = new VariableAttributes("ncat", "Number of categories", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        scale = new VariableAttributes("scale", "Scaling constant", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        group = new VariableAttributes("group", "Item group", ItemType.NOT_ITEM, DataType.STRING, ++column, "");
+        variableMap.put(name.getName().toString(), name);
+        variableMap.put(model.getName().toString(), model);
+        variableMap.put(ncat.getName().toString(), ncat);
+        variableMap.put(scale.getName().toString(), scale);
+        variableMap.put(group.getName().toString(), group);
 
-        VariableInfo step = null;
-        VariableInfo stepSe = null;
+        if(hasDiscrimination){
+            aparam = new VariableAttributes("aparam", "Item discrimination", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+            ase = new VariableAttributes("a_se", "Discrimination standard error", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+            variableMap.put("aparam", aparam);
+            variableMap.put("a_se", ase);
+        }
+
+        if(hasDifficulty){
+            bparam = new VariableAttributes("bparam", "Item difficulty", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+            bse = new VariableAttributes("b_se", "Difficulty standard error", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+            variableMap.put("bparam", bparam);
+            variableMap.put("b_se", bse);
+        }
+
+        if(maxBinaryParam>=3){
+            cparam = new VariableAttributes("cparam", "Item guessing", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+            cse = new VariableAttributes("c_se", "Guessing standard error", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+            variableMap.put("cparam", cparam);
+            variableMap.put("c_se", cse);
+        }
+
+        if(maxBinaryParam==4){
+            uparam = new VariableAttributes("uparam", "Item slipping", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+            use = new VariableAttributes("u_se", "Slipping standard error", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+            variableMap.put("uparam", uparam);
+            variableMap.put("u_se", use);
+        }
+
+        VariableAttributes step = null;
+        VariableAttributes stepSe = null;
 
         int stepNum = 0;
+        String stepName = "";
+        String stepSeName = "";
         if(maxCol>1){
             for(int i=0; i<maxCol;i++){
                 stepNum = i+1;
-                step = new VariableInfo("step"+stepNum, "Step parameter for category " + stepNum, VariableType.NOT_ITEM, VariableType.DOUBLE, column++, "");
-                stepSe = new VariableInfo("step_se"+stepNum, "Standard error for category " + stepNum, VariableType.NOT_ITEM, VariableType.DOUBLE, column++, "");
-                variables.add(step);
-                variables.add(stepSe);
+                stepName = "step"+stepNum;
+                stepSeName = "step_se"+stepNum;
+                step = new VariableAttributes(stepName, "Step parameter for category " + stepNum, ItemType.NOT_ITEM, DataType.DOUBLE, column++, "");
+                stepSe = new VariableAttributes(stepSeName, "Standard error for category " + stepNum, ItemType.NOT_ITEM, DataType.DOUBLE, column++, "");
+                variableMap.put(stepName, step);
+                variableMap.put(stepSeName, stepSe);
             }
         }
+
+        fitValue = new VariableAttributes("sx2_fit", "SX2 Fit statistic", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        fitDf = new VariableAttributes("sx2_df", "SX2 Fit statistic degrees of freedom", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        fitPvalue = new VariableAttributes("sx2_pvalue", "SX2 Fit statistic p-value", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        variableMap.put("sx2_fit", fitValue);
+        variableMap.put("sx2_df", fitDf);
+        variableMap.put("sx2_pvalue", fitPvalue);
 
     }
 
     public void outputToDb()throws SQLException {
-        PreparedStatement pstmt = null;
+        Statement stmt = null;
+        ResultSet rs = null;
 
         try{
-
             createVariables();
 
-            int ncol = variables.size();
-
             VariableTableName variableTableName = new VariableTableName(itemTableName.toString());
-            dao.createTables(conn, itemTableName, variableTableName, variables);
+            dao.createTables(conn, itemTableName, variableTableName, variableMap);
 
-            String updateString = "INSERT INTO " + itemTableName.getNameForDatabase() + " VALUES(";
-			for(int i=0;i<ncol;i++){
-				updateString+= "?";
-				if(i<ncol-1){
-					updateString+=",";
-				}else{
-					updateString+=")";
-				}
-			}
+            //Select items and new score variables
+            Table sqlTable = new Table(itemTableName.getNameForDatabase());
+            SelectQuery select = new SelectQuery();
+            for(String s : variableMap.keySet()){
+                select.addColumn(sqlTable, variableMap.get(s).getName().nameForDatabase());
+            }
 
             conn.setAutoCommit(false);//begin transaction
 
-            pstmt = conn.prepareStatement(updateString);
-            int column = 12;
-            int nrow = 0;
+            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            rs=stmt.executeQuery(select.toString());
 
+            int nrow = 0;
+            String stepName = "";
+            String stepSeName = "";
+            ItemFitStatistic fitStatistic = null;
 
             for(int j=0;j<irm.length;j++){
-                //begin adding information to prepared statement.
-                //Item name and model type set for all items.
-                pstmt.setString(1, irm[j].getName().toString());
+                rs.moveToInsertRow();
+
+                rs.updateString(name.getName().nameForDatabase(), irm[j].getName().toString());
 
                 if(irm[j] instanceof Irm4PL){
-                    pstmt.setString(2, "L4");
+                    rs.updateString(model.getName().nameForDatabase(), "L4");
                 }else if(irm[j] instanceof IrmGPCM){
-                    pstmt.setString(2, "PC1");
+                    rs.updateString(model.getName().nameForDatabase(), "PC1");
                 }else if(irm[j] instanceof IrmPCM2){
-                    pstmt.setString(2, "PC4");
+                    rs.updateString(model.getName().nameForDatabase(), "PC4");
                 }else{
-                    pstmt.setString(2, "L3");
+                    rs.updateString(model.getName().nameForDatabase(), "L3");
                 }
 
-                pstmt.setDouble(3, irm[j].getNcat());
-                pstmt.setString(4, irm[j].getGroupId());
+                rs.updateDouble(ncat.getName().nameForDatabase(), irm[j].getNcat());
+                rs.updateDouble(scale.getName().nameForDatabase(), irm[j].getScalingConstant());
+                rs.updateString(group.getName().nameForDatabase(), irm[j].getGroupId());
 
-                //Only set discrimination parameter for model that include it.
-                if(irm[j].getType()!=IrmType.PCM && irm[j].getType()!=IrmType.PCM2){
-                    safeSetValue(pstmt, 5, irm[j].getDiscrimination());
-                    safeSetValue(pstmt, 6, irm[j].getDiscriminationStdError());
-                }else{
-                    pstmt.setNull(5, Types.DOUBLE);
-                    pstmt.setNull(6, Types.DOUBLE);
-                }
+                //Only set difficulty and discrimination parameters for a model that include them.
 
-                //Only set difficulty parameter for models that include it.
-                if(irm[j].getType()!=IrmType.GPCM && irm[j].getType()!=IrmType.PCM2){
-                    safeSetValue(pstmt, 7, irm[j].getDifficulty());
-                    safeSetValue(pstmt, 8, irm[j].getDifficultyStdError());
-                }else{
-                    pstmt.setNull(7, Types.DOUBLE);
-                    pstmt.setNull(8, Types.DOUBLE);
-                }
+                if(irm[j].getType()== IrmType.L3 || irm[j].getType()== IrmType.L4){
+                    if(!Double.isNaN(irm[j].getDifficulty())) rs.updateDouble(bparam.getName().nameForDatabase(), irm[j].getDifficulty());
+                    if(!Double.isNaN(irm[j].getDifficultyStdError())) rs.updateDouble(bse.getName().nameForDatabase(), irm[j].getDifficultyStdError());
 
-                //Only set guessing and slipping parameter for models that include it.
-                if(irm[j].getType()==IrmType.L4 || irm[j].getType()==IrmType.L3){
-                    safeSetValue(pstmt, 9, irm[j].getGuessing());
-                    safeSetValue(pstmt, 10, irm[j].getGuessingStdError());
-                    safeSetValue(pstmt, 11, irm[j].getSlipping());
-                    safeSetValue(pstmt, 12, irm[j].getSlippingStdError());
-                }else{
-                    pstmt.setNull(9, Types.DOUBLE);
-                    pstmt.setNull(10, Types.DOUBLE);
-                    pstmt.setNull(11, Types.DOUBLE);
-                    pstmt.setNull(12, Types.DOUBLE);
+                    if(maxBinaryParam>=2){
+                        irm[j].getDiscrimination();
+                        aparam.getName();
+                        if(!Double.isNaN(irm[j].getDiscrimination())) rs.updateDouble(aparam.getName().nameForDatabase(), irm[j].getDiscrimination());
+                        if(!Double.isNaN(irm[j].getDiscriminationStdError())) rs.updateDouble(ase.getName().nameForDatabase(), irm[j].getDiscriminationStdError());
+                    }
+
+                    if(maxBinaryParam>=3){
+                        if(!Double.isNaN(irm[j].getGuessing())) rs.updateDouble(cparam.getName().nameForDatabase(), irm[j].getGuessing());
+                        if(!Double.isNaN(irm[j].getGuessingStdError())) rs.updateDouble(cse.getName().nameForDatabase(), irm[j].getGuessingStdError());
+                    }
+
+                    if(maxBinaryParam>=4){
+                        if(!Double.isNaN(irm[j].getSlipping())) rs.updateDouble(uparam.getName().nameForDatabase(), irm[j].getSlipping());
+                        if(!Double.isNaN(irm[j].getSlippingStdError())) rs.updateDouble(use.getName().nameForDatabase(), irm[j].getSlippingStdError());
+                    }
+                }else if(irm[j].getType()==IrmType.GPCM){
+                    if(!Double.isNaN(irm[j].getDiscrimination())) rs.updateDouble(aparam.getName().nameForDatabase(), irm[j].getDiscrimination());
+                    if(!Double.isNaN(irm[j].getDiscriminationStdError())) rs.updateDouble(ase.getName().nameForDatabase(), irm[j].getDiscriminationStdError());
                 }
-                column=12;
 
                 //Add step parameters for polytomous items
+                VariableAttributes tempStep = null;
                 if(maxCol>1){
                     if(irm[j].getType()==IrmType.GPCM || irm[j].getType()==IrmType.PCM2){
                         double[] step = irm[j].getStepParameters();
                         double[] stepSe = irm[j].getStepStdError();
                         for(int k=1;k<step.length;k++){//First step is always zero. Skip it here.
-                            safeSetValue(pstmt, ++column, step[k]);
-                            safeSetValue(pstmt, ++column, stepSe[k]);
-                        }
-                    }else if(irm[j].getType()==IrmType.GPCM2 || irm[j].getType()==IrmType.PCM){
-                        double[] step = irm[j].getStepParameters();
-                        double[] stepSe = irm[j].getStepStdError();
-                        for(int k=0;k<step.length;k++){//Will change with refactoring
-                            safeSetValue(pstmt, ++column, step[k]);
-                            safeSetValue(pstmt, ++column, stepSe[k]);
-                        }
-                    }else{
-                        for(int k=0;k<maxCol;k++){
-                            pstmt.setNull(++column, Types.DOUBLE);
-                            pstmt.setNull(++column, Types.DOUBLE);
+                            stepName = "step"+k;
+                            stepSeName = "step_se"+k;
+
+                            tempStep = variableMap.get(stepName);
+                            if(!Double.isNaN(step[k])) rs.updateDouble(tempStep.getName().nameForDatabase(), step[k]);
+
+                            tempStep = variableMap.get(stepSeName);
+                            if(!Double.isNaN(stepSe[k])) rs.updateDouble(tempStep.getName().nameForDatabase(), stepSe[k]);
                         }
                     }
 
                 }
-                pstmt.executeUpdate();
+
+                //Add item fit statistics
+                fitStatistic = irm[j].getItemFitStatistic();
+                if(!Double.isNaN(fitStatistic.getValue())) rs.updateDouble(fitValue.getName().nameForDatabase(), fitStatistic.getValue());
+                if(!Double.isNaN(fitStatistic.getDegreesOfFreedom())) rs.updateDouble(fitDf.getName().nameForDatabase(), fitStatistic.getDegreesOfFreedom());
+                if(!Double.isNaN(fitStatistic.getPValue())) rs.updateDouble(fitPvalue.getName().nameForDatabase(), fitStatistic.getPValue());
+
                 nrow++;
+                rs.insertRow();
             }
-            pstmt.close();
 
             //add row count to row count table
             dao.setTableInformation(conn, itemTableName, nrow, "Item parameter output table for analysis of " +
@@ -229,7 +270,8 @@ public class DerbyIrtItemOutput {
             throw new SQLException(ex.getMessage());
 		}finally{
             conn.setAutoCommit(true);
-            if(pstmt!=null) pstmt.close();
+            if(stmt!=null) stmt.close();
+            if(rs!=null) rs.close();
         }
 
     }

@@ -19,8 +19,8 @@ package com.itemanalysis.jmetrik.utils;
 
 import au.com.bytecode.opencsv.ResultSetHelper;
 import au.com.bytecode.opencsv.ResultSetHelperService;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -78,7 +78,7 @@ public class DerbyCSVWriter implements Closeable {
 
     private ResultSetHelper resultService = new ResultSetHelperService();
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
     /**
      * Constructs CSVWriter using a comma for the separator.
@@ -86,7 +86,7 @@ public class DerbyCSVWriter implements Closeable {
      * @param writer
      *            the writer to an underlying CSV source.
      */
-    public DerbyCSVWriter(Writer writer, ArrayList<VariableInfo> variables) {
+    public DerbyCSVWriter(Writer writer, ArrayList<VariableAttributes> variables) {
         this(writer, DEFAULT_SEPARATOR, variables);
     }
 
@@ -98,7 +98,7 @@ public class DerbyCSVWriter implements Closeable {
      * @param separator
      *            the delimiter to use for separating entries.
      */
-    public DerbyCSVWriter(Writer writer, char separator, ArrayList<VariableInfo> variables) {
+    public DerbyCSVWriter(Writer writer, char separator, ArrayList<VariableAttributes> variables) {
         this(writer, separator, DEFAULT_QUOTE_CHARACTER, variables);
     }
 
@@ -112,7 +112,7 @@ public class DerbyCSVWriter implements Closeable {
      * @param quotechar
      *            the character to use for quoted elements
      */
-    public DerbyCSVWriter(Writer writer, char separator, char quotechar, ArrayList<VariableInfo> variables) {
+    public DerbyCSVWriter(Writer writer, char separator, char quotechar, ArrayList<VariableAttributes> variables) {
     	this(writer, separator, quotechar, DEFAULT_ESCAPE_CHARACTER, variables);
     }
 
@@ -128,7 +128,7 @@ public class DerbyCSVWriter implements Closeable {
      * @param escapechar
      *            the character to use for escaping quotechars or escapechars
      */
-    public DerbyCSVWriter(Writer writer, char separator, char quotechar, char escapechar, ArrayList<VariableInfo> variables) {
+    public DerbyCSVWriter(Writer writer, char separator, char quotechar, char escapechar, ArrayList<VariableAttributes> variables) {
         this(writer, separator, quotechar, escapechar, DEFAULT_LINE_END, variables);
     }
 
@@ -145,7 +145,7 @@ public class DerbyCSVWriter implements Closeable {
      * @param lineEnd
      * 			  the line feed terminator to use
      */
-    public DerbyCSVWriter(Writer writer, char separator, char quotechar, String lineEnd, ArrayList<VariableInfo> variables) {
+    public DerbyCSVWriter(Writer writer, char separator, char quotechar, String lineEnd, ArrayList<VariableAttributes> variables) {
         this(writer, separator, quotechar, DEFAULT_ESCAPE_CHARACTER, lineEnd, variables);
     }
 
@@ -165,7 +165,7 @@ public class DerbyCSVWriter implements Closeable {
      * @param lineEnd
      * 			  the line feed terminator to use
      */
-    public DerbyCSVWriter(Writer writer, char separator, char quotechar, char escapechar, String lineEnd, ArrayList<VariableInfo> variables) {
+    public DerbyCSVWriter(Writer writer, char separator, char quotechar, char escapechar, String lineEnd, ArrayList<VariableAttributes> variables) {
         this.rawWriter = writer;
         this.pw = new PrintWriter(writer);
         this.separator = separator;
@@ -238,7 +238,7 @@ public class DerbyCSVWriter implements Closeable {
 
         StringBuilder sb = new StringBuilder(INITIAL_STRING_SIZE);
         for (int i = 0; i < nextLine.length; i++) {
-            stringValue = variables.get(i).getType().getDataType()==VariableType.STRING;
+            stringValue = variables.get(i).getType().getDataType()== DataType.STRING;
 
 
 

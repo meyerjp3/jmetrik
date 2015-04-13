@@ -17,26 +17,24 @@
 
 package com.itemanalysis.jmetrik.model;
 
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import javax.swing.*;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TreeSet;
 
 public class VariableListModel extends AbstractListModel {
 
-    private TreeSet<VariableInfo> variableSet = null;
+    private TreeSet<VariableAttributes> variableSet = new TreeSet<VariableAttributes>(LIST_COMPARATOR);
 
     private VariableListFilter filter = null;
 
     private static Comparator LIST_COMPARATOR = new Comparator(){
         public int compare(Object o1, Object o2){
             int result;
-            VariableInfo a = (VariableInfo)o1;
-            VariableInfo b = (VariableInfo)o2;
+            VariableAttributes a = (VariableAttributes)o1;
+            VariableAttributes b = (VariableAttributes)o2;
 
             if(a.positionInDb()<b.positionInDb()){
                 result = -1;
@@ -52,18 +50,17 @@ public class VariableListModel extends AbstractListModel {
 
     public VariableListModel(VariableListFilter filter){
         this.filter = filter;
-        variableSet = new TreeSet<VariableInfo>(LIST_COMPARATOR);
     }
 
     public int getSize(){
         return  variableSet.size();
     }
     
-    public VariableInfo getElementAt(int index){
-        return (VariableInfo)variableSet.toArray()[index];
+    public VariableAttributes getElementAt(int index){
+        return (VariableAttributes)variableSet.toArray()[index];
     }
 
-    public void addElement(VariableInfo element){
+    public void addElement(VariableAttributes element){
         if(filter.passThroughFilter(element)){
             if(variableSet.add(element)){
                 fireContentsChanged(this,0,getSize()-1);
@@ -71,29 +68,29 @@ public class VariableListModel extends AbstractListModel {
         }
     }
 
-    public void addAll(VariableInfo[] elements){
-        for(VariableInfo v: elements){
+    public void addAll(VariableAttributes[] elements){
+        for(VariableAttributes v: elements){
             addElement(v);
         }
     }
 
-    public void removeAll(VariableInfo[] elements){
-        for(VariableInfo v: elements){
+    public void removeAll(VariableAttributes[] elements){
+        for(VariableAttributes v: elements){
             removeElement(v);
         }
     }
 
-    public VariableInfo[] getAll(){
+    public VariableAttributes[] getAll(){
         Object[] o = variableSet.toArray();
         int size = o.length;
-        VariableInfo[] v=new VariableInfo[size];
+        VariableAttributes[] v=new VariableAttributes[size];
         for(int i=0;i<size;i++){
-            v[i]=(VariableInfo)o[i];
+            v[i]=(VariableAttributes)o[i];
         }
         return v;
     }
 
-    public void replaceElement(VariableInfo element){
+    public void replaceElement(VariableAttributes element){
         if(filter.passThroughFilter(element)){
             if(variableSet.contains(element)){
                 variableSet.remove(element);
@@ -107,19 +104,19 @@ public class VariableListModel extends AbstractListModel {
         fireContentsChanged(this,0,getSize());
     }
 
-    public boolean contains(VariableInfo varInfo){
-        return variableSet.contains(varInfo);
+    public boolean contains(VariableAttributes variableAttributes){
+        return variableSet.contains(variableAttributes);
     }
 
-    public Iterator<VariableInfo> iterator(){
+    public Iterator<VariableAttributes> iterator(){
         return variableSet.iterator();
     }
 
-    public VariableInfo lastElement(){
+    public VariableAttributes lastElement(){
         return variableSet.last();
     }
 
-    public boolean removeElement(VariableInfo element){
+    public boolean removeElement(VariableAttributes element){
         boolean removed = variableSet.remove(element);
         if(removed){
             fireContentsChanged(this, 0, getSize());

@@ -25,8 +25,9 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
 import com.itemanalysis.psychometrics.cmh.CochranMantelHaenszel;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -51,16 +52,16 @@ public class CmhOutputTable {
 
     public void saveOutput(TreeMap<Integer, CochranMantelHaenszel> cmhTreeMap)throws SQLException {
 
-        VariableInfo var1 = new VariableInfo("name", "Item Name", VariableType.NOT_ITEM, VariableType.STRING, 1, "");
-        VariableInfo var2 = new VariableInfo("chisq", "Mantel-Haenszel Chi-square", VariableType.NOT_ITEM, VariableType.DOUBLE, 2, "");
-        VariableInfo var3 = new VariableInfo("pvalue", "Chi-square p-value", VariableType.NOT_ITEM, VariableType.DOUBLE, 3, "");
-        VariableInfo var4 = new VariableInfo("n", "Valid Sample Size", VariableType.NOT_ITEM, VariableType.DOUBLE, 4, "");
-        VariableInfo var5 = new VariableInfo("effectsize", "Effect Size", VariableType.NOT_ITEM, VariableType.DOUBLE, 5, "");
-        VariableInfo var6 = new VariableInfo("lower", "95% Confidence Interval Lower bound", VariableType.NOT_ITEM, VariableType.DOUBLE, 6, "");
-        VariableInfo var7 = new VariableInfo("upper", "95% Confidence Interval Upper bound", VariableType.NOT_ITEM, VariableType.DOUBLE, 7, "");
-        VariableInfo var8 = new VariableInfo("etsclass", "ETS DIF CLassification", VariableType.NOT_ITEM, VariableType.STRING, 8, "");
+        VariableAttributes var1 = new VariableAttributes("name", "Item Name", ItemType.NOT_ITEM, DataType.STRING, 1, "");
+        VariableAttributes var2 = new VariableAttributes("chisq", "Mantel-Haenszel Chi-square", ItemType.NOT_ITEM, DataType.DOUBLE, 2, "");
+        VariableAttributes var3 = new VariableAttributes("pvalue", "Chi-square p-value", ItemType.NOT_ITEM, DataType.DOUBLE, 3, "");
+        VariableAttributes var4 = new VariableAttributes("n", "Valid Sample Size", ItemType.NOT_ITEM, DataType.DOUBLE, 4, "");
+        VariableAttributes var5 = new VariableAttributes("effectsize", "Effect Size", ItemType.NOT_ITEM, DataType.DOUBLE, 5, "");
+        VariableAttributes var6 = new VariableAttributes("lower", "95% Confidence Interval Lower bound", ItemType.NOT_ITEM, DataType.DOUBLE, 6, "");
+        VariableAttributes var7 = new VariableAttributes("upper", "95% Confidence Interval Upper bound", ItemType.NOT_ITEM, DataType.DOUBLE, 7, "");
+        VariableAttributes var8 = new VariableAttributes("etsclass", "ETS DIF CLassification", ItemType.NOT_ITEM, DataType.STRING, 8, "");
 
-        ArrayList<VariableInfo> variables = new ArrayList<VariableInfo>();
+        ArrayList<VariableAttributes> variables = new ArrayList<VariableAttributes>();
         variables.add(var1);
         variables.add(var2);
         variables.add(var3);
@@ -158,7 +159,7 @@ public class CmhOutputTable {
         dao.setTableInformation(conn, dataTableName, n, desc);
     }
 
-    private void createTables(ArrayList<VariableInfo> variables)throws SQLException{
+    private void createTables(ArrayList<VariableAttributes> variables)throws SQLException{
 
         //get type of database according to properties
         JmetrikPreferencesManager preferencesManager = new JmetrikPreferencesManager();

@@ -30,8 +30,8 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.swing.ChartTitlesDialog;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 public class LineChartDialog extends JDialog{
@@ -46,7 +46,7 @@ public class LineChartDialog extends JDialog{
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
 
-    public LineChartDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableInfo> variables){
+    public LineChartDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableAttributes> variables){
         super(parent,"Line Chart",true);
         this.dbName=dbName;
         this.tableName=tableName;
@@ -61,18 +61,21 @@ public class LineChartDialog extends JDialog{
 
         vsp = new SelectionXYByGroupPanel();
         //filter out strings
-        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
-        VariableType filterType3 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        vsp.addSelectedXFilterType(filterType1);
-        vsp.addSelectedXFilterType(filterType2);
-        vsp.addSelectedXFilterType(filterType3);
-        vsp.addSelectedXFilterType(filterType4);
-        vsp.addSelectedYFilterType(filterType1);
-        vsp.addSelectedYFilterType(filterType2);
-        vsp.addSelectedYFilterType(filterType3);
-        vsp.addSelectedYFilterType(filterType4);
+//        VariableType filterType1 = new VariableType(ItemType.BINARY_ITEM, DataType.STRING);
+//        VariableType filterType2 = new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.STRING);
+//        VariableType filterType3 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.STRING);
+//        VariableType filterType4 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        vsp.addSelectedXFilterType(filterType1);
+//        vsp.addSelectedXFilterType(filterType2);
+//        vsp.addSelectedXFilterType(filterType3);
+//        vsp.addSelectedXFilterType(filterType4);
+//        vsp.addSelectedYFilterType(filterType1);
+//        vsp.addSelectedYFilterType(filterType2);
+//        vsp.addSelectedYFilterType(filterType3);
+//        vsp.addSelectedYFilterType(filterType4);
+
+        vsp.addSelectedXFilterDataType(DataType.STRING);
+        vsp.addSelectedYFilterDataType(DataType.STRING);
         vsp.setVariables(variables);
 
         JButton b1 = vsp.getButton1();
@@ -162,8 +165,8 @@ public class LineChartDialog extends JDialog{
             try{
                 command = new LineChartCommand();
                 if(vsp.selectionMade()){
-                    VariableInfo xVar = vsp.getSelectedXVariable();
-                    VariableInfo yVar = vsp.getSelectedYVariable();
+                    VariableAttributes xVar = vsp.getSelectedXVariable();
+                    VariableAttributes yVar = vsp.getSelectedYVariable();
                     command.getFreeOption("xvar").add(xVar.getName().toString());
                     command.getFreeOption("yvar").add(yVar.getName().toString());
                     command.getPairedOptionList("data").addValue("db", dbName.toString());
@@ -174,8 +177,11 @@ public class LineChartDialog extends JDialog{
                                 vsp.getGroupByVariable().getName().toString());
                     }
 
-                    command.getFreeOption("title").add(chartTitle);
+                    if(!"".equals(chartTitle)) command.getFreeOption("title").add(chartTitle);
+                    chartTitle = "";
+
                     if(!"".equals(chartSubtitle)) command.getFreeOption("subtitle").add(chartSubtitle);
+                    chartSubtitle = "";
 
                     canRun=true;
                     setVisible(false);

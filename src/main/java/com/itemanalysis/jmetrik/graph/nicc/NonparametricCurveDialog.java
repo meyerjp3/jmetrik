@@ -21,8 +21,8 @@ import com.itemanalysis.jmetrik.selector.MultipleSelectionXYByGroupPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -66,7 +66,7 @@ public class NonparametricCurveDialog extends JDialog {
     private String outputPath = "";
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
-    public NonparametricCurveDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables) {
+    public NonparametricCurveDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables) {
         super(parent, "Nonparametric Characteristic Curves", true);
         this.dbName = dbName;
         this.tableName = tableName;
@@ -74,16 +74,19 @@ public class NonparametricCurveDialog extends JDialog {
         vsp = new MultipleSelectionXYByGroupPanel();
 
         //filter out continuous items and non items
-        VariableType filterType1 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.NOT_ITEM, VariableType.DOUBLE);
-        VariableType filterType3 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.DOUBLE);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType2);
-        vsp.addSelectedFilterType(filterType3);
-        vsp.addSelectedFilterType(filterType4);
-        vsp.addGroupByFilterType(filterType3);
-        vsp.addGroupByFilterType(filterType4);
+//        VariableType filterType1 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        VariableType filterType2 = new VariableType(ItemType.NOT_ITEM, DataType.DOUBLE);
+//        VariableType filterType3 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.STRING);
+//        VariableType filterType4 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.DOUBLE);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType2);
+//        vsp.addSelectedFilterType(filterType3);
+//        vsp.addSelectedFilterType(filterType4);
+//        vsp.addGroupByFilterType(filterType3);
+//        vsp.addGroupByFilterType(filterType4);
+
+        vsp.addSelectedFilterItemType(ItemType.NOT_ITEM);
+        vsp.addSelectedFilterItemType(ItemType.CONTINUOUS_ITEM);
         vsp.setVariables(variables);
 
         JButton b1 = vsp.getButton1();
@@ -608,13 +611,13 @@ public class NonparametricCurveDialog extends JDialog {
                 command = new NonparametricCurveCommand();
 
                 //get variables
-                VariableInfo[] variables = vsp.getSelectedVariables();
-                for(VariableInfo v : variables){
+                VariableAttributes[] variables = vsp.getSelectedVariables();
+                for(VariableAttributes v : variables){
                     command.getFreeOptionList("variables").addValue(v.getName().toString());
                 }
 
                 //get predictor variable
-                VariableInfo regressorVariable = vsp.getIndependentVariable();
+                VariableAttributes regressorVariable = vsp.getIndependentVariable();
                 command.getFreeOption("xvar").add(regressorVariable.getName().toString());
 
                 //get database and table
@@ -656,7 +659,7 @@ public class NonparametricCurveDialog extends JDialog {
                     }else{
                         command.getPairedOptionList("codes").addValue("focal", focalTextField.getText().trim());
                         command.getPairedOptionList("codes").addValue("reference", referenceTextField.getText().trim());
-                        VariableInfo groupVar = vsp.getGroupByVariable();
+                        VariableAttributes groupVar = vsp.getGroupByVariable();
                         command.getFreeOption("groupvar").add(groupVar.getName().toString());
 
                         canRun = true;

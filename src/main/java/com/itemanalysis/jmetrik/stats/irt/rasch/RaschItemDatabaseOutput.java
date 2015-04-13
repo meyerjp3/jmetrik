@@ -20,9 +20,9 @@ package com.itemanalysis.jmetrik.stats.irt.rasch;
 import com.itemanalysis.jmetrik.dao.DatabaseAccessObject;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.irt.estimation.JointMaximumLikelihoodEstimation;
 import com.itemanalysis.psychometrics.irt.estimation.RaschFitStatistics;
 import com.itemanalysis.psychometrics.irt.model.ItemResponseModel;
@@ -35,22 +35,22 @@ import java.util.ArrayList;
 public class RaschItemDatabaseOutput {
 
     int maxCat = 0;
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private Connection conn = null;
     private DatabaseAccessObject dao = null;
     private DataTableName newTableName = null;
     private DataTableName currentTableName = null;
-    private VariableInfo name = null;
-    private VariableInfo model = null;
-    private VariableInfo ncat = null;
-    private VariableInfo group = null;
-    private VariableInfo bparam = null;
-    private VariableInfo se = null;
-    private VariableInfo wms = null;
-    private VariableInfo stdwms = null;
-    private VariableInfo ums = null;
-    private VariableInfo stdums = null;
-    private VariableInfo extreme = null;
+    private VariableAttributes name = null;
+    private VariableAttributes model = null;
+    private VariableAttributes ncat = null;
+    private VariableAttributes group = null;
+    private VariableAttributes bparam = null;
+    private VariableAttributes se = null;
+    private VariableAttributes wms = null;
+    private VariableAttributes stdwms = null;
+    private VariableAttributes ums = null;
+    private VariableAttributes stdums = null;
+    private VariableAttributes extreme = null;
     private JointMaximumLikelihoodEstimation jmle = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
@@ -63,22 +63,22 @@ public class RaschItemDatabaseOutput {
         this.newTableName = newTableName;
         this.jmle = jmle;
         maxCat = jmle.getMaxCategory();
-        variables = new ArrayList<VariableInfo>();
+        variables = new ArrayList<VariableAttributes>();
     }
 
     private void createVariables(){
         int column = 0;
-        name = new VariableInfo("name", "Item Name", VariableType.NOT_ITEM, VariableType.STRING, ++column, "");
-        model = new VariableInfo("model", "IRT Model", VariableType.NOT_ITEM, VariableType.STRING, ++column, "");
-        ncat = new VariableInfo("ncat", "Number of categories", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        group = new VariableInfo("group", "Item group", VariableType.NOT_ITEM, VariableType.STRING, ++column, "");
-        extreme = new VariableInfo("extreme", "Extreme value flag", VariableType.NOT_ITEM, VariableType.STRING, ++column, "");
-        bparam = new VariableInfo("bparam", "Item difficulty", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        se = new VariableInfo("se", "Standard error", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        wms = new VariableInfo("wms", "Weighted mean squre - INFIT", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        stdwms = new VariableInfo("stdwms", "Standardized weighted mean square - INFIT", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        ums = new VariableInfo("ums", "Unweighted mean square - OUTFIT", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
-        stdums = new VariableInfo("stdums", "Standardized unweighted mean square - OUTFIT", VariableType.NOT_ITEM, VariableType.DOUBLE, ++column, "");
+        name = new VariableAttributes("name", "Item Name", ItemType.NOT_ITEM, DataType.STRING, ++column, "");
+        model = new VariableAttributes("model", "IRT Model", ItemType.NOT_ITEM, DataType.STRING, ++column, "");
+        ncat = new VariableAttributes("ncat", "Number of categories", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        group = new VariableAttributes("group", "Item group", ItemType.NOT_ITEM, DataType.STRING, ++column, "");
+        extreme = new VariableAttributes("extreme", "Extreme value flag", ItemType.NOT_ITEM, DataType.STRING, ++column, "");
+        bparam = new VariableAttributes("bparam", "Item difficulty", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        se = new VariableAttributes("se", "Standard error", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        wms = new VariableAttributes("wms", "Weighted mean squre - INFIT", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        stdwms = new VariableAttributes("stdwms", "Standardized weighted mean square - INFIT", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        ums = new VariableAttributes("ums", "Unweighted mean square - OUTFIT", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
+        stdums = new VariableAttributes("stdums", "Standardized unweighted mean square - OUTFIT", ItemType.NOT_ITEM, DataType.DOUBLE, ++column, "");
         variables.add(name);
         variables.add(model);
         variables.add(ncat);
@@ -91,17 +91,17 @@ public class RaschItemDatabaseOutput {
         variables.add(ums);
         variables.add(stdums);
 
-        VariableInfo step = null;
-        VariableInfo cSe = null;
-        VariableInfo cWms = null;
-        VariableInfo cUms = null;
+        VariableAttributes step = null;
+        VariableAttributes cSe = null;
+        VariableAttributes cWms = null;
+        VariableAttributes cUms = null;
 
         if(maxCat>2){
             for(int i=1; i<maxCat;i++){
-                step = new VariableInfo("step"+i, "Threshold for category " + i, VariableType.NOT_ITEM, VariableType.DOUBLE, column++, "");
-                cSe = new VariableInfo("cse"+i, "Standard error for category " + i, VariableType.NOT_ITEM, VariableType.DOUBLE, column++, "");
-                cWms = new VariableInfo("cwms"+i, "Weighted mean square for category " + i, VariableType.NOT_ITEM, VariableType.DOUBLE, column++, "");
-                cUms = new VariableInfo("cums"+i, "Unweighted mean square for category " + i, VariableType.NOT_ITEM, VariableType.DOUBLE, column++, "");
+                step = new VariableAttributes("step"+i, "Threshold for category " + i, ItemType.NOT_ITEM, DataType.DOUBLE, column++, "");
+                cSe = new VariableAttributes("cse"+i, "Standard error for category " + i, ItemType.NOT_ITEM, DataType.DOUBLE, column++, "");
+                cWms = new VariableAttributes("cwms"+i, "Weighted mean square for category " + i, ItemType.NOT_ITEM, DataType.DOUBLE, column++, "");
+                cUms = new VariableAttributes("cums"+i, "Unweighted mean square for category " + i, ItemType.NOT_ITEM, DataType.DOUBLE, column++, "");
                 variables.add(step);
                 variables.add(cSe);
                 variables.add(cWms);
@@ -143,6 +143,7 @@ public class RaschItemDatabaseOutput {
             RaschFitStatistics fitStats = null;
             int extremeItem = 0;
             int k = 2;
+            double tempValue = 0;
 
             for(int j=0;j<jmle.getNumberOfItems();j++){
                 irm = jmle.getItemResponseModelAt(j);
@@ -171,17 +172,49 @@ public class RaschItemDatabaseOutput {
                     pstmt.setString(4, irm.getGroupId());
                     pstmt.setString(5, strExtreme);
                     pstmt.setDouble(6, irm.getDifficulty());
-                    pstmt.setDouble(7, irm.getDifficultyStdError());
+
+                    tempValue = irm.getDifficultyStdError();
+                    if(Double.isNaN(tempValue) || Double.isInfinite(tempValue)){
+                        pstmt.setNull(7, Types.DOUBLE);
+                    }else{
+                        pstmt.setDouble(7, tempValue);
+                    }
+
+
                     if(extremeItem!=0){
                         pstmt.setNull(8, Types.DOUBLE);
                         pstmt.setNull(9, Types.DOUBLE);
                         pstmt.setNull(10, Types.DOUBLE);
                         pstmt.setNull(11, Types.DOUBLE);
                     }else{
-                        pstmt.setDouble(8, fitStats.getWeightedMeanSquare());
-                        pstmt.setDouble(9, fitStats.getStandardizedWeightedMeanSquare());
-                        pstmt.setDouble(10, fitStats.getUnweightedMeanSquare());
-                        pstmt.setDouble(11, fitStats.getStandardizedUnweightedMeanSquare());
+                        tempValue = fitStats.getWeightedMeanSquare();
+                        if(Double.isNaN(tempValue) || Double.isInfinite(tempValue)){
+                            pstmt.setNull(8, Types.DOUBLE);
+                        }else{
+                            pstmt.setDouble(8, tempValue);
+                        }
+
+                        tempValue = fitStats.getStandardizedWeightedMeanSquare();
+                        if(Double.isNaN(tempValue) || Double.isInfinite(tempValue)){
+                            pstmt.setNull(9, Types.DOUBLE);
+                        }else{
+                            pstmt.setDouble(9, tempValue);
+                        }
+
+                        tempValue = fitStats.getUnweightedMeanSquare();
+                        if(Double.isNaN(tempValue) || Double.isInfinite(tempValue)){
+                            pstmt.setNull(10, Types.DOUBLE);
+                        }else{
+                            pstmt.setDouble(10, tempValue);
+                        }
+
+                        tempValue = fitStats.getStandardizedUnweightedMeanSquare();
+                        if(Double.isNaN(tempValue) || Double.isInfinite(tempValue)){
+                            pstmt.setNull(11, Types.DOUBLE);
+                        }else{
+                            pstmt.setDouble(11, tempValue);
+                        }
+
                     }
 
                     column=11;
@@ -191,9 +224,27 @@ public class RaschItemDatabaseOutput {
                         for(int i=0;i<maxCat-1;i++){
                             if(rsg!=null && i<k-1){
                                 pstmt.setDouble(++column, rsg.getThresholdAt(i));
-                                pstmt.setDouble(++column, rsg.getThresholdStdErrorAt(i));
-                                pstmt.setDouble(++column, rsg.getCategoryFitAt(i).getWeightedMeanSquare());
-                                pstmt.setDouble(++column, rsg.getCategoryFitAt(i).getUnweightedMeanSquare());
+
+                                tempValue = rsg.getThresholdStdErrorAt(i);
+                                if(Double.isNaN(tempValue) || Double.isInfinite(tempValue)){
+                                    pstmt.setNull(++column, Types.DOUBLE);
+                                }else{
+                                    pstmt.setDouble(++column, tempValue);
+                                }
+
+                                tempValue = rsg.getCategoryFitAt(i).getWeightedMeanSquare();
+                                if(Double.isNaN(tempValue) || Double.isInfinite(tempValue)){
+                                    pstmt.setNull(++column, Types.DOUBLE);
+                                }else{
+                                    pstmt.setDouble(++column, tempValue);
+                                }
+
+                                tempValue = rsg.getCategoryFitAt(i).getUnweightedMeanSquare();
+                                if(Double.isNaN(tempValue) || Double.isInfinite(tempValue)){
+                                    pstmt.setNull(++column, Types.DOUBLE);
+                                }else{
+                                    pstmt.setDouble(++column, tempValue);
+                                }
                             }else{
                                 pstmt.setNull(++column, Types.DOUBLE);
                                 pstmt.setNull(++column, Types.DOUBLE);

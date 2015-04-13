@@ -22,8 +22,8 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.distribution.UniformDistributionApproximation;
 import com.itemanalysis.psychometrics.kernel.*;
 import com.itemanalysis.psychometrics.measurement.KernelRegressionCategories;
@@ -53,18 +53,19 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
     private DatabaseAccessObject dao = null;
     private NonparametricCurveCommand command = null;
     private NonparametricCurvePanel nonparametricPanel = null;
-    private TreeMap<VariableInfo, KernelRegressionItem> focalRegression = null;
-    private TreeMap<VariableInfo, KernelRegressionItem> referenceRegression = null;
-    private TreeMap<VariableInfo, KernelRegressionCategories> categoryRegression = null;
-    private TreeMap<VariableInfo, KernelRegressionItem> kernelRegression = null;
+    private TreeMap<VariableAttributes, KernelRegressionItem> focalRegression = null;
+    private TreeMap<VariableAttributes, KernelRegressionItem> referenceRegression = null;
+    private TreeMap<VariableAttributes, KernelRegressionCategories> categoryRegression = null;
+    private TreeMap<VariableAttributes, KernelRegressionItem> kernelRegression = null;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
-    private TreeMap<VariableInfo, XYSeriesCollection> xySeriesMap = null;
+    private TreeMap<VariableAttributes, XYSeriesCollection> xySeriesMap = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
-    private VariableInfo regressorVariable = null;
-    private VariableInfo groupByVariable = null;
+    private VariableAttributes regressorVariable = null;
+    private VariableAttributes groupByVariable = null;
     private boolean hasGroupVariable = false;
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private double maxProgress = 100.0;
     private double sampleSize = 0.0;
     private DataTableName tableName = null;
@@ -112,7 +113,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
         variableTableName = new VariableTableName(table);
 
         String xvar = command.getFreeOption("xvar").getString();
-        regressorVariable = dao.getVariableInfo(conn, variableTableName, xvar);
+        regressorVariable = dao.getVariableAttributes(conn, variableTableName, xvar);
 
         ArrayList<String> selectedVariables = command.getFreeOptionList("variables").getString();
         variables = dao.getSelectedVariables(conn, variableTableName, selectedVariables);
@@ -123,7 +124,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
 
         if(command.getFreeOption("groupvar").hasValue()){
             String gvar = command.getFreeOption("groupvar").getString();
-            groupByVariable = dao.getVariableInfo(conn, variableTableName, gvar);
+            groupByVariable = dao.getVariableAttributes(conn, variableTableName, gvar);
             hasGroupVariable = true;
             focalCode = command.getPairedOptionList("codes").getStringAt("focal");
             referenceCode = command.getPairedOptionList("codes").getStringAt("reference");
@@ -222,16 +223,16 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
         ResultSet rs = null;
 
         //create focal map
-        focalRegression = new TreeMap<VariableInfo, KernelRegressionItem>();
-        for(VariableInfo v : variables){
+        focalRegression = new TreeMap<VariableAttributes, KernelRegressionItem>();
+        for(VariableAttributes v : variables){
             KernelRegressionItem kItem = new KernelRegressionItem(v, kernelFunction, bandwidth, uniformDistributionApproximation);
             focalRegression.put(v, kItem);
         }
 
         //create reference map
         if(hasGroupVariable){
-            referenceRegression = new TreeMap<VariableInfo, KernelRegressionItem>();
-            for(VariableInfo v : variables){
+            referenceRegression = new TreeMap<VariableAttributes, KernelRegressionItem>();
+            for(VariableAttributes v : variables){
                 KernelRegressionItem kItem = new KernelRegressionItem(v, kernelFunction, bandwidth, uniformDistributionApproximation);
                 referenceRegression.put(v, kItem);
             }
@@ -239,13 +240,13 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
 
         //determine whether group variable is double or not
         boolean groupVariableIsDouble = false;
-        if(groupByVariable.getType().getDataType()== VariableType.DOUBLE) groupVariableIsDouble = true;
+        if(groupByVariable.getType().getDataType()== DataType.DOUBLE) groupVariableIsDouble = true;
 
         try{
             //connect to db
             Table sqlTable = new Table(tableName.getNameForDatabase());
             SelectQuery select = new SelectQuery();
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 select.addColumn(sqlTable, v.getName().nameForDatabase());
             }
             select.addColumn(sqlTable, regressorVariable.getName().nameForDatabase());
@@ -279,13 +280,13 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
                 score = rs.getDouble(regressorVariable.getName().nameForDatabase());
                 if(!rs.wasNull()){
                     if(focalCode.equals(group)){
-                        for(VariableInfo v : focalRegression.keySet()){
+                        for(VariableAttributes v : focalRegression.keySet()){
                             kernelRegressionItem = focalRegression.get(v);
                             itemResponse = rs.getObject(v.getName().nameForDatabase());
                             if(itemResponse!=null) kernelRegressionItem.increment(score, itemResponse);
                         }
                     }else if(referenceCode.equals(group)){
-                        for(VariableInfo v : referenceRegression.keySet()){
+                        for(VariableAttributes v : referenceRegression.keySet()){
                             kernelRegressionItem = referenceRegression.get(v);
                             itemResponse = rs.getObject(v.getName().nameForDatabase());
                             if(itemResponse!=null) kernelRegressionItem.increment(score, itemResponse);
@@ -308,8 +309,8 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
     }
 
     public void evaluateAll()throws SQLException{
-        categoryRegression = new TreeMap<VariableInfo, KernelRegressionCategories>();
-        for(VariableInfo v : variables){
+        categoryRegression = new TreeMap<VariableAttributes, KernelRegressionCategories>();
+        for(VariableAttributes v : variables){
             KernelRegressionCategories kCat = new KernelRegressionCategories(v, kernelFunction, bandwidth, uniformDistributionApproximation);
             categoryRegression.put(v, kCat);
         }
@@ -317,7 +318,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
         //connect to db
         Table sqlTable = new Table(tableName.getNameForDatabase());
         SelectQuery select = new SelectQuery();
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             select.addColumn(sqlTable, v.getName().nameForDatabase());
         }
         select.addColumn(sqlTable, regressorVariable.getName().nameForDatabase());
@@ -341,7 +342,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
                 //omit examinees with missing data
                 score = rs.getDouble(regressorVariable.getName().nameForDatabase());
                 if(!rs.wasNull()){
-                    for(VariableInfo v : categoryRegression.keySet()){
+                    for(VariableAttributes v : categoryRegression.keySet()){
                         kernelRegressionCategories = categoryRegression.get(v);
                         itemResponse = rs.getObject(v.getName().nameForDatabase());
                         if(itemResponse!=null) kernelRegressionCategories.increment(score, itemResponse);
@@ -360,8 +361,8 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
     }
 
     public void evaluate() throws SQLException{
-        kernelRegression = new TreeMap<VariableInfo, KernelRegressionItem>();
-        for(VariableInfo v : variables){
+        kernelRegression = new TreeMap<VariableAttributes, KernelRegressionItem>();
+        for(VariableAttributes v : variables){
             KernelRegressionItem kItem = new KernelRegressionItem(v, kernelFunction, bandwidth, uniformDistributionApproximation);
             kernelRegression.put(v, kItem);
         }
@@ -373,7 +374,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
             //connect to db
             Table sqlTable = new Table(tableName.getNameForDatabase());
             SelectQuery select = new SelectQuery();
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 select.addColumn(sqlTable, v.getName().nameForDatabase());
             }
             select.addColumn(sqlTable, regressorVariable.getName().nameForDatabase());
@@ -393,7 +394,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
                 //omit examinees with missing data
                 score = rs.getDouble(regressorVariable.getName().nameForDatabase());
                 if(!rs.wasNull()){
-                    for(VariableInfo v : kernelRegression.keySet()){
+                    for(VariableAttributes v : kernelRegression.keySet()){
                         kernelRegressionItem = kernelRegression.get(v);
                         itemResponse = rs.getObject(v.getName().nameForDatabase());
                         if(itemResponse!=null) kernelRegressionItem.increment(score, itemResponse);
@@ -426,7 +427,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
         double tccMax = 0;
         double tccMin = 0;
 
-        for(VariableInfo v : focalRegression.keySet()){
+        for(VariableAttributes v : focalRegression.keySet()){
             KernelRegressionItem kItemF, kItemR;
             XYSeries seriesF;
             XYSeries seriesR;
@@ -502,7 +503,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
         double tccMin = 0;
         double tccMax = 0;
 
-        for(VariableInfo v : categoryRegression.keySet()){
+        for(VariableAttributes v : categoryRegression.keySet()){
             KernelRegressionCategories kCategories;
             XYSeries series;
 
@@ -577,7 +578,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
         double tccMax = 0;
         double tccMin = 0;
 
-        for(VariableInfo v : kernelRegression.keySet()){
+        for(VariableAttributes v : kernelRegression.keySet()){
             KernelRegressionItem kItem;
             XYSeries seriesData = new XYSeries(v.getName().toString());
             collection = new XYSeriesCollection();
@@ -624,8 +625,6 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
         this.firePropertyChange("status", "", "Running Curves...");
         this.firePropertyChange("progress-on", null, null);
         try{
-            logger.info(command.paste());
-
             initialize();
 
             if(hasGroupVariable){
@@ -657,6 +656,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
                 logger.info("NICC bandwidth = " + bandwidth.value() + "\n" +
                         "Bandwidth adjustment factor = " + bandwidth.getAdjustmentFactor());
             }
+            scriptLogger.info(command.paste());
             firePropertyChange("status", "", "Done: " + sw.getElapsedTime());
             firePropertyChange("progress-off", null, null); //make statusbar progress not visible
         }catch(Exception ex){

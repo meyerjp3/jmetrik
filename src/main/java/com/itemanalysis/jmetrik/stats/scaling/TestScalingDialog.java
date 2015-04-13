@@ -35,9 +35,9 @@ import com.itemanalysis.jmetrik.selector.MultipleSelectionPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
 import org.apache.log4j.Logger;
 
 public class TestScalingDialog extends JDialog{
@@ -72,7 +72,7 @@ public class TestScalingDialog extends JDialog{
     private String scoreType = "sum";
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
-    public TestScalingDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableInfo> variables){
+    public TestScalingDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList <VariableAttributes> variables){
         super(parent,"Test Scaling",true);
         setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
         this.dbName = dbName;
@@ -95,12 +95,16 @@ public class TestScalingDialog extends JDialog{
         });
 
         vsp = new MultipleSelectionPanel();
-        VariableType filterType1 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.NOT_ITEM, VariableType.DOUBLE);
-        vsp.addUnselectedFilterType(filterType1);
-        vsp.addUnselectedFilterType(filterType4);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType4);
+
+        //Filter out not item
+//        VariableType filterType1 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        VariableType filterType4 = new VariableType(ItemType.NOT_ITEM, DataType.DOUBLE);
+//        vsp.addUnselectedFilterType(filterType1);
+//        vsp.addUnselectedFilterType(filterType4);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType4);
+
+        vsp.addUnselectedFilterItemType(ItemType.NOT_ITEM);
         vsp.setVariables(variables);
         vsp.showButton4(false);
 
@@ -354,7 +358,7 @@ public class TestScalingDialog extends JDialog{
         return command;
     }
 
-    public VariableInfo[] getSelectedVariables(){
+    public VariableAttributes[] getSelectedVariables(){
         return vsp.getSelectedVariables();
     }
 
@@ -365,7 +369,7 @@ public class TestScalingDialog extends JDialog{
     public class RunActionListener implements ActionListener{
 
         public void actionPerformed(ActionEvent e){
-            VariableInfo[] v = vsp.getSelectedVariables();
+            VariableAttributes[] v = vsp.getSelectedVariables();
             if(v.length>0){
                 try{
                     command = new TestScalingCommand();

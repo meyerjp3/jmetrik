@@ -6,10 +6,14 @@ import com.itemanalysis.jmetrik.dao.DerbyIrtItemOutput;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
+import com.itemanalysis.jmetrik.stats.irt.rasch.IrtResidualOut;
 import com.itemanalysis.jmetrik.swing.JmetrikTextFile;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.jmetrik.workspace.VariableChangeType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
 import com.itemanalysis.psychometrics.distribution.DistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.NormalDistributionApproximation;
@@ -25,21 +29,14 @@ import org.apache.commons.math3.util.Pair;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 
 public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
 
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
-    private ArrayList<VariableInfo> variables = null;
-    private VariableInfo groupByVariable = null;
+    private ArrayList<VariableAttributes> variables = null;
+    private VariableAttributes groupByVariable = null;
     private Throwable theException = null;
     private Connection conn = null;
     private DatabaseAccessObject dao = null;
@@ -47,11 +44,11 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
     private DatabaseName dbName = null;
     private DataTableName tableName = null;
     private VariableTableName variableTableName = null;
-    private DataTableName ipTable = null;
     private JmetrikTextFile tfa = null;
     private ArrayList<String> selectedItems = null;
     private IrtItemCalibrationCommand command = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     private ItemResponseModel[] itemResponseModels = null;
     private double tol = 0.001;
@@ -61,6 +58,29 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
     private ItemResponseVector[] responseVectors = null;
     private DistributionApproximation latentDistribution = null;
     private boolean itemTableAdded = false;
+    private int mincell = 1;
+    private DataTableName latentOutputTableName = null;
+    private DataTableName residualOutputTableName = null;
+    private boolean estimatePersonScores = false;
+    private VariableName scoreName = null;
+    private String scoreType = "";
+    private double scoreMean = 0;
+    private double scoreSd = 1;
+    private double scoreTol = 1e-5;
+    private int scoreMaxIter = 150;
+    private int scorePoints = 60;
+    private double scoreMin = -4.5;
+    private double scoreMax = 4.5;
+    private boolean residualTableAdded = false;
+    private MarginalMaximumLikelihoodEstimation mmle = null;
+    private PersonScoringType personScoringType = PersonScoringType.EAP;
+    private boolean personScoreAdded = false;
+    private boolean saveResiduals = false;
+    private VariableAttributes personScoreVariable = null;
+    private VariableAttributes personScoreStdErrorVariable = null;
+    private int numberOfExaminees = 0;
+    private double[] theta = null;
+    private boolean latentDistributionSaved = false;
 
     public IrtItemCalibrationAnalysis(Connection conn, DatabaseAccessObject dao, IrtItemCalibrationCommand command, JmetrikTextFile tfa){
         this.conn = conn;
@@ -92,14 +112,59 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
         variableTableName = new VariableTableName(tableName.toString());
 
         //Output information
-        temp = command.getOption("itemout").getValueAt("table", "");
-        if(!"".equals(temp)) itemOutputTableName = new DataTableName(temp);
+        if(command.getOption("output").hasAnyValues()){
+            temp = command.getOption("output").getValueAt("item", "");
+            if(!"".equals(temp)) itemOutputTableName = new DataTableName(temp);
+
+            temp = command.getOption("output").getValueAt("latent", "");
+            if(!"".equals(temp)) latentOutputTableName = new DataTableName(temp);
+
+            temp = command.getOption("output").getValueAt("residual", "");
+            if(!"".equals(temp)){
+                residualOutputTableName = new DataTableName(temp);
+                saveResiduals = true;
+            }
+
+        }
+
 
         ignoreMissingData = command.getOption("missing").containsValue("ignore");
 
+        mincell = command.getOption("itemfit").getValueAtAsInteger("mincell", 1);
+
+        //PersonScoring options
+        if(command.getOption("scoring").hasAnyValues()){
+            estimatePersonScores = true;
+            scoreName = new VariableName(command.getOption("scoring").getValueAt("name", "theta"));
+            scoreType = command.getOption("scoring").getValueAt("type", "EAP");
+
+            if("EAP".equals(scoreType)){
+                personScoringType = PersonScoringType.EAP;
+                scoreMean = command.getOption("scoring").getValueAtAsDouble("mean", 0);
+                scoreSd = command.getOption("scoring").getValueAtAsDouble("sd", 0);
+                scorePoints = command.getOption("scoring").getValueAtAsInteger("points", 150);
+
+            }else if("MAP".equals(scoreType)){
+                personScoringType = PersonScoringType.MAP;
+                scoreMean = command.getOption("scoring").getValueAtAsDouble("mean", 0);
+                scoreSd = command.getOption("scoring").getValueAtAsDouble("sd", 0);
+                scoreTol = command.getOption("scoring").getValueAtAsDouble("tol", 0.00005);
+                scoreMaxIter = command.getOption("scoring").getValueAtAsInteger("maxiter", 100);
+
+            }else if("MLE".equals(scoreType)){
+                personScoringType = PersonScoringType.MLE;
+                scoreTol = command.getOption("scoring").getValueAtAsDouble("tol", 0.00005);
+                scoreMaxIter = command.getOption("scoring").getValueAtAsInteger("maxiter", 100);
+            }
+
+            //All method require this information
+            scoreMin = command.getOption("scoring").getValueAtAsDouble("min", -4.5);
+            scoreMax = command.getOption("scoring").getValueAtAsDouble("max", 4.5);
+        }
+
+
         //Latent distribution
         String[] df = {"normal", "0.0", "1.0"};
-        ;
         extractLatentDistributionFromOption(
                 command.getOption("latent").getValueAt("name", "normal"),
                 command.getOption("latent").getValueAtAsDouble("min", -4.0),
@@ -254,13 +319,186 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
 
         //Add item scoring information to item resposne models (Very inefficient nested loops)
         variables = dao.getSelectedVariables(conn, variableTableName, selectedItems);
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             for(ItemResponseModel model : itemResponseModels){
                 if(v.getName().equals(model.getName())){
                     model.setItemScoring(v.getItemScoring());
                     break;//Break inner loop
                 }
             }
+        }
+
+    }
+
+    private void savePersonScores() throws SQLException{
+        int numberOfColumns = dao.getColumnCount(conn, tableName);
+        theta = new double[numberOfExaminees];
+
+        //begin transaction
+        conn.setAutoCommit(false);
+
+        //Person score variable
+        personScoreVariable = new VariableAttributes(
+                scoreName.toString(),
+                personScoringType.toString() + " person score",
+                ItemType.NOT_ITEM,
+                DataType.DOUBLE,
+                numberOfColumns+1,
+                "");
+        dao.addColumnToDb(conn, tableName, personScoreVariable);
+        variables.add(personScoreVariable);
+
+        //Person score standard error variable
+        personScoreStdErrorVariable = new VariableAttributes(
+                scoreName.toString()+"_se",
+                personScoringType.toString() + " person score standard error",
+                ItemType.NOT_ITEM,
+                DataType.DOUBLE,
+                numberOfColumns+2,
+                "");
+        dao.addColumnToDb(conn, tableName, personScoreStdErrorVariable);
+        variables.add(personScoreStdErrorVariable);
+
+        //Select items and new score variables
+        Table sqlTable = new Table(tableName.getNameForDatabase());
+        SelectQuery select = new SelectQuery();
+        select.addColumn(sqlTable, personScoreVariable.getName().nameForDatabase());
+        select.addColumn(sqlTable, personScoreStdErrorVariable.getName().nameForDatabase());
+
+        //Update database variables
+        Statement stmt = null;
+        ResultSet rs = null;
+        try{
+            int i=0;
+            double thetaSE = 0;
+            IrtExaminee irtExaminee = new IrtExaminee(itemResponseModels);
+
+            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            rs=stmt.executeQuery(select.toString());
+
+            while(rs.next()){
+                irtExaminee.setResponseVector(responseVectors[i]);
+
+                //compute person ability estimates
+                if(PersonScoringType.MAP==personScoringType){
+                    theta[i] = irtExaminee.mapEstimate(scoreMean, scoreSd, scoreMin, scoreMax, scoreMaxIter, scoreTol);
+                    thetaSE = irtExaminee.mapStandardErrorAt(theta[i]);
+                }else if(PersonScoringType.MLE==personScoringType){
+                    theta[i] = irtExaminee.maximumLikelihoodEstimate(scoreMin, scoreMax, scoreMaxIter, scoreTol);
+                    thetaSE = irtExaminee.mleStandardErrorAt(theta[i]);
+                }else{
+                    //EAP
+                    theta[i] = irtExaminee.eapEstimate(scoreMean, scoreSd, scoreMin, scoreMax, scorePoints);
+                    thetaSE = irtExaminee.eapStandardErrorAt(theta[i]);
+                }
+
+                //Add value to database
+                if(Double.isNaN(theta[i])){
+                    rs.updateNull(personScoreVariable.getName().nameForDatabase());
+                    rs.updateNull(personScoreStdErrorVariable.getName().nameForDatabase());
+                }else if(Double.isNaN(thetaSE)){
+                    rs.updateDouble(personScoreVariable.getName().nameForDatabase(), theta[i]);
+                    rs.updateNull(personScoreStdErrorVariable.getName().nameForDatabase());
+                }else{
+                    rs.updateDouble(personScoreVariable.getName().nameForDatabase(), theta[i]);
+                    rs.updateDouble(personScoreStdErrorVariable.getName().nameForDatabase(), thetaSE);
+                }
+                rs.updateRow();
+                i++;
+
+            }
+        }catch(SQLException ex){
+            conn.rollback();
+            conn.setAutoCommit(true);
+			throw new SQLException(ex);
+        }finally{
+            personScoreAdded = true;
+            conn.commit();
+            conn.setAutoCommit(true);//end transaction
+            if(stmt!=null) stmt.close();
+            if(rs!=null) rs.close();
+        }
+
+
+
+    }
+
+    private void saveResiduals()throws SQLException{
+        if(!personScoreAdded || residualOutputTableName==null) return;
+        IrtResidualOut irtResidualOut = new IrtResidualOut(conn, dao,
+                responseVectors,
+                theta,
+                itemResponseModels,
+                tableName,
+                residualOutputTableName);
+        irtResidualOut.outputToDb();
+
+        residualTableAdded = true;
+    }
+
+    private void saveLatentDistribution()throws SQLException{
+        VariableAttributes theta = new VariableAttributes("theta", "Theta values (quadrature points)", ItemType.NOT_ITEM, DataType.DOUBLE, 0, "");
+        VariableAttributes weight = new VariableAttributes("weight", "Density values (quadrature weights)", ItemType.NOT_ITEM, DataType.DOUBLE, 1, "");
+        ArrayList<VariableAttributes> latentVariables = new ArrayList<VariableAttributes>();
+        latentVariables.add(theta);
+        latentVariables.add(weight);
+
+        VariableTableName latentOutputVariableTableName = new VariableTableName(latentOutputTableName.toString());
+
+        Statement stmt = null;
+        ResultSet rs = null;
+
+        try{
+            conn.setAutoCommit(false);//start transaction
+            dao.createTables(conn, latentOutputTableName, latentOutputVariableTableName, latentVariables);
+
+            //connect to tables and update rows
+            //Select items and new score variables
+            Table sqlTable = new Table(latentOutputTableName.getNameForDatabase());
+            SelectQuery select = new SelectQuery();
+            select.addColumn(sqlTable, theta.getName().nameForDatabase());
+            select.addColumn(sqlTable, weight.getName().nameForDatabase());
+
+            //Update database variables
+            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+            rs=stmt.executeQuery(select.toString());
+
+            int nrow = latentDistribution.getNumberOfPoints();
+            double thetaValue = 0;
+            double weightValue = 0;
+            for(int i=0;i<nrow;i++){
+                rs.moveToInsertRow();
+
+                thetaValue = latentDistribution.getPointAt(i);
+                if(Double.isNaN(thetaValue) || Double.isInfinite(thetaValue)){
+                    rs.updateNull(theta.getName().nameForDatabase());
+                }else{
+                    rs.updateDouble(theta.getName().nameForDatabase(), thetaValue);
+                }
+
+                weightValue = latentDistribution.getDensityAt(i);
+                if(Double.isNaN(weightValue) || Double.isInfinite(weightValue)){
+                    rs.updateNull(weight.getName().nameForDatabase());
+                }else{
+                    rs.updateDouble(weight.getName().nameForDatabase(), weightValue);
+                }
+
+                rs.insertRow();
+            }
+
+            dao.setTableInformation(conn, latentOutputVariableTableName, nrow, "Latent distribution table");
+            latentDistributionSaved = true;
+
+        }catch(SQLException ex){
+            conn.rollback();
+            conn.setAutoCommit(true);
+			throw new SQLException(ex);
+        }finally{
+            personScoreAdded = true;
+            conn.commit();
+            conn.setAutoCommit(true);//end transaction
+            if(stmt!=null) stmt.close();
+            if(rs!=null) rs.close();
         }
 
     }
@@ -325,13 +563,17 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
     }
 
     /**
-     * Support method for converting database table into an array of item response vectors.
-     * NOTE: This could be improved. The item response vectors can be stored as unique values with frequency counts.
-     * This version stored on vector for each examinee.
+     * Summarizes data into response vectors. If condensed==true, it will only store
+     * unique response vectors and a frequency count. Otherwise, there will be
+     * one response vector for each examinee. If saving person scores or residuals,
+     * then condensed should be false.
+     *
+     * @param condensed if true will save unique response patterns and a frequency count. Otherwise
+     *                  will store a response vector for each examinee.
      *
      * @throws SQLException
      */
-    private void summarizeData()throws SQLException{
+    private void summarizeData(boolean condensed)throws SQLException{
         this.firePropertyChange("status", "", "Summarizing data...");
 
         Frequency freq = new Frequency();
@@ -342,10 +584,11 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
         Object response = null;
         byte responseScore = 0;
 
-        int nrow = (int)getSampleSize();
-        int ncol = variables.size();
+        numberOfExaminees = (int)getSampleSize();
+        int ncol = itemResponseModels.length;
         byte[] rv;
-//        responseVectors = new ItemResponseVector[nrow];
+
+        if(!condensed) responseVectors = new ItemResponseVector[numberOfExaminees];
 
         try{
 
@@ -381,19 +624,27 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
                     c++;
                 }
                 iVec = new ItemResponseVector(rv, 1.0);
-                freq.addValue(iVec);
-//                responseVectors[r] = iVec;
+
+                if(condensed){
+                    freq.addValue(iVec);
+                }else{
+                    responseVectors[r] = iVec;
+                }
                 r++;
             }//End initial summary
 
-            responseVectors = new ItemResponseVector[freq.getUniqueCount()];
-            int index = 0;
-            Iterator<Comparable<?>> iter = freq.valuesIterator();
-            while(iter.hasNext()){
-                responseVectors[index] = (ItemResponseVector)iter.next();
-                responseVectors[index].setFrequency(Long.valueOf(freq.getCount(responseVectors[index])).doubleValue());
-                index++;
+            if(condensed){
+                responseVectors = new ItemResponseVector[freq.getUniqueCount()];
+                int index = 0;
+                Iterator<Comparable<?>> iter = freq.valuesIterator();
+                while(iter.hasNext()){
+                    responseVectors[index] = (ItemResponseVector)iter.next();
+                    responseVectors[index].setFrequency(Long.valueOf(freq.getCount(responseVectors[index])).doubleValue());
+                    index++;
+                }
+
             }
+
 
             //For debugging
 //            System.out.println("Unique Vectors: " + freq.getUniqueCount());
@@ -410,54 +661,6 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
         }
 
     }
-
-//    public ItemResponseVector[] getResponseVectors(File f, boolean headerIncluded){
-//        Frequency freq = new Frequency();
-//        String responseString = "";
-//
-//        try{
-//            BufferedReader br = new BufferedReader(new FileReader(f));
-//            String line = "";
-//            if(headerIncluded) br.readLine();//skip header
-//            while((line=br.readLine())!=null){
-//                line = line.replaceAll(",", "");
-//                freq.addValue(line);
-//            }
-//            br.close();
-//
-//        }catch(IOException ex){
-//            ex.printStackTrace();
-//        }
-//
-//        ItemResponseVector[] responseData = new ItemResponseVector[freq.getUniqueCount()];
-//        ItemResponseVector irv = null;
-//        Iterator<Comparable<?>> iter = freq.valuesIterator();
-//        int index = 0;
-//        byte[] rv = null;
-//
-//        //create array of ItemResponseVector objects
-//        while(iter.hasNext()){
-//            Comparable<?> value = iter.next();
-//            responseString = value.toString();
-//
-//            int n=responseString.length();
-//            rv = new byte[n];
-//
-//            String response = "";
-//            for (int i = 0;i < n; i++){
-//                response = String.valueOf(responseString.charAt(i)).toString();
-//                rv[i] = Byte.parseByte(response);
-//            }
-//
-//            //create response vector objects
-//            irv = new ItemResponseVector(rv, Long.valueOf(freq.getCount(value)).doubleValue());
-//            responseData[index] = irv;
-//            index++;
-//        }
-//
-//        return responseData;
-//
-//    }
 
     /**
      * Method responsible for estimating parameters.
@@ -476,7 +679,7 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
         itemResponseModels = startValues.computeStartingValues();
         logger.info("IRT START VALUES\n" + startValues.printItemParameters());
 
-        MarginalMaximumLikelihoodEstimation mmle = new MarginalMaximumLikelihoodEstimation(
+        mmle = new MarginalMaximumLikelihoodEstimation(
                 responseVectors,
                 itemResponseModels,
                 latentDistribution);
@@ -487,11 +690,22 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
         mmle.estimateParameters(tol, maxIter);
         mmle.computeItemStandardErrors();
 
+        publish(mmle.printItemParameters()+"\n\n");
         logger.info(emStatus.toString());
 
-        String output = printHeader() + mmle.printItemParameters();
+        this.firePropertyChange("status", "", "Computing item fit statistics...");
+        mmle.computeSX2ItemFit(mincell);
+        publish(mmle.printItemFitStatistics() + "\n\n");
+        publish(mmle.printLatentDistribution() + "\n\n");
 
-        return output;
+        return sw.getElapsedTime();
+    }
+
+    @Override
+    protected void process(List<String> chunks){
+        for(String s : chunks){
+            tfa.append(s + "\n");
+        }
     }
 
     private void saveItemEstimates()throws SQLException{
@@ -508,16 +722,33 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
         sw = new StopWatch();
         this.firePropertyChange("status", "", "Running IRT Item Calibration...");
         this.firePropertyChange("progress-ind-on", null, null);
-        logger.info(command.paste());
 
         try{
             parseCommand();
-            summarizeData();
-            s = estimateParameters();
+
+            boolean condensed = true;
+            if(estimatePersonScores || saveResiduals) condensed = false;
+            summarizeData(condensed);
+
+            publish(printHeader());
+
+            estimateParameters();
+
             if(itemOutputTableName!=null) saveItemEstimates();
+            if(latentOutputTableName!=null) saveLatentDistribution();
+            if(estimatePersonScores){
+                this.firePropertyChange("status", "", "Saving person scores...");
+                savePersonScores();
+            }
 
-            firePropertyChange("status", "", "Done: " + sw.getElapsedTime());
+            if(saveResiduals){
+                this.firePropertyChange("status", "", "Saving residuals...");
+                saveResiduals();
+            }
 
+            s = sw.getElapsedTime();
+            firePropertyChange("status", "", "Done: " + s);
+            return s;
         }catch(Throwable t){
             logger.fatal(t.getMessage(), t);
             theException=t;
@@ -534,10 +765,20 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
 			}else{
                 //Fire database changed information
                 if(itemTableAdded) firePropertyChange("table-added", "", itemOutputTableName);//will addArgument table to list
+                if(residualTableAdded) firePropertyChange("table-added", "", residualOutputTableName);//will addArgument table to list
+                if(personScoreAdded){
+                    fireVariableChanged(new VariableChangeEvent(this, tableName, personScoreVariable, VariableChangeType.VARIABLE_ADDED));
+                    fireVariableChanged(new VariableChangeEvent(this, tableName, personScoreStdErrorVariable, VariableChangeType.VARIABLE_ADDED));
+                }
+
+                if(latentDistributionSaved){
+                    firePropertyChange("table-added", "", latentOutputTableName);//will addArgument table to list
+                }
 
                 tfa.addText(get());
                 tfa.addText("Elapsed time: " + sw.getElapsedTime());
                 tfa.setCaretPosition(0);
+                scriptLogger.info(command.paste());
             }
         }catch(Exception ex){
             logger.fatal(ex.getMessage(), ex);

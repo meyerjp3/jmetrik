@@ -18,8 +18,8 @@
 package com.itemanalysis.jmetrik.stats.cmh;
 
 import com.itemanalysis.jmetrik.selector.SingleSelectionPanel;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -30,28 +30,31 @@ public class MatchingVariableDialog extends JDialog {
 
     private boolean canRun = false;
 
-    private VariableInfo selectedVariable = null;
+    private VariableAttributes selectedVariable = null;
 
     private SingleSelectionPanel singleSelectionPanel = null;
 
-    public MatchingVariableDialog(JFrame parent, ArrayList<VariableInfo> variables){
+    public MatchingVariableDialog(JFrame parent, ArrayList<VariableAttributes> variables){
         super(parent, "Select Matching Variable", true);
 
         singleSelectionPanel = new SingleSelectionPanel();
 
         //filter out strings from unselected list
-        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
-        VariableType filterType3 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        singleSelectionPanel.addUnselectedFilterType(filterType1);
-        singleSelectionPanel.addUnselectedFilterType(filterType2);
-        singleSelectionPanel.addUnselectedFilterType(filterType3);
-        singleSelectionPanel.addUnselectedFilterType(filterType4);
-        singleSelectionPanel.addSelectedFilterType(filterType1);
-        singleSelectionPanel.addSelectedFilterType(filterType2);
-        singleSelectionPanel.addSelectedFilterType(filterType3);
-        singleSelectionPanel.addSelectedFilterType(filterType4);
+//        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
+//        VariableType filterType2 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
+//        VariableType filterType3 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
+//        VariableType filterType4 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
+//        singleSelectionPanel.addUnselectedFilterType(filterType1);
+//        singleSelectionPanel.addUnselectedFilterType(filterType2);
+//        singleSelectionPanel.addUnselectedFilterType(filterType3);
+//        singleSelectionPanel.addUnselectedFilterType(filterType4);
+//        singleSelectionPanel.addSelectedFilterType(filterType1);
+//        singleSelectionPanel.addSelectedFilterType(filterType2);
+//        singleSelectionPanel.addSelectedFilterType(filterType3);
+//        singleSelectionPanel.addSelectedFilterType(filterType4);
+
+        singleSelectionPanel.addUnselectedFilterDataType(DataType.STRING);
+        singleSelectionPanel.addSelectedFilterDataType(DataType.STRING);
 
         singleSelectionPanel.setVariables(variables);
         singleSelectionPanel.showButton4(false);
@@ -97,7 +100,7 @@ public class MatchingVariableDialog extends JDialog {
 
     }
 
-    public VariableInfo getMatchingVariable(){
+    public VariableAttributes getMatchingVariable(){
         return selectedVariable;
     }
 

@@ -32,13 +32,14 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.swing.ChartTitlesDialog;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 public class ItemMapDialog extends JDialog{
 
-    private ArrayList <VariableInfo> variables;
+    private ArrayList <VariableAttributes> variables;
     private SingleSelectionPanel vsp;
     private String chartTitle = "";
     private String chartSubtitle = "";
@@ -60,7 +61,7 @@ public class ItemMapDialog extends JDialog{
     private JTextField tableTextField;
     // End of variables declaration
 
-    public ItemMapDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables, SortedListModel<DataTableName> listModel){
+    public ItemMapDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables, SortedListModel<DataTableName> listModel){
         super(parent, "Item Map", true);
         setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
         this.dbName = dbName;
@@ -80,27 +81,36 @@ public class ItemMapDialog extends JDialog{
         vsp=new SingleSelectionPanel();
 
         //filter out binary, polytomous, continuous items and strings
-        VariableType filterType1 = new VariableType(VariableType.BINARY_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.BINARY_ITEM, VariableType.DOUBLE);
-        VariableType filterType3 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING);
-        VariableType filterType4 = new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.DOUBLE);
-        VariableType filterType5 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING);
-        VariableType filterType6 = new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.DOUBLE);
-        VariableType filterType7 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        vsp.addUnselectedFilterType(filterType1);
-        vsp.addUnselectedFilterType(filterType2);
-        vsp.addUnselectedFilterType(filterType3);
-        vsp.addUnselectedFilterType(filterType4);
-        vsp.addUnselectedFilterType(filterType5);
-        vsp.addUnselectedFilterType(filterType6);
-        vsp.addUnselectedFilterType(filterType7);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType2);
-        vsp.addSelectedFilterType(filterType3);
-        vsp.addSelectedFilterType(filterType4);
-        vsp.addSelectedFilterType(filterType5);
-        vsp.addSelectedFilterType(filterType6);
-        vsp.addSelectedFilterType(filterType7);
+//        VariableType filterType1 = new VariableType(ItemType.BINARY_ITEM, DataType.STRING);
+//        VariableType filterType2 = new VariableType(ItemType.BINARY_ITEM, DataType.DOUBLE);
+//        VariableType filterType3 = new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.STRING);
+//        VariableType filterType4 = new VariableType(ItemType.POLYTOMOUS_ITEM, DataType.DOUBLE);
+//        VariableType filterType5 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.STRING);
+//        VariableType filterType6 = new VariableType(ItemType.CONTINUOUS_ITEM, DataType.DOUBLE);
+//        VariableType filterType7 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        vsp.addUnselectedFilterType(filterType1);
+//        vsp.addUnselectedFilterType(filterType2);
+//        vsp.addUnselectedFilterType(filterType3);
+//        vsp.addUnselectedFilterType(filterType4);
+//        vsp.addUnselectedFilterType(filterType5);
+//        vsp.addUnselectedFilterType(filterType6);
+//        vsp.addUnselectedFilterType(filterType7);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType2);
+//        vsp.addSelectedFilterType(filterType3);
+//        vsp.addSelectedFilterType(filterType4);
+//        vsp.addSelectedFilterType(filterType5);
+//        vsp.addSelectedFilterType(filterType6);
+//        vsp.addSelectedFilterType(filterType7);
+
+        vsp.addUnselectedFilterItemType(ItemType.BINARY_ITEM);
+        vsp.addUnselectedFilterItemType(ItemType.POLYTOMOUS_ITEM);
+        vsp.addUnselectedFilterItemType(ItemType.CONTINUOUS_ITEM);
+        vsp.addUnselectedFilterDataType(DataType.STRING);
+        vsp.addSelectedFilterItemType(ItemType.BINARY_ITEM);
+        vsp.addSelectedFilterItemType(ItemType.POLYTOMOUS_ITEM);
+        vsp.addSelectedFilterItemType(ItemType.CONTINUOUS_ITEM);
+        vsp.addSelectedFilterDataType(DataType.STRING);
         vsp.setVariables(variables);
 
         JButton b1 = vsp.getButton1();
@@ -557,7 +567,7 @@ public class ItemMapDialog extends JDialog{
         public void actionPerformed(ActionEvent e){
             try{
                 command = new ItemMapCommand();
-                VariableInfo v = vsp.getSelectedVariables();
+                VariableAttributes v = vsp.getSelectedVariables();
                 command.getFreeOption("variables").add(v.getName().toString());
                 command.getPairedOptionList("data").addValue("db", dbName.toString());
                 command.getPairedOptionList("data").addValue("table", tableName.toString());

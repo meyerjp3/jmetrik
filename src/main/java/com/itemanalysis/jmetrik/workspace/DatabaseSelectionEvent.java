@@ -20,7 +20,7 @@ package com.itemanalysis.jmetrik.workspace;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import java.util.ArrayList;
 
@@ -30,21 +30,21 @@ public class DatabaseSelectionEvent {
 
     private DataTableName tableName = null;
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
-    public DatabaseSelectionEvent(Object source, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables){
+    public DatabaseSelectionEvent(Object source, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables){
         this.dbName = dbName;
         this.tableName = tableName;
         this.variables = variables;
     }
 
-    public DatabaseSelectionEvent(Object source, DatabaseName dbName, VariableTableName tableName, ArrayList<VariableInfo> variables){
+    public DatabaseSelectionEvent(Object source, DatabaseName dbName, VariableTableName tableName, ArrayList<VariableAttributes> variables){
         this.dbName = dbName;
         this.tableName = new DataTableName(tableName.toString());
         this.variables = variables;
     }
 
-    public DatabaseSelectionEvent(Object source, String dbName, String tableName, ArrayList<VariableInfo> variables){
+    public DatabaseSelectionEvent(Object source, String dbName, String tableName, ArrayList<VariableAttributes> variables){
         this.dbName = new DatabaseName(dbName);
         this.tableName = new DataTableName(tableName);
         this.variables = variables;
@@ -58,7 +58,7 @@ public class DatabaseSelectionEvent {
         return tableName;
     }
 
-    public ArrayList<VariableInfo> getVariables(){
+    public ArrayList<VariableAttributes> getVariables(){
         return variables;
     }
 

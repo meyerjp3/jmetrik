@@ -22,8 +22,8 @@ import com.itemanalysis.jmetrik.selector.MultipleSelectionPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -79,7 +79,7 @@ public class ItemAnalysisDialog extends JDialog {
     private TableNameDialog tableNameDialog = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
-    public ItemAnalysisDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables){
+    public ItemAnalysisDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables){
         super(parent, "Item Analysis",true);
         this.dbName = dbName;
         this.tableName = tableName;
@@ -95,12 +95,15 @@ public class ItemAnalysisDialog extends JDialog {
         vsp = new MultipleSelectionPanel();
 
         //filter out nonitems
-        VariableType filterType1 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.NOT_ITEM, VariableType.DOUBLE);
-        vsp.addUnselectedFilterType(filterType1);
-        vsp.addUnselectedFilterType(filterType2);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType2);
+//        VariableType filterType1 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        VariableType filterType2 = new VariableType(ItemType.NOT_ITEM, DataType.DOUBLE);
+//        vsp.addUnselectedFilterType(filterType1);
+//        vsp.addUnselectedFilterType(filterType2);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType2);
+
+        vsp.addUnselectedFilterItemType(ItemType.NOT_ITEM);
+        vsp.addSelectedFilterItemType(ItemType.NOT_ITEM);
         vsp.setVariables(variables);
 
         JButton b1 = vsp.getButton1();
@@ -390,7 +393,7 @@ public class ItemAnalysisDialog extends JDialog {
                     command = new ItemAnalysisCommand();
 
                     for(int i=0;i<v.length;i++){
-                        command.getFreeOptionList("variables").addValue(((VariableInfo) v[i]).getName().toString());
+                        command.getFreeOptionList("variables").addValue(((VariableAttributes) v[i]).getName().toString());
                     }
 
                     command.getPairedOptionList("data").addValue("db", dbName.toString());

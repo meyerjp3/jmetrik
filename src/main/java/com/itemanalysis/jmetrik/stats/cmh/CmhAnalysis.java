@@ -39,8 +39,8 @@ import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.psychometrics.cmh.CochranMantelHaenszel;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
@@ -59,13 +59,13 @@ public class CmhAnalysis extends SwingWorker<String,Void> {
     private double maxProgress = 0.0;
     private int progressValue=0;
     private int lineNumber=0;
-    private VariableInfo groupVar = null;
-    private VariableInfo matchVar = null;
+    private VariableAttributes groupVar = null;
+    private VariableAttributes matchVar = null;
     private String focalCode = null;
     private String referenceCode = null;
     private boolean etsDelta = false;
     private String dString = "";
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
     boolean tables = false;
     private DataTableName tableName = null;
@@ -76,6 +76,7 @@ public class CmhAnalysis extends SwingWorker<String,Void> {
     private boolean saveOutput = false;
     private boolean scoreAsZero = true;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public CmhAnalysis(Connection conn, DatabaseAccessObject dao, CmhCommand command, JmetrikTextFile textFile){
         this.conn = conn;
@@ -127,7 +128,7 @@ public class CmhAnalysis extends SwingWorker<String,Void> {
 
         //add items to tree map
         CochranMantelHaenszel tempItem;
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             tempItem = cmhTreeMap.get(v.positionInDb());
             if(tempItem==null){
                 tempItem = new CochranMantelHaenszel(focalCode, referenceCode, groupVar, v, etsDelta);
@@ -162,7 +163,7 @@ public class CmhAnalysis extends SwingWorker<String,Void> {
         //create query for all variables
         Table sqlTable = new Table(tableName.getNameForDatabase());
         SelectQuery select = new SelectQuery();
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             select.addColumn(sqlTable, v.getName().nameForDatabase());
         }
         select.addColumn(sqlTable, groupVar.getName().nameForDatabase());
@@ -176,7 +177,7 @@ public class CmhAnalysis extends SwingWorker<String,Void> {
         while(rs.next()){
 
             //get value for group
-            if(groupVar.getType().getDataType()== VariableType.DOUBLE){
+            if(groupVar.getType().getDataType()== DataType.DOUBLE){
                 tempGroup = rs.getDouble(groupVar.getName().nameForDatabase());
             }else{
                 tempGroup = rs.getString(groupVar.getName().nameForDatabase());
@@ -188,10 +189,10 @@ public class CmhAnalysis extends SwingWorker<String,Void> {
                 matchingScore = rs.getDouble(matchVar.getName().nameForDatabase());
                 if(!rs.wasNull()){
                     //loop over items and increment dif analysis
-                    for(VariableInfo v : variables){
+                    for(VariableAttributes v : variables){
                         tempItem = cmhTreeMap.get(v.positionInDb());
                         response = rs.getObject(v.getName().nameForDatabase());
-                        itemScore = v.getItemScoring().computeItemScore(response, scoreAsZero);
+                        itemScore = v.getItemScoring().computeItemScore(response);
                         tempItem.increment(matchingScore, tempGroup.toString(), itemScore);
                     }
                 }
@@ -255,8 +256,6 @@ public class CmhAnalysis extends SwingWorker<String,Void> {
         this.firePropertyChange("status", "", "Running DIF Analysis...");
         this.firePropertyChange("progress-on", null, null);
         try{
-            logger.info(command.paste());
-
             //get variable info from db
             tableName = new DataTableName(command.getPairedOptionList("data").getStringAt("table"));
             VariableTableName variableTableName = new VariableTableName(tableName.toString());
@@ -266,12 +265,12 @@ public class CmhAnalysis extends SwingWorker<String,Void> {
             //get grouping variable info
             if(command.getFreeOption("groupvar").hasValue()){
                 String groupByName=command.getFreeOption("groupvar").getString();
-                groupVar = dao.getVariableInfo(conn, new VariableTableName(tableName.toString()), groupByName);
+                groupVar = dao.getVariableAttributes(conn, new VariableTableName(tableName.toString()), groupByName);
             }
 
             //get matching variable info
             String matchVarString = command.getFreeOption("matchvar").getString();
-            matchVar = dao.getVariableInfo(conn, variableTableName, matchVarString);
+            matchVar = dao.getVariableAttributes(conn, variableTableName, matchVarString);
 
             initialize();
             summarize();
@@ -306,6 +305,7 @@ public class CmhAnalysis extends SwingWorker<String,Void> {
                 textFile.addText(get());
                 textFile.addText("Elapsed time: " + sw.getElapsedTime());
                 textFile.setCaretPosition(0);
+                scriptLogger.info(command.paste());
             }
 
         }catch(Exception ex){

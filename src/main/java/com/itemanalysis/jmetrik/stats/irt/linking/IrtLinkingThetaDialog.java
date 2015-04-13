@@ -23,8 +23,9 @@ import com.itemanalysis.jmetrik.model.VariableListFilter;
 import com.itemanalysis.jmetrik.model.VariableListModel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -74,9 +75,9 @@ public class IrtLinkingThetaDialog extends JDialog{
 
     private boolean selectWeight = true;
 
-    private VariableInfo thetaVariable = null;
+    private VariableAttributes thetaVariable = null;
 
-    private VariableInfo weightVariable = null;
+    private VariableAttributes weightVariable = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
@@ -137,14 +138,21 @@ public class IrtLinkingThetaDialog extends JDialog{
         variableScrollPane.setPreferredSize(new Dimension(150, 300));
 
         //filter out items and strings
+//        VariableListFilter listFilter = new VariableListFilter();
+//        listFilter.addFilteredType(new VariableType(VariableType.BINARY_ITEM, VariableType.STRING));
+//        listFilter.addFilteredType(new VariableType(VariableType.BINARY_ITEM, VariableType.DOUBLE));
+//        listFilter.addFilteredType(new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING));
+//        listFilter.addFilteredType(new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.DOUBLE));
+//        listFilter.addFilteredType(new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING));
+//        listFilter.addFilteredType(new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.DOUBLE));
+//        listFilter.addFilteredType(new VariableType(VariableType.NOT_ITEM, VariableType.STRING));
+
+        //filter out items and strings
         VariableListFilter listFilter = new VariableListFilter();
-        listFilter.addFilteredType(new VariableType(VariableType.BINARY_ITEM, VariableType.STRING));
-        listFilter.addFilteredType(new VariableType(VariableType.BINARY_ITEM, VariableType.DOUBLE));
-        listFilter.addFilteredType(new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.STRING));
-        listFilter.addFilteredType(new VariableType(VariableType.POLYTOMOUS_ITEM, VariableType.DOUBLE));
-        listFilter.addFilteredType(new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.STRING));
-        listFilter.addFilteredType(new VariableType(VariableType.CONTINUOUS_ITEM, VariableType.DOUBLE));
-        listFilter.addFilteredType(new VariableType(VariableType.NOT_ITEM, VariableType.STRING));
+        listFilter.addFilteredItemType(ItemType.BINARY_ITEM);
+        listFilter.addFilteredItemType(ItemType.POLYTOMOUS_ITEM);
+        listFilter.addFilteredItemType(ItemType.CONTINUOUS_ITEM);
+        listFilter.addFilteredDataType(DataType.STRING);
         variableListModel = new VariableListModel(listFilter);
         variableList.setModel(variableListModel);
         variableScrollPane.setViewportView(variableList);
@@ -305,11 +313,11 @@ public class IrtLinkingThetaDialog extends JDialog{
         weightVariable = null;
     }
 
-    private void setVariables(ArrayList<VariableInfo> variables){
+    private void setVariables(ArrayList<VariableAttributes> variables){
         reset();
         variableListModel.clear();
 
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             variableListModel.addElement(v);
         }
     }
@@ -318,7 +326,7 @@ public class IrtLinkingThetaDialog extends JDialog{
         try{
             if(currentTable!=null && currentTable.equals(tableName)) return;
             VariableTableName variableTableName = new VariableTableName(tableName.toString());
-            ArrayList<VariableInfo> v = dao.getAllVariables(conn, variableTableName);
+            ArrayList<VariableAttributes> v = dao.getAllVariables(conn, variableTableName);
             setVariables(v);
             currentTable = tableName;
         }catch(SQLException ex){
@@ -339,11 +347,11 @@ public class IrtLinkingThetaDialog extends JDialog{
         return thetaVariable!=null;
     }
 
-    public VariableInfo getTheta(){
+    public VariableAttributes getTheta(){
         return thetaVariable;
     }
 
-    public VariableInfo getWeight(){
+    public VariableAttributes getWeight(){
         return weightVariable;
     }
 

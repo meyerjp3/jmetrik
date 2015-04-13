@@ -2,7 +2,7 @@ package com.itemanalysis.jmetrik.stats.irt.estimation;
 
 import com.itemanalysis.jmetrik.commandbuilder.MegaOption;
 import com.itemanalysis.jmetrik.model.VariableListModel;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import javax.swing.*;
 import java.awt.*;
@@ -77,7 +77,7 @@ public class IrtItemConfigurationDialog extends JDialog {
     };
 
     private VariableListModel variableListModel = null;
-    private ArrayList<VariableInfo> selectedVariables = null;
+    private ArrayList<VariableAttributes> selectedVariables = null;
     private int ncat = 0;
     private double scalingConstant = 1.0;
     private boolean fixedDiscrimination = false;
@@ -735,7 +735,7 @@ public class IrtItemConfigurationDialog extends JDialog {
     public boolean checkForSameNumberOfCategories(){
         int[] selectedIndices = itemList.getSelectedIndices();
 
-        VariableInfo v = null;
+        VariableAttributes v = null;
         double maxItemScore = 0;
         double previousMaxItemScore = 0;
         for(int i : selectedIndices){
@@ -755,7 +755,7 @@ public class IrtItemConfigurationDialog extends JDialog {
         return true;
     }
 
-    public ArrayList<VariableInfo> getSelectedVariables(){
+    public ArrayList<VariableAttributes> getSelectedVariables(){
         return selectedVariables;
     }
 
@@ -768,12 +768,12 @@ public class IrtItemConfigurationDialog extends JDialog {
             IrtItemCalibrationCommand command = new IrtItemCalibrationCommand();
             MegaOption option = command.getOption("group");
 
-            selectedVariables = new ArrayList<VariableInfo>();
+            selectedVariables = new ArrayList<VariableAttributes>();
 
             //Process selected items
             int[] selectedIndices = itemList.getSelectedIndices();
             String variableString = "(";
-            VariableInfo v = null;
+            VariableAttributes v = null;
             for(int i = 0; i<selectedIndices.length;i++){
                 v = variableListModel.getElementAt(i);
                 selectedVariables.add(v);

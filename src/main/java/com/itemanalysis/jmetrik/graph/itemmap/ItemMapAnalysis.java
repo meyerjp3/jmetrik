@@ -31,7 +31,7 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
 import com.itemanalysis.psychometrics.histogram.BinCalculationType;
 import com.itemanalysis.psychometrics.histogram.Histogram;
@@ -49,8 +49,9 @@ public class ItemMapAnalysis extends SwingWorker<ItemMapPanel, Void> {
     private StopWatch sw = null;
     private DataTableName tableName = null;
     private DataTableName itemTableName = null;
-    private ArrayList<VariableInfo> variable = null;
+    private ArrayList<VariableAttributes> variable = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
     private int progressValue = 0;
     private int lineNumber = 0;
     private double maxProgress = 100.0;
@@ -88,7 +89,7 @@ public class ItemMapAnalysis extends SwingWorker<ItemMapPanel, Void> {
         try{
             Table sqlTable = new Table(tableName.getNameForDatabase());
             SelectQuery select = new SelectQuery();
-            for(VariableInfo v : variable){
+            for(VariableAttributes v : variable){
                 select.addColumn(sqlTable, v.getName().nameForDatabase());
             }
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -247,6 +248,7 @@ public class ItemMapAnalysis extends SwingWorker<ItemMapPanel, Void> {
                 logger.fatal(theException.getMessage(), theException);
                 firePropertyChange("error", "", "Error - Check log for details.");
             }
+            scriptLogger.info(command.paste());
         }catch(Exception ex){
             logger.fatal(theException.getMessage(), theException);
             firePropertyChange("error", "", "Error - Check log for details.");

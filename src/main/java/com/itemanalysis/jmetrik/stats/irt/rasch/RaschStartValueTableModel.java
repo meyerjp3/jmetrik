@@ -17,7 +17,7 @@
 
 package com.itemanalysis.jmetrik.stats.irt.rasch;
 
-import com.itemanalysis.psychometrics.data.VariableInfo;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
 
 import javax.swing.table.AbstractTableModel;
@@ -27,11 +27,11 @@ public class RaschStartValueTableModel extends AbstractTableModel {
 
     private String[] columnNames = {"Variable", "Fixed Value"};
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
     private Boolean[] fixedParams = null;
 
-    public RaschStartValueTableModel(ArrayList<VariableInfo> variables){
+    public RaschStartValueTableModel(ArrayList<VariableAttributes> variables){
         this.variables = variables;
         fixedParams = new Boolean[variables.size()];
         initializeData();
@@ -63,7 +63,7 @@ public class RaschStartValueTableModel extends AbstractTableModel {
     public ArrayList<VariableName> getFixedValueNames(){
         ArrayList<VariableName> start = new ArrayList<VariableName>();
         int i = 0;
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             if(fixedParams[i]){
                 start.add(v.getName());
             }

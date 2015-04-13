@@ -28,8 +28,8 @@ import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -83,7 +83,7 @@ public class RaschDialog extends JDialog{
     private SortedListModel<DataTableName> tableListModel = null;
 
     public RaschDialog(JFrame parent, Connection conn, DatabaseName dbName, DataTableName tableName, SortedListModel<DataTableName> tableListModel,
-                       ArrayList <VariableInfo> variables){
+                       ArrayList <VariableAttributes> variables){
         super(parent,"Rasch Models",true);
 		setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 
@@ -130,12 +130,15 @@ public class RaschDialog extends JDialog{
 		vsp=new MultipleSelectionPanel();
 
         //filter out nonitems
-        VariableType filterType1 = new VariableType(VariableType.NOT_ITEM, VariableType.STRING);
-        VariableType filterType2 = new VariableType(VariableType.NOT_ITEM, VariableType.DOUBLE);
-        vsp.addUnselectedFilterType(filterType1);
-        vsp.addUnselectedFilterType(filterType2);
-        vsp.addSelectedFilterType(filterType1);
-        vsp.addSelectedFilterType(filterType2);
+//        VariableType filterType1 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
+//        VariableType filterType2 = new VariableType(ItemType.NOT_ITEM, DataType.DOUBLE);
+//        vsp.addUnselectedFilterType(filterType1);
+//        vsp.addUnselectedFilterType(filterType2);
+//        vsp.addSelectedFilterType(filterType1);
+//        vsp.addSelectedFilterType(filterType2);
+
+        vsp.addUnselectedFilterItemType(ItemType.NOT_ITEM);
+        vsp.addSelectedFilterItemType(ItemType.NOT_ITEM);
         vsp.setVariables(variables);
 
         JButton b1 = vsp.getButton1();
@@ -855,7 +858,7 @@ public class RaschDialog extends JDialog{
                     //data information--------------------------------------------------------------------------------------
                     Object[] v = vsp.getSelectedVariables();
                     for(int i=0;i<v.length;i++){
-                        command.getFreeOptionList("variables").addValue(((VariableInfo) v[i]).getName().toString());
+                        command.getFreeOptionList("variables").addValue(((VariableAttributes) v[i]).getName().toString());
                     }
                     command.getPairedOptionList("data").addValue("db", dbName.toString());
                     command.getPairedOptionList("data").addValue("table", tableName.toString());
@@ -882,7 +885,7 @@ public class RaschDialog extends JDialog{
                     }
 
                     if(startDialog!=null && startDialog.canRun()){
-                        ArrayList<VariableInfo> n = startDialog.getSelectedVariables();
+                        ArrayList<VariableAttributes> n = startDialog.getSelectedVariables();
                         for(int i=0;i<n.size();i++){
                             command.getFreeOptionList("ifixed").addValue(n.get(i).toString());
                         }

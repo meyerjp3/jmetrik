@@ -25,9 +25,7 @@ import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.sql.SqlSafeTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.*;
 import com.itemanalysis.psychometrics.irt.model.*;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
@@ -314,7 +312,15 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
         }
     }
 
-    public void createTables(Connection conn, DataTableName dataTableName, VariableTableName variableTableName, ArrayList<VariableInfo> variables)throws SQLException{
+    public void createTables(Connection conn, DataTableName dataTableName, VariableTableName variableTableName, LinkedHashMap<String, VariableAttributes> variables)throws SQLException{
+        ArrayList<VariableAttributes> variableAttributeses = new ArrayList<VariableAttributes>();
+        for(String s : variables.keySet()){
+            variableAttributeses.add(variables.get(s));
+        }
+        createTables(conn, dataTableName, variableTableName, variableAttributeses);
+    }
+
+    public void createTables(Connection conn, DataTableName dataTableName, VariableTableName variableTableName, ArrayList<VariableAttributes> variables)throws SQLException{
 
         Statement stmt = null;
         PreparedStatement pstmt = null;
@@ -343,13 +349,22 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             //Populate variable table
             sqlString = "INSERT INTO " + variableTableName.getNameForDatabase() + " VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
             pstmt = conn.prepareStatement(sqlString);
-            for(VariableInfo v : variables){
+
+            ItemType it;
+            DataType dt;
+            for(VariableAttributes v : variables){
 
                 pstmt.setString(1, v.getName().toString());                 //name
-                pstmt.setString(2, v.getSubscale());                        //subscale/group
+                pstmt.setString(2, v.getItemGroup());                        //subscale/group
                 pstmt.setString(3, v.printOptionScoreKey());                //scoring
-                pstmt.setInt(4, v.getType().getItemType());                 //item type
-                pstmt.setInt(5, v.getType().getDataType());                 //data type
+
+                it = v.getType().getItemType();
+                int itemInt = ItemType.toInt(it);
+                dt = v.getType().getDataType();
+                int dataInt = dt.toInt(dt);
+
+                pstmt.setInt(4, itemInt);                 //item type
+                pstmt.setInt(5, dataInt);                 //data type
                 pstmt.setString(6, v.getLabel().toString());                //label
                 pstmt.setNull(7, Types.VARCHAR);                            //omit code initially set to null
                 pstmt.setNull(8, Types.VARCHAR);                            //not reached code initially set to null
@@ -359,7 +374,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             //create data table
             sqlString = "CREATE TABLE " + dataTableName.getNameForDatabase() + " (";
             int counter = 0;
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 if(counter>0) sqlString += ", ";
                 /**
                  * The next line was added on April 19, 2014. It uses escaped double-quotes when creating the
@@ -519,7 +534,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
 
     }
 
-    public ArrayList<VariableInfo> getVariableInfoFromColumn(Connection conn, DataTableName tableName, VariableName variableName)throws SQLException{
+    public ArrayList<VariableAttributes> getVariableAttributesFromColumn(Connection conn, DataTableName tableName, VariableName variableName)throws SQLException{
         Statement stmt = null;
         ResultSet rs = null;
 
@@ -531,13 +546,13 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             rs = stmt.executeQuery(query.toString());
 
-            ArrayList<VariableInfo> variables = new ArrayList<VariableInfo>();
-            VariableInfo tempInfo = null;
+            ArrayList<VariableAttributes> variables = new ArrayList<VariableAttributes>();
+            VariableAttributes tempInfo = null;
             int index=0;
             Object temp = null;
             while(rs.next()){
                 temp=rs.getObject(variableName.nameForDatabase());
-                tempInfo = new VariableInfo(temp.toString(), "", VariableType.NOT_ITEM, VariableType.DOUBLE, index, "");
+                tempInfo = new VariableAttributes(temp.toString(), "", ItemType.NOT_ITEM, DataType.DOUBLE, index, "");
                 variables.add(tempInfo);
                 index++;
             }
@@ -969,7 +984,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
     }
 
 
-    public void addColumnToDb(Connection conn, DataTableName tableName, VariableInfo variable)throws SQLException{
+    public void addColumnToDb(Connection conn, DataTableName tableName, VariableAttributes variable)throws SQLException{
         Statement stmt = null;
         ResultSet rs = null;
         try{
@@ -984,6 +999,8 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             int n = rsmd.getColumnCount();
             HashSet<VariableName> names = new HashSet<VariableName>();
             VariableName tempName = null;
+            ItemType it = null;
+            DataType dt = null;
             for(int i=0;i<n;i++){
                 tempName = new VariableName(rsmd.getColumnName(i+1));
                 names.add(tempName);
@@ -1018,8 +1035,14 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             rs.updateString(1, variable.getName().toString());
             rs.updateString(2, "");
             rs.updateString(3, "");
-            rs.updateInt(4, variable.getType().getItemType());
-            rs.updateInt(5, variable.getType().getDataType());
+
+            it = variable.getType().getItemType();
+            int itemInt = ItemType.toInt(it);
+            dt = variable.getType().getDataType();
+            int dataInt = DataType.toInt(dt);
+
+            rs.updateInt(4, itemInt);
+            rs.updateInt(5, dataInt);
             rs.updateString(6, variable.getLabel().toString());
             rs.insertRow();
             rs.moveToCurrentRow();
@@ -1046,7 +1069,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             //get variable info for all variables in table
             JmetrikDatabaseFactory dbFactory = new JmetrikDatabaseFactory(DatabaseType.APACHE_DERBY);
             DatabaseAccessObject dao = dbFactory.getDatabaseAccessObject();
-            ArrayList<VariableInfo> variables = dao.getAllVariables(conn, oldVariableTableName);
+            ArrayList<VariableAttributes> variables = dao.getAllVariables(conn, oldVariableTableName);
 
             String oldDesc = dao.getTableDescription(conn, oldTable);
 
@@ -1070,22 +1093,30 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             //Populate new variable table
             String updateString = "INSERT INTO " + newVariableTableName.getNameForDatabase() + " VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
             pstmt = conn.prepareStatement(updateString);
-            for(VariableInfo v : variables){
+            ItemType it;
+            DataType dt;
+            for(VariableAttributes v : variables){
                 pstmt.setString(1, v.getName().toString());                 //name
-                pstmt.setString(2, v.getSubscale());                        //subscale/group
+                pstmt.setString(2, v.getItemGroup());                        //subscale/group
                 pstmt.setString(3, v.printOptionScoreKey());                //scoring
-                pstmt.setInt(4, v.getType().getItemType());                 //item type
-                pstmt.setInt(5, v.getType().getDataType());                 //data type
+
+                it = v.getType().getItemType();
+                int itemInt = ItemType.toInt(it);
+                dt = v.getType().getDataType();
+                int dataInt = DataType.toInt(dt);
+
+                pstmt.setInt(4, itemInt);                 //item type
+                pstmt.setInt(5, dataInt);                 //data type
                 pstmt.setString(6, v.getLabel().toString());                //label
 
-                Object omit = v.getOmitCode();
+                Object omit = v.getSpecialDataCodes().getOmittedCode();
                 if(omit!=null && !omit.toString().trim().equals("")){
                     pstmt.setString(7, omit.toString().trim());                //omit code
                 }else{
                     pstmt.setNull(7, Types.VARCHAR);                           //omit code initially set to null
                 }
 
-                Object nr = v.getNotReachedCode();
+                Object nr = v.getSpecialDataCodes().getNotReachedCode();
                 if(nr!=null && !nr.toString().trim().equals("")){
                     pstmt.setString(8, nr.toString().trim());                //not reached code
                 }else{
@@ -1141,7 +1172,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
      * @return
      * @throws SQLException
      */
-    public ArrayList<VariableInfo> getAllVariables(Connection conn, VariableTableName tableName)throws SQLException {
+    public ArrayList<VariableAttributes> getAllVariables(Connection conn, VariableTableName tableName)throws SQLException {
         Statement stmt = null;
         ResultSet rs = null;
         try{
@@ -1150,7 +1181,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             selectQuery.addColumn(table, "*");
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             rs = stmt.executeQuery(selectQuery.toString());
-            ArrayList<VariableInfo> variables = new ArrayList<VariableInfo>();
+            ArrayList<VariableAttributes> variables = new ArrayList<VariableAttributes>();
             int dbColumnPosition = 0;
             int testItemOrder = 0;
             String groupId = "";
@@ -1159,9 +1190,9 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             VariableType type = null;
 
             while(rs.next()){//loop over all items
-                if(rs.getString(4).equals(VariableType.BINARY_ITEM_STRING) ||
-                        rs.getString(4).equals(VariableType.POLYTOMOUS_ITEM_STRING) ||
-                        rs.getString(4).equals(VariableType.CONTINUOUS_ITEM_STRING)){
+                if(rs.getString(4).equals(ItemType.BINARY_ITEM.toString()) ||
+                        rs.getString(4).equals(ItemType.POLYTOMOUS_ITEM.toString()) ||
+                        rs.getString(4).equals(ItemType.CONTINUOUS_ITEM.toString())){
                     testItemOrder++;
                 }
 
@@ -1170,7 +1201,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
                 type = new VariableType(rs.getInt(4), rs.getInt(5));
                 scoring = rs.getString(3);
 
-                VariableInfo var = new VariableInfo(
+                VariableAttributes var = new VariableAttributes(
                         name.toString(), //name
                         rs.getString(6), //label
                         type.getItemType(), //item type
@@ -1184,20 +1215,12 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
                 String omit = rs.getString(7); //omitted code
 
                 if(!rs.wasNull()){
-                    if(type.getDataType()==VariableType.DOUBLE){
-                        var.setOmitCode(Double.parseDouble(omit));
-                    }else{
-                        var.setOmitCode(omit);
-                    }
+                    var.getSpecialDataCodes().setOmittedCode(omit);
                 }
 
                 String notReached = rs.getString(8); //not reached code
                 if(!rs.wasNull()){
-                    if(type.getDataType()==VariableType.DOUBLE){
-                        var.setNotReachedCode(Double.parseDouble(notReached));
-                    }else{
-                        var.setNotReachedCode(notReached);
-                    }
+                    var.getSpecialDataCodes().setNotReachedCode(notReached);
                 }
 
                 variables.add(var);
@@ -1222,7 +1245,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
      * @return
      * @throws SQLException
      */
-    public ArrayList<VariableInfo> getSelectedVariables(Connection conn, VariableTableName tableName, ArrayList<String> selectedVariables)throws SQLException{
+    public ArrayList<VariableAttributes> getSelectedVariables(Connection conn, VariableTableName tableName, ArrayList<String> selectedVariables)throws SQLException{
         Statement stmt = null;
         ResultSet rs = null;
         try{
@@ -1231,7 +1254,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             selectQuery.addColumn(table, "*");
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             rs = stmt.executeQuery(selectQuery.toString());
-            ArrayList<VariableInfo> variables = new ArrayList<VariableInfo>();
+            ArrayList<VariableAttributes> variables = new ArrayList<VariableAttributes>();
             int dbColumnPosition = 0;
             int testItemOrder = 0;
             String groupId = "";
@@ -1240,9 +1263,9 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             VariableType type = null;
 
             while(rs.next()){//loop over all items
-                if(rs.getString(4).equals(VariableType.BINARY_ITEM_STRING) ||
-                        rs.getString(4).equals(VariableType.POLYTOMOUS_ITEM_STRING) ||
-                        rs.getString(4).equals(VariableType.CONTINUOUS_ITEM_STRING)){
+                if(rs.getString(4).equals(ItemType.BINARY_ITEM.toString()) ||
+                        rs.getString(4).equals(ItemType.POLYTOMOUS_ITEM.toString()) ||
+                        rs.getString(4).equals(ItemType.CONTINUOUS_ITEM.toString())){
                     testItemOrder++;
                 }
 
@@ -1251,7 +1274,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
                 type = new VariableType(rs.getInt(4), rs.getInt(5));
                 scoring = rs.getString(3);
 
-                VariableInfo var = new VariableInfo(
+                VariableAttributes var = new VariableAttributes(
                         name.toString(), //name
                         rs.getString(6), //label
                         type.getItemType(), //item type
@@ -1264,19 +1287,11 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
                 //set Special Codes
                 String omit = rs.getString(7);
                 if(!rs.wasNull()){
-                    if(type.getDataType()==VariableType.DOUBLE){
-                        var.setOmitCode(Double.parseDouble(omit));
-                    }else{
-                        var.setOmitCode(omit);
-                    }
+                    var.getSpecialDataCodes().setOmittedCode(omit);
                 }
                 String notReached = rs.getString(8);
                 if(!rs.wasNull()){
-                    if(type.getDataType()==VariableType.DOUBLE){
-                        var.setOmitCode(Double.parseDouble(notReached));
-                    }else{
-                        var.setOmitCode(notReached);
-                    }
+                    var.getSpecialDataCodes().setNotReachedCode(notReached);
                 }
 
 
@@ -1306,7 +1321,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
      * @return
      * @throws SQLException
      */
-    public VariableInfo getVariableInfo(Connection conn, VariableTableName tableName, String varName)throws SQLException{
+    public VariableAttributes getVariableAttributes(Connection conn, VariableTableName tableName, String varName)throws SQLException{
         ArrayList<String> selectedVariables = new ArrayList<String>();
         selectedVariables.add(varName);
         return getSelectedVariables(conn, tableName, selectedVariables).get(0);
@@ -1318,7 +1333,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
      * @param variables
      * @throws SQLException
      */
-    public synchronized void setVariableScoring(Connection conn, VariableTableName tableName, ArrayList<VariableInfo> variables)throws SQLException{
+    public synchronized void setVariableScoring(Connection conn, VariableTableName tableName, ArrayList<VariableAttributes> variables)throws SQLException{
         Statement stmt = null;
         ResultSet rs = null;
         try{
@@ -1330,7 +1345,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             while(rs.next()){
                 name = rs.getString("variable");
                 Inner:
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     if(v.getName().toString().equals(name)){
                         rs.updateString("scoring", v.printOptionScoreKey()); //scoring
                         rs.updateRow();
@@ -1440,7 +1455,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
      * @param variables
      * @throws SQLException
      */
-    public synchronized void setVariableGrouping(Connection conn, VariableTableName tableName, ArrayList<VariableInfo> variables)throws SQLException{
+    public synchronized void setVariableGrouping(Connection conn, VariableTableName tableName, ArrayList<VariableAttributes> variables)throws SQLException{
         Statement stmt = null;
         ResultSet rs = null;
         try{
@@ -1452,9 +1467,9 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             while(rs.next()){
                 name = rs.getString("variable");
                 Inner:
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     if(v.getName().toString().equals(name)){
-                        rs.updateString("vargroup", v.getSubscale()); //grouping
+                        rs.updateString("vargroup", v.getItemGroup()); //grouping
                         rs.updateRow();
                         break Inner;
                     }
@@ -1472,7 +1487,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
     /**
      * This method updates the variable table with an omit code. Note that omit and not reached
      * codes are stored in the variable table as VARCHAR(30). If the variable is actually
-     * a double, the type conversion is made when the code is processed by a VariableInfo
+     * a double, the type conversion is made when the code is processed by a VariableAttributes
      * object.
      *
      * @param conn
@@ -1480,7 +1495,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
      * @param variables
      * @throws SQLException
      */
-    public synchronized void setOmitCode(Connection conn, VariableTableName tableName, ArrayList<VariableInfo> variables)throws SQLException{
+    public synchronized void setOmitCode(Connection conn, VariableTableName tableName, ArrayList<VariableAttributes> variables)throws SQLException{
         Statement stmt = null;
         ResultSet rs = null;
         try{
@@ -1493,9 +1508,9 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             while(rs.next()){
                 name = rs.getString("variable");
                 Inner:
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     if(v.getName().toString().equals(name)){
-                        omitCode = v.getOmitCode();
+                        omitCode = v.getSpecialDataCodes().getOmittedCode();
                         if(omitCode==null){
                             rs.updateNull("omitcode");
                         }else{
@@ -1518,7 +1533,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
     /**
      * This method updates the variable table with a not reached code. Note that omit and not reached
      * codes are stored in the variable table as VARCHAR(30). If the variable is actually
-     * a double, the type conversion is made when the code is processed by a VariableInfo
+     * a double, the type conversion is made when the code is processed by a VariableAttributes
      * object.
      *
      * @param conn
@@ -1526,7 +1541,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
      * @param variables
      * @throws SQLException
      */
-    public synchronized void setNotReachedCode(Connection conn, VariableTableName tableName, ArrayList<VariableInfo> variables)throws SQLException{
+    public synchronized void setNotReachedCode(Connection conn, VariableTableName tableName, ArrayList<VariableAttributes> variables)throws SQLException{
         Statement stmt = null;
         ResultSet rs = null;
         try{
@@ -1539,9 +1554,9 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             while(rs.next()){
                 name = rs.getString("variable");
                 Inner:
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     if(v.getName().toString().equals(name)){
-                        nrCode = v.getNotReachedCode();
+                        nrCode = v.getSpecialDataCodes().getNotReachedCode();
                         if(nrCode==null){
                             rs.updateNull("notreachedcode");
                         }else{
@@ -1565,14 +1580,14 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
      * This method updates the variable table with an omit and not reached code.
      * Note that omit and not reached codes are stored in the variable table as
      * VARCHAR(30). If the variable is actually a double, the type conversion
-     * is made when the code is processed by a VariableInfo object.
+     * is made when the code is processed by a VariableAttributes object.
      *
      * @param conn
      * @param tableName
      * @param variables
      * @throws SQLException
      */
-    public synchronized void setOmitAndNotReachedCode(Connection conn, VariableTableName tableName, ArrayList<VariableInfo> variables)throws SQLException{
+    public synchronized void setOmitAndNotReachedCode(Connection conn, VariableTableName tableName, ArrayList<VariableAttributes> variables)throws SQLException{
         Statement stmt = null;
         ResultSet rs = null;
         try{
@@ -1587,9 +1602,9 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             while(rs.next()){
                 name = rs.getString("variable");
                 Inner:
-                for(VariableInfo v : variables){
+                for(VariableAttributes v : variables){
                     if(v.getName().toString().equals(name)){
-                        omitCode = v.getOmitCode();
+                        omitCode = v.getSpecialDataCodes().getOmittedCode();
                         if(omitCode==null){
                             rs.updateNull("omitcode");
                         }else{
@@ -1597,7 +1612,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
                         }
 
 
-                        nrCode = v.getNotReachedCode();
+                        nrCode = v.getSpecialDataCodes().getNotReachedCode();
                         if(nrCode==null){
                             rs.updateNull("notreachedcode");
                         }else{
@@ -1617,7 +1632,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
         }
     }
 
-    public synchronized void saveVariables(Connection conn, VariableTableName tableName, ArrayList<VariableInfo> variables)throws SQLException{
+    public synchronized void saveVariables(Connection conn, VariableTableName tableName, ArrayList<VariableAttributes> variables)throws SQLException{
         Statement stmt = null;
         ResultSet rs = null;
         try{
@@ -1625,17 +1640,17 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             rs = stmt.executeQuery("SELECT * FROM " + tableName.getNameForDatabase());
             String name = "";
             int i = 0;
-            for(VariableInfo v : variables){
+            for(VariableAttributes v : variables){
                 rs.absolute(i+1);
                 rs.updateObject(1, v.getName().toString());              //name
-                rs.updateObject(2, v.getSubscale());                     //group (i.e. subscale)
+                rs.updateObject(2, v.getItemGroup());                     //group (i.e. subscale)
                 rs.updateObject(3, v.printOptionScoreKey());                   //scoring
                 rs.updateObject(4, v.getType().getItemType());        //item type
                 rs.updateObject(5, v.getType().getDataType());  //data type
                 rs.updateObject(6, v.getLabel().toString());             //label
 
-                if(v.getOmitCode()!=null) rs.updateObject(7, v.getOmitCode().toString());
-                if(v.getNotReachedCode()!=null) rs.updateObject(8, v.getNotReachedCode().toString());
+                if(v.getSpecialDataCodes().getOmittedCode()!=null) rs.updateObject(7, v.getSpecialDataCodes().getOmittedCode().toString());
+                if(v.getSpecialDataCodes().getNotReachedCode()!=null) rs.updateObject(8, v.getSpecialDataCodes().getNotReachedCode().toString());
 
                 rs.updateRow();
                 i++;

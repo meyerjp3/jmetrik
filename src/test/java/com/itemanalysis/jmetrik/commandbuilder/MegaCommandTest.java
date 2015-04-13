@@ -1,5 +1,6 @@
 package com.itemanalysis.jmetrik.commandbuilder;
 
+import com.itemanalysis.jmetrik.stats.irt.estimation.IrtItemCalibrationCommand;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -317,6 +318,13 @@ public class MegaCommandTest {
 
 
 
+    }
+
+    @Ignore
+    @Test
+    public void commandHelpTest(){
+        IrtItemCalibrationCommand command = new IrtItemCalibrationCommand();
+        System.out.println(command.getHelpText());
     }
 
 

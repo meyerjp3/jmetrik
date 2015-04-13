@@ -22,8 +22,9 @@ import com.itemanalysis.jmetrik.model.VariableListModel;
 import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.DataType;
+import com.itemanalysis.psychometrics.data.ItemType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -55,7 +56,7 @@ public class MultipleSelectionByGroupPanel extends JPanel implements VariableCha
     private VariableListFilter unselectedVariableFilter;
     private VariableListFilter selectedVariableFilter;
     private VariableListFilter groupByVariableFilter;
-    private VariableInfo groupByVariable;
+    private VariableAttributes groupByVariable;
 
     private String nameGroupTextField = "Group by:";
 
@@ -190,7 +191,7 @@ public class MultipleSelectionByGroupPanel extends JPanel implements VariableCha
                 if(selectGroupVariable){
                     //Check to see if variable passes filter. If so, then move it to selected list
                     int[] selected = unselectedVariableList.getSelectedIndices();
-                    VariableInfo temp = unselectedListModel.getElementAt(selected[0]);//only use first selection
+                    VariableAttributes temp = unselectedListModel.getElementAt(selected[0]);//only use first selection
                     if(groupByVariableFilter.passThroughFilter(temp)){
 
                         groupByVariable = temp;
@@ -295,11 +296,11 @@ public class MultipleSelectionByGroupPanel extends JPanel implements VariableCha
         );
     }// </editor-fold>
 
-    public void setVariables(ArrayList<VariableInfo> variables){
+    public void setVariables(ArrayList<VariableAttributes> variables){
         reset();
         unselectedListModel.clear();
 
-        for(VariableInfo v : variables){
+        for(VariableAttributes v : variables){
             unselectedListModel.addElement(v);
         }
     }
@@ -317,16 +318,43 @@ public class MultipleSelectionByGroupPanel extends JPanel implements VariableCha
 
     }
 
-    public void addUnselectedFilterType(VariableType t){
-        unselectedVariableFilter.addFilteredType(t);
+    public void addUnselectedFilterDataType(DataType dataType){
+        unselectedVariableFilter.addFilteredDataType(dataType);
     }
 
-    public void addSelectedFilterType(VariableType t){
-        selectedVariableFilter.addFilteredType(t);
+    public void addSelectedFilterDataType(DataType dataType){
+        selectedVariableFilter.addFilteredDataType(dataType);
     }
 
-    public void addGroupByFilterType(VariableType t){
-        groupByVariableFilter.addFilteredType(t);
+    public void addGroupByFilterDataType(DataType dataType){
+        groupByVariableFilter.addFilteredDataType(dataType);
+    }
+
+    public void addUnselectedFilterItemType(ItemType itemType){
+        unselectedVariableFilter.addFilteredItemType(itemType);
+    }
+
+    public void addSelectedFilterItemType(ItemType itemType){
+        selectedVariableFilter.addFilteredItemType(itemType);
+    }
+
+    public void addGroupByFilterItemType(ItemType itemType){
+        groupByVariableFilter.addFilteredItemType(itemType);
+    }
+
+    public void addUnselectedFilterType(DataType dataType, ItemType itemType){
+        unselectedVariableFilter.addFilteredDataType(dataType);
+        unselectedVariableFilter.addFilteredItemType(itemType);
+    }
+
+    public void addSelectedFilterType(DataType dataType, ItemType itemType){
+        selectedVariableFilter.addFilteredDataType(dataType);
+        selectedVariableFilter.addFilteredItemType(itemType);
+    }
+
+    public void addGroupByFilterType(DataType dataType, ItemType itemType){
+        groupByVariableFilter.addFilteredDataType(dataType);
+        groupByVariableFilter.addFilteredItemType(itemType);
     }
 
     public JButton getButton1(){
@@ -373,12 +401,12 @@ public class MultipleSelectionByGroupPanel extends JPanel implements VariableCha
      *
      * @return array of selected variables.
      */
-    public VariableInfo[] getSelectedVariables(){
-        VariableInfo[] selected = selectedListModel.getAll();
+    public VariableAttributes[] getSelectedVariables(){
+        VariableAttributes[] selected = selectedListModel.getAll();
         return selected;
     }
 
-    public VariableInfo getGroupByVariable(){
+    public VariableAttributes getGroupByVariable(){
         return groupByVariable;
     }
 
@@ -393,33 +421,33 @@ public class MultipleSelectionByGroupPanel extends JPanel implements VariableCha
     public void variableChanged(VariableChangeEvent e){
 
         if(e.getChangeType()== VariableChangeType.VARIABLE_DELETED){
-            VariableInfo varInfo = e.getVariable();
-            unselectedListModel.removeElement(varInfo);
-            selectedListModel.removeElement(varInfo);
-            if(groupByVariable!=null && groupByVariable.equals(varInfo)){
+            VariableAttributes varAtt = e.getVariable();
+            unselectedListModel.removeElement(varAtt);
+            selectedListModel.removeElement(varAtt);
+            if(groupByVariable!=null && groupByVariable.equals(varAtt)){
                 groupByVariable=null;
             }
         }else if(e.getChangeType()==VariableChangeType.VARIABLE_ADDED){
-            VariableInfo varInfo = e.getVariable();
-            unselectedListModel.addElement(varInfo);
+            VariableAttributes varAtt = e.getVariable();
+            unselectedListModel.addElement(varAtt);
         }else if(e.getChangeType()==VariableChangeType.VARIABLE_MODIFIED){
-            VariableInfo varInfo = e.getVariable();
+            VariableAttributes varAtt = e.getVariable();
             //do not use selectedListModel.replaceElement(v) because of need to filter variable
-            if(selectedListModel.removeElement(varInfo)){
-                selectedListModel.addElement(varInfo); //will force filtering of modified variable
+            if(selectedListModel.removeElement(varAtt)){
+                selectedListModel.addElement(varAtt); //will force filtering of modified variable
             }else{
                 //do not use variableListModel.replaceElement(v) because of need to filter variable
-                unselectedListModel.removeElement(varInfo);
-                unselectedListModel.addElement(varInfo); //will force filtering of modified variable
+                unselectedListModel.removeElement(varAtt);
+                unselectedListModel.addElement(varAtt); //will force filtering of modified variable
             }
         }else if(e.getChangeType()==VariableChangeType.VARIABLE_RENAMED){
-            VariableInfo oldVarInfo = e.getOldVariable();
-            if(selectedListModel.removeElement(oldVarInfo)){
+            VariableAttributes oldvarAtt = e.getOldVariable();
+            if(selectedListModel.removeElement(oldvarAtt)){
                 selectedListModel.addElement(e.getVariable());
-            }else if(groupByVariable!=null && groupByVariable.equals(oldVarInfo)){
+            }else if(groupByVariable!=null && groupByVariable.equals(oldvarAtt)){
                 groupByVariable=e.getVariable();
             }else{
-                unselectedListModel.removeElement(oldVarInfo);
+                unselectedListModel.removeElement(oldvarAtt);
                 unselectedListModel.addElement(e.getVariable());
             }
 

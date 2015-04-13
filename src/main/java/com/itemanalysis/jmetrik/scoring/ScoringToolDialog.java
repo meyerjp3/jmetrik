@@ -22,8 +22,7 @@ import com.itemanalysis.jmetrik.selector.MultipleSelectionPanel;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.swing.DataTable;
-import com.itemanalysis.psychometrics.data.VariableInfo;
-import com.itemanalysis.psychometrics.data.VariableType;
+import com.itemanalysis.psychometrics.data.VariableAttributes;
 
 import javax.swing.*;
 import java.awt.*;
@@ -53,9 +52,9 @@ public class ScoringToolDialog extends JDialog{
     
     private DataTableName tableName = null;
 
-    private ArrayList<VariableInfo> variables = null;
+    private ArrayList<VariableAttributes> variables = null;
 
-    private TreeSet<VariableInfo> scoredVariable = null;
+    private TreeSet<VariableAttributes> scoredVariable = null;
 
     private MultipleSelectionPanel selectionPanel = null;
 
@@ -66,12 +65,12 @@ public class ScoringToolDialog extends JDialog{
     private boolean selectVariables = true;
 
     /** Creates new form ScoringToolDialog */
-    public ScoringToolDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableInfo> variables) {
+    public ScoringToolDialog(JFrame parent, DatabaseName dbName, DataTableName tableName, ArrayList<VariableAttributes> variables) {
         super(parent, "Advanced Item Scoring", true);
         this.dbName = dbName;
         this.tableName = tableName;
         this.variables = variables;
-        scoredVariable = new TreeSet<VariableInfo>();
+        scoredVariable = new TreeSet<VariableAttributes>();
 
         keys = new ArrayList<OptionScoreKey>();
 
@@ -105,9 +104,9 @@ public class ScoringToolDialog extends JDialog{
         optionScoreTableModel = new OptionScoreTableModel();
 
         selectionPanel = new MultipleSelectionPanel();
-        VariableType filterType = new VariableType(VariableType.NO_FILTER, VariableType.NO_FILTER);
-        selectionPanel.addUnselectedFilterType(filterType);
-        selectionPanel.addSelectedFilterType(filterType);
+//        VariableType filterType = new VariableType(VariableType.NO_FILTER, VariableType.NO_FILTER);
+//        selectionPanel.addUnselectedFilterType(filterType);
+//        selectionPanel.addSelectedFilterType(filterType);
         selectionPanel.setVariables(variables);
 
         selectionPanel.setUnselectedListCellRenderer(new ScoredItemListCellRenderer());
@@ -228,8 +227,8 @@ public class ScoringToolDialog extends JDialog{
     class SubmitButtonActionListener implements ActionListener{
 
         public void actionPerformed(ActionEvent e) {
-            VariableInfo[] varInfo = selectionPanel.getSelectedVariables();
-            int size = varInfo.length;
+            VariableAttributes[] varAttr = selectionPanel.getSelectedVariables();
+            int size = varAttr.length;
 
             if(size==0){
                 JOptionPane.showMessageDialog(ScoringToolDialog.this, "You must select one or more variables. \n " +
@@ -239,9 +238,9 @@ public class ScoringToolDialog extends JDialog{
 
                 ArrayList<String> varNames = new ArrayList<String>();
                 for(int i=0;i<size;i++){
-                    scoredVariable.add(varInfo[i]);
-                    varNames.add(varInfo[i].getName().toString());
-                    varString += varInfo[i].getName().toString() + ", ";
+                    scoredVariable.add(varAttr[i]);
+                    varNames.add(varAttr[i].getName().toString());
+                    varString += varAttr[i].getName().toString() + ", ";
                 }
                 varString = varString.trim();
                 varString = varString.substring(0, varString.length()-1);
@@ -298,7 +297,7 @@ public class ScoringToolDialog extends JDialog{
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus){
             Font labelFont = UIManager.getFont("Label.font");
             JLabel label = (JLabel)super.getListCellRendererComponent(list,value,index,isSelected,cellHasFocus);
-            VariableInfo v = (VariableInfo)value;
+            VariableAttributes v = (VariableAttributes)value;
             if(scoredVariable.contains(v)){
                 label.setFont(labelFont.deriveFont(Font.BOLD)) ;
             }else{

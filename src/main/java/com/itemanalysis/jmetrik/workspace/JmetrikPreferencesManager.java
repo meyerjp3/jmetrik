@@ -65,7 +65,12 @@ public class JmetrikPreferencesManager {
     private static final String DEFAULT_LOG_HOME = (USER_HOME + "/jmetrik/log");
     public static final String DEFAULT_LOG_NAME = "jmetrik-logger";//cannot be changed by user
     public static final String DEFAULT_SCRIPT_LOG_NAME = "jmetrik-script-log";//cannot be changed by user
+
+    //Log properties before version 4
     private static final String DEFAULT_LOG_PROPERTY_FILE = "jmetrik-log.props";//cannot be changed by user
+
+    //Log properties changed in version 4
+    private static final String DEFAULT_LOG_PROPERTY_FILE_V4 = "jmetrik-log-v4.props";//cannot be changed by user
     private static final String DEFAULT_APP_DATA_HOME = USER_HOME + "/jmetrik/jmk";//not editable by user
 
     //database property names
@@ -236,7 +241,7 @@ public class JmetrikPreferencesManager {
         //directory should already exist
         //create log4j properties file if it does not exist
         String header = "#DO NOT EDIT - JMETRIK LOG PROPERTIES FILE - DO NOT EDIT";
-        String fullPropertiesName = (logHome + "/" + DEFAULT_LOG_PROPERTY_FILE);
+        String fullPropertiesName = (logHome + "/" + DEFAULT_LOG_PROPERTY_FILE_V4);
         String fullLogFileName = (logHome + "/" + DEFAULT_LOG_NAME);
         String fullScriptLogFileName = (logHome + "/" + DEFAULT_SCRIPT_LOG_NAME);
         File f = new File(fullPropertiesName);
@@ -246,13 +251,6 @@ public class JmetrikPreferencesManager {
                 f.createNewFile();
                 BufferedWriter bw = new BufferedWriter(new FileWriter(f));
                 bw.append(header); bw.newLine();
-//                bw.append("log4j.rootLogger=ALL, A2"); bw.newLine();
-//                bw.append("log4j.appender.A2.layout=org.apache.log4j.PatternLayout"); bw.newLine();
-//                bw.append("log4j.appender.A2.File=" + fullLogFileName); bw.newLine();
-//                bw.append("log4j.appender.A2.Append=false"); bw.newLine();
-//                bw.append("log4j.appender.A2=org.apache.log4j.FileAppender"); bw.newLine();
-//                bw.append("log4j.appender.A2.layout.ConversionPattern=[%p] %d{DATE} %n%m%n%n"); bw.newLine();
-
                 bw.append("log4j.logger.jmetrik-logger=ALL, adminAppender"); bw.newLine();
                 bw.append("log4j.logger.jmetrik-script-logger=INFO, scriptAppender"); bw.newLine();
                 bw.append("log4j.additivity.jmetrik-logger=false"); bw.newLine();
@@ -273,9 +271,6 @@ public class JmetrikPreferencesManager {
                 bw.append("log4j.appender.scriptAppender.layout.ConversionPattern=%m%n%n"); bw.newLine();
 
 
-
-
-
                 bw.close();
             }catch(IOException ex){
                 firePropertyChange("error", "", "Error - Log properties file could not be created.");
@@ -285,8 +280,17 @@ public class JmetrikPreferencesManager {
     
     public void loadLog(){
         String logHome = p.get(LOG_HOME, DEFAULT_LOG_HOME);
-        String header = "#DO NOT EDIT - JMETRIK LOG PROPERTIES FILE - DO NOT EDIT";
+
+        //Delete old log properties file -- needed for version 4
         String fullPropertiesName = (logHome + "/" + DEFAULT_LOG_PROPERTY_FILE);
+        File f1 = new File(fullPropertiesName);
+        if(f1.exists()){
+            f1.delete();
+            System.out.print("LOG PROP FILE: " + f1.getAbsolutePath() + " DELETED");
+        }
+
+        String header = "#DO NOT EDIT - JMETRIK LOG PROPERTIES FILE - DO NOT EDIT";
+        fullPropertiesName = (logHome + "/" + DEFAULT_LOG_PROPERTY_FILE_V4);
         String fullLogFileName = (logHome + "/" + DEFAULT_LOG_NAME);
         String fullScriptLogFileName = (logHome + "/" + DEFAULT_SCRIPT_LOG_NAME);
 
@@ -303,7 +307,6 @@ public class JmetrikPreferencesManager {
             FileInputStream in = new FileInputStream(f);
             p.load(in);
             in.close();
-//            p.setProperty("log4j.appender.A2.File", fullLogFileName);
             p.setProperty("log4j.appender.jmetrik-logger.File", fullLogFileName);
             p.setProperty("log4j.appender.jmetrik-script-logger.File", fullScriptLogFileName);
 

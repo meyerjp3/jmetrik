@@ -75,6 +75,8 @@ public class Workspace implements StatusNotifier{
     private final ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(maxQueueSize);
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
+    private JButton refreshButton = null;
+
     public Workspace(final JList workspaceList, JTabbedPane tabbedPane, DataTable dataTable, DataTable variableTable){
         this.workspaceList = workspaceList;
         this.tabbedPane = tabbedPane;
@@ -221,6 +223,10 @@ public class Workspace implements StatusNotifier{
             task.addPropertyChangeListener(l);
         }
         threadPool.execute(task);
+    }
+
+    public void setRefreshButton(JButton refreshButton){
+        this.refreshButton = refreshButton;
     }
 
     /**
@@ -408,6 +414,8 @@ public class Workspace implements StatusNotifier{
      * @param tableName
      */
     public void reloadTable(DataTableName tableName){
+        if(null==tableName) return;
+
         //load data model
         PagingDataModel dataModel = new PagingDataModel(conn, tableName, dao, propertyChangeListeners);
         dataTable.setModel(dataModel);
@@ -672,7 +680,9 @@ public class Workspace implements StatusNotifier{
                 DataTableName evtTableName = e.getTableName();
                 if(evtTableName.equals(currentDataTable)){
                     //current table is reloaded any time a variable is added or deleted
-                    reloadTable(e.getTableName());
+//                    reloadTable(e.getTableName());
+                    refreshButton.setEnabled(true);
+                    refreshButton.setText("Refresh Data View");
                 }
             }
         }
@@ -699,18 +709,31 @@ public class Workspace implements StatusNotifier{
                 //open table and set TreePath to selected table
                 DataTableName tName = (DataTableName)e.getNewValue();
                 tableListModel.addElement(tName);
-                openTable(tName);
-                workspaceList.setSelectedValue(tName, true);
+                workspaceList.clearSelection();
+
+                //Table will be openned when selected
+
+//                openTable(tName);
+//                try{
+//                    //rapidly importing many data files will cause an ArrayIndexOutOfBoundsException
+//                    workspaceList.setSelectedValue(tName, true);
+//                }catch(ArrayIndexOutOfBoundsException ex){
+//                    logger.warn("Table index out of bounds in list of data tables. No worries.", ex);
+//                }
+
             }else if("table-added".equals(propertyName)){
                 DataTableName dataTableName = (DataTableName)e.getNewValue();
                 tableListModel.addElement(dataTableName);
             }else if("table-deleted".equals(propertyName)){
                 DataTableName dataTableName = (DataTableName)e.getNewValue();
                 tableListModel.removeElement(dataTableName);
+                workspaceList.clearSelection();
             }else if("table-updated".equals(propertyName)){
                 DataTableName dataTableName = (DataTableName)e.getNewValue();
                 if(currentDataTable!=null && currentDataTable.equals(dataTableName)){
-                    reloadTable(dataTableName);
+//                    reloadTable(dataTableName);
+                    refreshButton.setEnabled(true);
+                    refreshButton.setText("Refresh Data View");
                 }
             }
         }

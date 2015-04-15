@@ -86,8 +86,8 @@ public class Jmetrik extends JFrame{
     final static String APP_NAME = "jMetrik";
     final static String VERSION = "4.0.0";
     final static boolean BETA_VERSION = true;
-    final static String RELEASE_DATE = "October 21, 2014";
-    final static String COPYRIGHT_YEAR = "2009 - 2014";
+    final static String RELEASE_DATE = "April 14, 2014";
+    final static String COPYRIGHT_YEAR = "2009 - 2015";
     final static String AUTHOR = "J. Patrick Meyer";
 
     private DataTable dataTable = null;
@@ -102,6 +102,8 @@ public class Jmetrik extends JFrame{
     private PrintRequestAttributeSet attributes = null;
     public final static String JMETRIK_TEXT_FILE = "com.itemanalysis.jmetrik.swing.JmetrikTextFile";
     static Logger logger = Logger.getLogger("jmetrik-logger");
+
+    private JButton refreshButton = null;
 
     //Dialog components
     private IrtPlotDialog irtPlotDialog = null;
@@ -273,6 +275,7 @@ public class Jmetrik extends JFrame{
         workspace.addPropertyChangeListener(new TableNameListener());
         workspace.addPropertyChangeListener(statusBar.getStatusListener());
         workspace.addPropertyChangeListener(new ErrorOccurredPropertyChangeListener());
+//        workspace.setRefreshButton(refreshButton);
     }
     
     private void openWorkspace(String dbName){
@@ -1078,6 +1081,22 @@ public class Jmetrik extends JFrame{
         ImageIcon iconCloseAllTabs = new ImageIcon(url, "Close All");
         button = new JButton(new CloseAllTabsAction("",iconCloseAllTabs));
         tools.add(button);
+
+        urlString = "/org/tango-project/tango-icon-theme/16x16/actions/view-refresh.png";
+        url = this.getClass().getResource( urlString );
+        ImageIcon iconRefreshData = new ImageIcon(url, "Refresh Data View");
+        refreshButton = new JButton("",iconRefreshData);
+        refreshButton.setEnabled(false);
+        tools.add(refreshButton);
+        refreshButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                workspace.reloadTable(workspace.getCurrentDataTable());
+                refreshButton.setEnabled(false);
+                refreshButton.setText("");
+            }
+        });
+        workspace.setRefreshButton(refreshButton);
 
         return tools;
     }

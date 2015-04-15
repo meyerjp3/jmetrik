@@ -408,9 +408,9 @@ public class IrtPlotDialog extends JDialog {
                 }
             });
 
-            thinLabel.setText("Score increment");
+            thinLabel.setText("Number of points");
 
-            thinTextField.setText("1");
+            thinTextField.setText("25");
             thinTextField.setMaximumSize(new Dimension(50, 28));
             thinTextField.setMinimumSize(new Dimension(50, 28));
             thinTextField.setPreferredSize(new Dimension(50, 28));

@@ -366,7 +366,7 @@ public class GraphPanel extends JPanel{
 //
 //            }
 //        });
-//        popMenu.addArgument(mItem);
+//        popMenu.add(mItem);
 //    }
 
 }

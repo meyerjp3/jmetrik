@@ -356,7 +356,6 @@ public class ItemAnalysis extends SwingWorker<String,Void> {
                         command.getSelectAllOption("options").isArgumentSelected("header")){
                     if(counter<(nItems-1)) buffer.append("\n");
                 }
-
                 counter++;
             }
         }

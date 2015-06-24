@@ -18,7 +18,6 @@
 package com.itemanalysis.jmetrik.graph.nicc;
 
 import com.itemanalysis.jmetrik.swing.GraphPanel;
-import com.itemanalysis.jmetrik.swing.SimpleFilter;
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -32,10 +31,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleInsets;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.TreeMap;
@@ -194,7 +190,7 @@ public class NonparametricCurvePanel extends GraphPanel {
 //
 //            }
 //        });
-//        popMenu.addArgument(mItem);
+//        popMenu.add(mItem);
 //    }
 
 }

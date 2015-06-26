@@ -36,6 +36,8 @@ import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.psychometrics.data.ItemType;
 import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
+import com.itemanalysis.psychometrics.factoranalysis.EstimationMethod;
+import com.itemanalysis.psychometrics.factoranalysis.ExploratoryFactorAnalysis;
 import com.itemanalysis.psychometrics.irt.estimation.JointMaximumLikelihoodEstimation;
 import com.itemanalysis.psychometrics.irt.estimation.RaschScaleQualityOutput;
 import com.itemanalysis.psychometrics.irt.model.Irm3PL;
@@ -82,6 +84,7 @@ public class RaschAnalysis extends SwingWorker<String, String>{
     private boolean savePersonFit = false;
     private boolean saveItemEstimates = false;
     private boolean saveResiduals = false;
+    private boolean evaluateDimensionality = true;//TODO make a user option
     private RaschPersonDatabaseOutput personOut = null;
 
 //    private byte[][] data = null;
@@ -254,11 +257,20 @@ public class RaschAnalysis extends SwingWorker<String, String>{
             publish(jmle.printCategoryStats());
             publish(scoreTable);
 
+
+
             //Compute and print scale quality statistics
             RaschScaleQualityOutput scaleOutput = new RaschScaleQualityOutput(
                     jmle.getItemSideScaleQuality(),
                     jmle.getPersonSideScaleQuality());
             publish("\n\n" + scaleOutput.printScaleQuality());
+
+
+            if(evaluateDimensionality){
+                ExploratoryFactorAnalysis princomp = jmle.getPrincipalComponentsForStandardizedResiduals(jmle.getNumberOfItems()/2);
+                princomp.estimateParameters(EstimationMethod.PRINCOMP);
+                publish("\n\n", princomp.printOutput("Principal Components Analysis of Std. Residuals"));
+            }
 
             //add item estimates to db
             if(saveItemEstimates){
@@ -285,7 +297,7 @@ public class RaschAnalysis extends SwingWorker<String, String>{
             }
 
             //optionally save residuals to database
-            if(saveResiduals){
+            if(saveResiduals) {
                 this.firePropertyChange("status", "", "Saving residuals...");
                 addResidualsToDb(jmle);
             }

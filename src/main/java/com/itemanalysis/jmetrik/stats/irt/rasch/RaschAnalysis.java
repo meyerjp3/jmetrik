@@ -267,9 +267,9 @@ public class RaschAnalysis extends SwingWorker<String, String>{
 
 
             if(evaluateDimensionality){
-                ExploratoryFactorAnalysis princomp = jmle.getPrincipalComponentsForStandardizedResiduals(jmle.getNumberOfItems()/2);
+                ExploratoryFactorAnalysis princomp = jmle.getPrincipalComponentsForStandardizedResiduals(5);//TODO make number of factors a user option
                 princomp.estimateParameters(EstimationMethod.PRINCOMP);
-                publish("\n\n", princomp.printOutput("Principal Components Analysis of Std. Residuals"));
+                publish("\n\n", princomp.printOutput("Principal Components Analysis of Standardized Residuals"));
             }
 
             //add item estimates to db

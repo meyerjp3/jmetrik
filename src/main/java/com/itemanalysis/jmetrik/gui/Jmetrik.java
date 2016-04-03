@@ -84,16 +84,15 @@ import java.util.TreeMap;
 public class Jmetrik extends JFrame{
 
     final static String APP_NAME = "jMetrik";
-    final static String VERSION = "4.0.0";
-    final static boolean BETA_VERSION = true;
-    final static String RELEASE_DATE = "April 14, 2014";
-    final static String COPYRIGHT_YEAR = "2009 - 2015";
+    final static String VERSION = "4.0.3";
+    final static boolean BETA_VERSION = false;
+    final static String RELEASE_DATE = "March 30, 2016";
+    final static String COPYRIGHT_YEAR = "2009 - 2016";
     final static String AUTHOR = "J. Patrick Meyer";
 
     private DataTable dataTable = null;
     private DataTable variableTable = null;
     private StatusBar statusBar = null;
-    private Color[] rowColors = null;
     private Workspace workspace = null;
     private JList workspaceList = null;
     private JTabbedPane tabbedPane = null;

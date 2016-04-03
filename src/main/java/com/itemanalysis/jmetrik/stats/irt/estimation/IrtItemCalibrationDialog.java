@@ -109,8 +109,8 @@ public class IrtItemCalibrationDialog extends JDialog {
     private IrtItemCalibrationCommand command = null;
     private ItemGroupWizzard wizzard = null;
 
-    private String[] latentDistributionTypeString = { "Normal", "Gauss-Hermite"};
-    private String[] latentDistributionCode = {"normal", "GH"};
+    private String[] latentDistributionTypeString = { "Normal", "Gauss-Hermite", "Empirical Histogram"};
+    private String[] latentDistributionCode = {"normal", "GH", "EH"};
 
     public IrtItemCalibrationDialog(JFrame parent, Connection conn, DatabaseName dbName, DataTableName tableName,
                                     SortedListModel<DataTableName> tableListModel, ArrayList<VariableAttributes> variables){
@@ -346,7 +346,7 @@ public class IrtItemCalibrationDialog extends JDialog {
 
         typeLabel.setText("Type");
 
-        typeComboBox.setModel(new DefaultComboBoxModel(new String[] { "Normal", "Gauss-Hermite", "Estimate Nonparametric" }));
+        typeComboBox.setModel(new DefaultComboBoxModel(new String[] { "Normal", "Gauss-Hermite", "Empirical Histogram" }));
         typeComboBox.setMaximumSize(new Dimension(125, 28));
         typeComboBox.setMinimumSize(new Dimension(125, 28));
         typeComboBox.setPreferredSize(new Dimension(125, 28));
@@ -368,21 +368,21 @@ public class IrtItemCalibrationDialog extends JDialog {
 
         pointsLabel.setText("Points");
 
-        pointTextField.setText("40");
+        pointTextField.setText("49");
         pointTextField.setMaximumSize(new Dimension(50, 28));
         pointTextField.setMinimumSize(new Dimension(50, 28));
         pointTextField.setPreferredSize(new Dimension(50, 28));
 
         minLabel.setText("Min value");
 
-        minTextField.setText("-4.0");
+        minTextField.setText("-6.0");
         minTextField.setMaximumSize(new Dimension(50, 28));
         minTextField.setMinimumSize(new Dimension(50, 28));
         minTextField.setPreferredSize(new Dimension(50, 28));
 
         maxLabel.setText("Max value");
 
-        maxTextField.setText("4.0");
+        maxTextField.setText("6.0");
         maxTextField.setMaximumSize(new Dimension(50, 28));
         maxTextField.setMinimumSize(new Dimension(50, 28));
         maxTextField.setPreferredSize(new Dimension(50, 28));

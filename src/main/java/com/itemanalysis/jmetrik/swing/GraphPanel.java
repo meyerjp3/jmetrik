@@ -33,6 +33,7 @@ import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.io.*;
 
@@ -157,6 +158,12 @@ public class GraphPanel extends JPanel{
                 renderer.setSeriesShapesFilled(i, false);
                 renderer.setSeriesShapesVisible(i, true);
                 renderer.setSeriesPaint(i, getPaintColor(i-half));
+
+                //This code will add points that are slightly transparent.
+                //The plan is to change the size according to the number of values at each point.
+//                renderer.setSeriesShape(i, new Ellipse2D.Double(-50/2,-50/2,50,50));
+//                renderer.setSeriesShapesFilled(i, true);
+//                renderer.setSeriesPaint(i, new Color(0,0,0,50));
             }
         }
 

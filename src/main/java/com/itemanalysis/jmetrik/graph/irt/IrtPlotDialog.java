@@ -70,8 +70,8 @@ public class IrtPlotDialog extends JDialog {
     private JTextField responseTableTextField;
     private JButton selectTableButton;
     private JTabbedPane tabbedPane;
-    private JLabel thinLabel;
-    private JTextField thinTextField;
+    private JLabel ObservedPointsLabel;
+    private JTextField observedPointsTextfield;
     private ButtonGroup typeGroup;
     // End of variables declaration
     private JFileChooser outputLocationChooser;
@@ -174,8 +174,8 @@ public class IrtPlotDialog extends JDialog {
             responseTableLebel = new JLabel();
             responseTableTextField = new JTextField();
             selectTableButton = new JButton();
-            thinLabel = new JLabel();
-            thinTextField = new JTextField();
+            ObservedPointsLabel = new JLabel();
+            observedPointsTextfield = new JTextField();
 
     //        setPreferredSize(new Dimension(434, 590));
 
@@ -253,7 +253,7 @@ public class IrtPlotDialog extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     if(categoryRadioButton.isSelected()){
                         responseTableTextField.setEnabled(true);
-                        thinTextField.setEnabled(true);
+                        observedPointsTextfield.setEnabled(true);
                         selectTableButton.setEnabled(true);
                     }
                 }
@@ -267,7 +267,7 @@ public class IrtPlotDialog extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     if(expectedScoreRadioButton.isSelected()){
                         responseTableTextField.setEnabled(false);
-                        thinTextField.setEnabled(false);
+                        observedPointsTextfield.setEnabled(false);
                         selectTableButton.setEnabled(false);
                     }
                 }
@@ -408,12 +408,12 @@ public class IrtPlotDialog extends JDialog {
                 }
             });
 
-            thinLabel.setText("Number of points");
+            ObservedPointsLabel.setText("Number of bins");
 
-            thinTextField.setText("25");
-            thinTextField.setMaximumSize(new Dimension(50, 28));
-            thinTextField.setMinimumSize(new Dimension(50, 28));
-            thinTextField.setPreferredSize(new Dimension(50, 28));
+            observedPointsTextfield.setText("10");
+            observedPointsTextfield.setMaximumSize(new Dimension(50, 28));
+            observedPointsTextfield.setMinimumSize(new Dimension(50, 28));
+            observedPointsTextfield.setPreferredSize(new Dimension(50, 28));
 
             GroupLayout responsePanelLayout = new GroupLayout(responsePanel);
             responsePanel.setLayout(responsePanelLayout);
@@ -422,7 +422,7 @@ public class IrtPlotDialog extends JDialog {
                 .addGroup(responsePanelLayout.createSequentialGroup()
                     .addContainerGap()
                     .addGroup(responsePanelLayout.createParallelGroup(GroupLayout.Alignment.TRAILING)
-                        .addComponent(thinLabel)
+                        .addComponent(ObservedPointsLabel)
                         .addComponent(responseTableLebel))
                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                     .addGroup(responsePanelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -430,7 +430,7 @@ public class IrtPlotDialog extends JDialog {
                             .addComponent(responseTableTextField, GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
                             .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                             .addComponent(selectTableButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                        .addComponent(thinTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                        .addComponent(observedPointsTextfield, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                     .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             );
             responsePanelLayout.setVerticalGroup(
@@ -443,8 +443,8 @@ public class IrtPlotDialog extends JDialog {
                         .addComponent(selectTableButton, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                     .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                     .addGroup(responsePanelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                        .addComponent(thinLabel)
-                        .addComponent(thinTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                        .addComponent(ObservedPointsLabel)
+                        .addComponent(observedPointsTextfield, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                     .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             );
 
@@ -722,7 +722,7 @@ public class IrtPlotDialog extends JDialog {
 
                     if(hasResponseData){
                         command.getPairedOptionList("response").addValue("table", responseTableTextField.getText().trim());
-                        command.getPairedOptionList("response").addValue("thin", thinTextField.getText().trim());
+                        command.getPairedOptionList("response").addValue("bins", observedPointsTextfield.getText().trim());
                     }
 
 

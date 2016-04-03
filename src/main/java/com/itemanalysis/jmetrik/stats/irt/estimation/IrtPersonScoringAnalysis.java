@@ -26,6 +26,7 @@ import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.jmetrik.workspace.VariableChangeType;
 import com.itemanalysis.psychometrics.data.*;
+import com.itemanalysis.psychometrics.distribution.ContinuousDistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.UserSuppliedDistributionApproximation;
 import com.itemanalysis.psychometrics.irt.estimation.IrtExaminee;
 import com.itemanalysis.psychometrics.irt.model.ItemResponseModel;
@@ -85,9 +86,10 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
     private int lineNumber = 0;
     private boolean logisticScale = true;
 
-    private UserSuppliedDistributionApproximation distributionApproximation = null;
+    private ContinuousDistributionApproximation distributionApproximation = null;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
+    static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
     public IrtPersonScoringAnalysis(Connection conn, DatabaseAccessObject dao, IrtPersonScoringCommand command, JmetrikTextFile tfa){
         this.conn = conn;
@@ -118,7 +120,7 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
         if(command.getSelectAllOption("method").isArgumentSelected("eap"))useEap = true;
 
         ArrayList<String> selectVariables = command.getFreeOptionList("variables").getString();
-        variables = dao.getSelectedVariables(conn, variableTableName, selectVariables);
+        variables = dao.getSelectedVariables(conn, variableTableName, selectVariables);//Will be in same order as selectedVariables
         selectedItems = new ArrayList<VariableName>();
         for(VariableAttributes v : variables){
             selectedItems.add(v.getName());
@@ -173,7 +175,7 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
                 index++;
             }
 
-            distributionApproximation = new UserSuppliedDistributionApproximation(points, weights);
+            distributionApproximation = new ContinuousDistributionApproximation(points, weights);
 
         }catch(SQLException ex){
             distributionApproximation = null;
@@ -351,6 +353,7 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
     }
 
     private void setItemParameters()throws SQLException{
+        //This call retrieves item parameters in the same order as the names in selectedItems
         LinkedHashMap<String, ItemResponseModel> temp = dao.getItemParameterSet(conn, ipTable, selectedItems, logisticScale);
         irm = new ItemResponseModel[temp.size()];
         int index = 0;
@@ -387,7 +390,6 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
         sw = new StopWatch();
         this.firePropertyChange("status", "", "Running IRT Person Scoring...");
         this.firePropertyChange("progress-ind-on", null, null);
-        logger.info(command.paste());
 
         try{
             processCommand();
@@ -421,6 +423,7 @@ public class IrtPersonScoringAnalysis extends SwingWorker<String, String> {
                 tfa.addText(get());
                 tfa.addText("Elapsed time: " + sw.getElapsedTime());
                 tfa.setCaretPosition(0);
+                scriptLogger.info(command.paste());
 
                 if(mleVar!=null){
                     fireVariableChanged(new VariableChangeEvent(this, tableName, mleVar, VariableChangeType.VARIABLE_ADDED));

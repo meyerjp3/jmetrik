@@ -40,6 +40,9 @@ import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
 import org.apache.log4j.Logger;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 public class ItemMapAnalysis extends SwingWorker<ItemMapPanel, Void> {
 
@@ -111,6 +114,72 @@ public class ItemMapAnalysis extends SwingWorker<ItemMapPanel, Void> {
         }catch(SQLException ex){
             logger.fatal(ex.getMessage(), ex);
             throw new SQLException(ex);
+        }finally{
+            if(rs!=null) rs.close();
+            if(stmt!=null) stmt.close();
+        }
+    }
+
+    private XYSeriesCollection summarizeItemSteps()throws SQLException{
+        Statement stmt = null;
+        ResultSet rs=null;
+
+        XYSeriesCollection seriesCollection = new XYSeriesCollection();
+
+        try{
+            Table sqlTable = new Table(itemTableName.getNameForDatabase());
+            SelectQuery select = new SelectQuery();
+            select.addColumn(sqlTable, "*");
+            stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            rs=stmt.executeQuery(select.toString());
+
+            VariableName itemName = new VariableName("name");
+            VariableName nCatName = new VariableName("ncat");
+            VariableName deltaName = new VariableName("bparam");
+            VariableName tauName = null;
+            int numCat = 2;
+            String gName = "difficulty";
+            rs=stmt.executeQuery(select.toString());
+
+            //Each item has its own series
+            XYSeries series = null;
+            Double itemPosition = 1.0;
+
+            //Create points
+            while(rs.next()){
+                String itemNameText = (String)rs.getObject(itemName.nameForDatabase());
+                Double nCat = (Double)rs.getObject(nCatName.nameForDatabase());
+                Double delta = (Double)rs.getObject(deltaName.nameForDatabase());
+                Double tau = 0.0;
+                Double step = 0.0;
+
+                series = new XYSeries(itemNameText);
+
+                if(nCat!=null && delta!=null){
+                    numCat = nCat.intValue();
+                    if(numCat>2){
+                        for(int i=1;i<numCat;i++){
+                            gName = "step" + i;
+                            //compute step difficulties and frequency of occurrence
+                            tauName = new VariableName(gName);
+                            tau = delta + (Double)rs.getObject(tauName.nameForDatabase());
+                            step = delta + tau;
+
+                            series.add(step, itemPosition);
+
+                        }
+                    }else{
+                        series.add(delta, itemPosition);
+                    }
+                }
+                seriesCollection.addSeries(series);
+                updateProgress();
+                itemPosition++;
+            }
+
+            return seriesCollection;
+        }catch(SQLException ex){
+            throw(ex);
         }finally{
             if(rs!=null) rs.close();
             if(stmt!=null) stmt.close();
@@ -206,7 +275,8 @@ public class ItemMapAnalysis extends SwingWorker<ItemMapPanel, Void> {
 
             initializeProgress();
             itemMapPanel.updatePersonDataset(summarizePersons());
-            itemMapPanel.updateItemDataSet(summarizeItems());
+//            itemMapPanel.updateItemDataSet(summarizeItems());
+            itemMapPanel.updateItemDataSet2(summarizeItemSteps());
 
             firePropertyChange("status", "", "Done: " + sw.getElapsedTime());
             firePropertyChange("progress-off", null, null); //make statusbar progress not visible

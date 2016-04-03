@@ -48,7 +48,6 @@ public class RaschDialog extends JDialog{
     private DatabaseName dbName = null;
     private DataTableName tableName = null;
     private MultipleSelectionPanel vsp = null;
-//	private JPanel selectionPanel;
     private JPanel mainPanel;
 	private boolean canRun = false;
     static Logger logger = Logger.getLogger("jmetrik-logger");
@@ -61,8 +60,12 @@ public class RaschDialog extends JDialog{
     private boolean savePersonFit = false;
     private boolean saveResiduals = false;
 
-    private ButtonGroup missingDataGroup = null;
-    private ButtonGroup centeringButtonGroup = null;
+    private boolean ignoreMissingData = true;
+    private boolean pcaResidual = false;
+    private boolean itemCentering = true;
+
+//    private ButtonGroup missingDataGroup = null;
+//    private ButtonGroup centeringButtonGroup = null;
 
     private JTextField itemOutputText = null;
     private JTextField globalConvergenceText = null;
@@ -92,7 +95,7 @@ public class RaschDialog extends JDialog{
         this.conn = conn;
         this.tableListModel = tableListModel;
 
-        centeringButtonGroup = new ButtonGroup();
+//        centeringButtonGroup = new ButtonGroup();
 
         //get type of database according to properties
         JmetrikPreferencesManager preferencesManager = new JmetrikPreferencesManager();
@@ -120,7 +123,6 @@ public class RaschDialog extends JDialog{
 
         mainPanel=new JPanel();
 		mainPanel=new JPanel();
-//		mainPanel.setPreferredSize(new Dimension(350,470));
 		mainPanel.setLayout(new GridBagLayout());
 
 //		selectionPanel= new JPanel();
@@ -128,14 +130,6 @@ public class RaschDialog extends JDialog{
 //		selectionPanel.setPreferredSize(new Dimension(350,200));
 
 		vsp=new MultipleSelectionPanel();
-
-        //filter out nonitems
-//        VariableType filterType1 = new VariableType(ItemType.NOT_ITEM, DataType.STRING);
-//        VariableType filterType2 = new VariableType(ItemType.NOT_ITEM, DataType.DOUBLE);
-//        vsp.addUnselectedFilterType(filterType1);
-//        vsp.addUnselectedFilterType(filterType2);
-//        vsp.addSelectedFilterType(filterType1);
-//        vsp.addSelectedFilterType(filterType2);
 
         vsp.addUnselectedFilterItemType(ItemType.NOT_ITEM);
         vsp.addSelectedFilterItemType(ItemType.NOT_ITEM);
@@ -254,19 +248,19 @@ public class RaschDialog extends JDialog{
 		c.fill = GridBagConstraints.HORIZONTAL;
 		panel.add(uconBox,c);
 
-        final JRadioButton centerItemsRadioButton = new JRadioButton("Center on items");
-        centerItemsRadioButton.setActionCommand("items");
-        centerItemsRadioButton.setSelected(true);
-        centeringButtonGroup.add(centerItemsRadioButton);
-        c.gridx = 3;
-        c.gridy = 0;
-        c.gridwidth = 6;
-        c.gridheight = 1;
-        c.weightx = 1;
-        c.weighty = 1;
-        c.anchor = GridBagConstraints.NORTHWEST;
-        c.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(centerItemsRadioButton,c);
+//        final JRadioButton centerItemsRadioButton = new JRadioButton("Center on items");
+//        centerItemsRadioButton.setActionCommand("items");
+//        centerItemsRadioButton.setSelected(true);
+//        centeringButtonGroup.add(centerItemsRadioButton);
+//        c.gridx = 3;
+//        c.gridy = 0;
+//        c.gridwidth = 6;
+//        c.gridheight = 1;
+//        c.weightx = 1;
+//        c.weighty = 1;
+//        c.anchor = GridBagConstraints.NORTHWEST;
+//        c.fill = GridBagConstraints.HORIZONTAL;
+//        panel.add(centerItemsRadioButton,c);
 
         final JCheckBox showStartBox = new JCheckBox("Show start values");
         showStartBox.addActionListener(new ActionListener(){
@@ -441,18 +435,18 @@ public class RaschDialog extends JDialog{
 		c.fill = GridBagConstraints.HORIZONTAL;
 		panel.add(savePersonEstBox, c);
 
-        final JRadioButton centerPersonsRadioButton = new JRadioButton("Center on persons");
-        centerPersonsRadioButton.setActionCommand("persons");
-        centeringButtonGroup.add(centerPersonsRadioButton);
-        c.gridx = 3;
-        c.gridy = 0;
-        c.gridwidth = 3;
-        c.gridheight = 1;
-        c.weightx = 1;
-        c.weighty = 1;
-        c.anchor = GridBagConstraints.NORTHWEST;
-        c.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(centerPersonsRadioButton, c);
+//        final JRadioButton centerPersonsRadioButton = new JRadioButton("Center on persons");
+//        centerPersonsRadioButton.setActionCommand("persons");
+//        centeringButtonGroup.add(centerPersonsRadioButton);
+//        c.gridx = 3;
+//        c.gridy = 0;
+//        c.gridwidth = 3;
+//        c.gridheight = 1;
+//        c.weightx = 1;
+//        c.weighty = 1;
+//        c.anchor = GridBagConstraints.NORTHWEST;
+//        c.fill = GridBagConstraints.HORIZONTAL;
+//        panel.add(centerPersonsRadioButton, c);
 
         final JCheckBox savePersonFitBox = new JCheckBox("Save person fit statistics");
         savePersonFitBox.addActionListener(new ActionListener(){
@@ -708,39 +702,89 @@ public class RaschDialog extends JDialog{
     }
 
     public JPanel getMissingDataPanel(){
+//        JPanel panel = new JPanel();
+//        panel.setBorder(new TitledBorder("Missing Data"));
+//        panel.setLayout(new GridBagLayout());
+//        GridBagConstraints c = new GridBagConstraints();
+//
+//        missingDataGroup = new ButtonGroup();
+//        JRadioButton ignoreButton = new JRadioButton("Ignore");
+//        ignoreButton.setSelected(true);
+//        ignoreButton.setActionCommand("ignore");
+//        missingDataGroup.add(ignoreButton);
+//        c.gridx = 0;
+//		c.gridy = 0;
+//		c.gridwidth = 4;
+//		c.gridheight = 1;
+//		c.weightx = 1;
+//		c.weighty = 1;
+//		c.anchor = GridBagConstraints.NORTHWEST;
+//		c.fill = GridBagConstraints.HORIZONTAL;
+//		panel.add(ignoreButton,c);
+//
+//        JRadioButton zeroButton = new JRadioButton("Score as zero");
+//        zeroButton.setActionCommand("zero");
+//        missingDataGroup.add(zeroButton);
+//        c.gridx = 0;
+//		c.gridy = 1;
+//		c.gridwidth = 4;
+//		c.gridheight = 1;
+//		c.weightx = 1;
+//		c.weighty = 1;
+//		c.anchor = GridBagConstraints.NORTHWEST;
+//		c.fill = GridBagConstraints.HORIZONTAL;
+//		panel.add(zeroButton,c);
+//        return panel;
+
+
         JPanel panel = new JPanel();
-        panel.setBorder(new TitledBorder("Missing Data"));
-        panel.setLayout(new GridBagLayout());
-        GridBagConstraints c = new GridBagConstraints();
+        panel.setBorder(new TitledBorder("Options"));
+        panel.setLayout(new GridLayout(3, 1));
 
-        missingDataGroup = new ButtonGroup();
-        JRadioButton ignoreButton = new JRadioButton("Ignore");
-        ignoreButton.setSelected(true);
-        ignoreButton.setActionCommand("ignore");
-        missingDataGroup.add(ignoreButton);
-        c.gridx = 0;
-		c.gridy = 0;
-		c.gridwidth = 4;
-		c.gridheight = 1;
-		c.weightx = 1;
-		c.weighty = 1;
-		c.anchor = GridBagConstraints.NORTHWEST;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(ignoreButton,c);
+        final JCheckBox ignoreCheckBox = new JCheckBox("Ignore missing data");
+        ignoreCheckBox.setSelected(true);
+        ignoreCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(ignoreCheckBox.isSelected()){
+                    ignoreMissingData = true;
+                }else{
+                    ignoreMissingData = false;
+                }
+            }
+        });
+        panel.add(ignoreCheckBox);
 
-        JRadioButton zeroButton = new JRadioButton("Score as zero");
-        zeroButton.setActionCommand("zero");
-        missingDataGroup.add(zeroButton);
-        c.gridx = 0;
-		c.gridy = 1;
-		c.gridwidth = 4;
-		c.gridheight = 1;
-		c.weightx = 1;
-		c.weighty = 1;
-		c.anchor = GridBagConstraints.NORTHWEST;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		panel.add(zeroButton,c);
+        final JCheckBox pcaCheckBox = new JCheckBox("PCA of Std Residuals");
+        pcaCheckBox.setSelected(false);
+        pcaCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(pcaCheckBox.isSelected()){
+                    pcaResidual = true;
+                }else{
+                    pcaResidual = false;
+                }
+            }
+        });
+        panel.add(pcaCheckBox);
+
+        final JCheckBox itemCenterCheckBox = new JCheckBox("Center on items");
+        itemCenterCheckBox.setSelected(true);
+        itemCenterCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(itemCenterCheckBox.isSelected()){
+                    itemCentering = true;
+                }else{
+                    itemCentering = false;
+                }
+            }
+        });
+        panel.add(itemCenterCheckBox);
         return panel;
+
+
 
     }
 
@@ -899,8 +943,26 @@ public class RaschDialog extends JDialog{
                     command.getSelectAllOption("person").setSelected("rsave", saveResiduals);
 
                     //estimation options--------------------------------------------------------------------------------------
-                    command.getSelectOneOption("missing").setSelected(missingDataGroup.getSelection().getActionCommand());
-                    command.getSelectOneOption("center").setSelected(centeringButtonGroup.getSelection().getActionCommand());
+//                    command.getSelectOneOption("missing").setSelected(missingDataGroup.getSelection().getActionCommand());
+//                    command.getSelectOneOption("center").setSelected(centeringButtonGroup.getSelection().getActionCommand());
+
+                    if(ignoreMissingData){
+                        command.getSelectOneOption("missing").setSelected("ignore");
+                    }else{
+                        command.getSelectOneOption("missing").setSelected("zero");
+                    }
+
+                    if(itemCentering){
+                        command.getSelectOneOption("center").setSelected("items");
+                    }else{
+                        command.getSelectOneOption("center").setSelected("persons");
+                    }
+
+                    if(pcaResidual){
+                        command.getSelectOneOption("pca").setSelected("yes");
+                    }else{
+                        command.getSelectOneOption("pca").setSelected("no");
+                    }
 
                     //global update
                     if(globalMaxIterText.getText().trim().equals("")){

@@ -99,9 +99,9 @@ public class IrtPersonScoringDialog extends JDialog{
     private SelectTableDialog itemParameterDialog = null;
     private DataTableName itemParameterTable = null;
     private IrtLinkingThetaDialog quadratureDialog = null;
-    private boolean useMle = true;
+    private boolean useMle = false;
     private boolean useMap = false;
-    private boolean useEap = false;
+    private boolean useEap = true;
     private boolean useQuadrature = false;
 
     static Logger logger = Logger.getLogger("jmetrik-logger");
@@ -235,6 +235,7 @@ public class IrtPersonScoringDialog extends JDialog{
         eapCheckbox.setText("Expected a posteriori");
         eapCheckbox.setToolTipText("");
         eapCheckbox.setActionCommand("eap");
+        eapCheckbox.setSelected(true);
         eapCheckbox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -263,7 +264,7 @@ public class IrtPersonScoringDialog extends JDialog{
         });
         methodPanel.add(mapCheckBox);
 
-        mleCheckBox.setSelected(true);
+        mleCheckBox.setSelected(false);
         mleCheckBox.setText("Maximum likelihood");
         mleCheckBox.setActionCommand("mle");
         mleCheckBox.addActionListener(

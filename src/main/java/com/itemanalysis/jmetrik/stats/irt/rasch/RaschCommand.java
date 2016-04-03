@@ -100,13 +100,26 @@ public class RaschCommand extends AbstractCommand{
             center.addArgument("persons", "Set average person ability to zero.");
             this.addSelectOneOption(center);
 
+            SelectOneOption pca = new SelectOneOption("pca", "Principal components analysis of standardized residuals", false);
+            pca.addArgument("yes", "Conduct PCA.");
+            pca.addArgument("no", "Do not conduct PCA.");
+            this.addSelectOneOption(pca);
+
             SelectAllOption options = new SelectAllOption("options", "General analysis options.", false);
             options.addArgument("noprint", "Suppress output", false);
             this.addSelectAllOption(options);
 
+
+
         }catch(IllegalArgumentException ex){
             throw new IllegalArgumentException(ex);
         }
+    }
+
+    public String getDataString()throws IllegalArgumentException{
+        String s = s = this.getPairedOptionList("data").getStringAt("db") + "." +
+                this.getPairedOptionList("data").getStringAt("table");
+        return s;
     }
 
 }

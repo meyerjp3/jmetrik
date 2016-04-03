@@ -19,6 +19,7 @@ package com.itemanalysis.jmetrik.graph.irt;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import javax.swing.SwingWorker;
 
@@ -30,20 +31,16 @@ import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.distribution.NormalDistributionApproximation;
+import com.itemanalysis.psychometrics.distribution.ContinuousDistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.UniformDistributionApproximation;
-import com.itemanalysis.psychometrics.irt.estimation.IrtObservedScoreDistribution;
+import com.itemanalysis.psychometrics.irt.estimation.IrtExaminee;
 import com.itemanalysis.psychometrics.irt.estimation.ItemResponseVector;
 import com.itemanalysis.psychometrics.irt.model.ItemResponseModel;
-import com.itemanalysis.psychometrics.kernel.*;
+import com.itemanalysis.psychometrics.statistics.TwoWayTable;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
-import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
-import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
-import org.apache.commons.math3.stat.descriptive.rank.Max;
-import org.apache.commons.math3.stat.descriptive.rank.Min;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.log4j.Logger;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -68,9 +65,6 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
     private boolean plotTcc = true;
     private boolean plotTestInfo = false;
     private boolean plotTestStdError = false;
-    private double min = -4.0;
-    private double max = 4.0;
-    private int points = 51;
     private double[] theta = null;
     private double[] tcc = null;
     private double[] tinfo = null;
@@ -80,14 +74,14 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
     private ItemResponseModel[] itemResponseModels = null;
     private DataTableName responseTableName = null;
     private boolean hasResponseData = false;
-    private IrtObservedScoreDistribution irtDist = null;
     private ItemResponseVector[] responseVector = null;
-    private double[] eapScore = null;
-    private int nscores = 0;
     private LinkedHashMap<String, ItemResponseModel> itemParameterSet = null;
-
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
-    private int thin = 1;
+
+    int nBins = 10;
+    double[] eap = null;
+    DescriptiveStatistics eapStats = new DescriptiveStatistics();
+    TwoWayTable[] table = null;
 
     public IrtPlotAnalysis(Connection conn, DatabaseAccessObject dao, IrtPlotCommand command, IrtPlotPanel irtPanel){
         this.command = command;
@@ -96,7 +90,6 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         this.dao = dao;
         variables = new ArrayList<String>();
         variableChangeListeners = new ArrayList<VariableChangeListener>();
-
     }
 
     private void initializeProgress()throws SQLException {
@@ -124,8 +117,15 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
 
         itemResponseModels = new ItemResponseModel[itemParameterSet.size()];
 
+//        int j=0;
+//        for(String s : itemParameterSet.keySet()){
+//            itemResponseModels[j] = itemParameterSet.get(s);
+//            j++;
+//        }
+
+        //In order of the item parameter table
         int j=0;
-        for(String s : itemParameterSet.keySet()){
+        for(String s : variables){
             itemResponseModels[j] = itemParameterSet.get(s);
             j++;
         }
@@ -147,6 +147,7 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         XYSeriesCollection collection = null;
         ItemResponseModel irm = null;
         for(String s : itemParameterSet.keySet()){
+
             collection = new XYSeriesCollection();
             irm = itemParameterSet.get(s);
             maxPossibleTestScore += irm.getMaxScoreWeight();
@@ -181,7 +182,7 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
             }
 
             if(hasResponseData){
-                addObservedPoints(j, irm.getNcat(), collection);
+                addObservedPoints(j, collection);
                 irtPanel.updateDatasetLinesAndPoints(s, collection, collection.getSeriesCount()>2);
             }else{
                 irtPanel.updateDataset(s, collection, collection.getSeriesCount()>1);
@@ -223,33 +224,45 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
 
     }
 
+    private ArrayList<VariableAttributes> reorderAttributes(ArrayList<VariableAttributes> variableAttributes){
+        ArrayList<VariableAttributes> orderedAttributes = new ArrayList<VariableAttributes>();
+
+        outer:
+        for(int j=0;j<itemResponseModels.length;j++){
+            inner:
+            for(VariableAttributes v : variableAttributes){
+                if(itemResponseModels[j].getName().equals(v.getName())){
+                    orderedAttributes.add(v);
+                    break inner;
+                }
+            }
+        }
+        return orderedAttributes;
+    }
+
     private void summarizeResponseData()throws SQLException{
         this.firePropertyChange("progress-ind-on", null, null);
 
         Statement stmt = null;
         ResultSet rs = null;
 
-        //IRT observed score distribution
-        NormalDistributionApproximation latentDist = new NormalDistributionApproximation(min, max, points);
-        irtDist = new IrtObservedScoreDistribution(itemResponseModels, latentDist);
-        irtDist.compute();
-        nscores = irtDist.getNumberOfScores();
-        eapScore = new double[nscores];
-        for(int i=0;i<nscores;i++){
-            eapScore[i] = irtDist.getEAP(i);
-        }
-
         //Summarize item response vectors
         try{
             int nrow = dao.getRowCount(conn, responseTableName);
             responseVector = new ItemResponseVector[nrow];
 
+            eap = new double[nrow];
+            IrtExaminee examinee = new IrtExaminee(itemResponseModels);
+
+            //Selecte variables must be in same order as in the array of item response models
             VariableTableName variableTableName = new VariableTableName(responseTableName.toString());
-            ArrayList<VariableAttributes> variableAttributes = dao.getSelectedVariables(conn, variableTableName, variables);
+            ArrayList<VariableAttributes> variableAttributes = reorderAttributes(dao.getSelectedVariables(conn, variableTableName, variables));
+
 
             //Query the db. Variables include the select items and the grouping variable is one is available.
             Table sqlTable = new Table(responseTableName.getNameForDatabase());
             SelectQuery select = new SelectQuery();
+
             for(VariableAttributes v : variableAttributes){
                 select.addColumn(sqlTable, v.getName().nameForDatabase());
             }
@@ -277,8 +290,16 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
                 }
                 iVec = new ItemResponseVector(rv, 1.0);
                 responseVector[i] = iVec;
+
+                //Compute EAP estimate and increment descriptive statistics
+                examinee.setResponseVector(responseVector[i]);
+                eap[i] = examinee.eapEstimate(0, 1, -5, 5, 51);//TODO allow user to set the arguments
+                eapStats.addValue(eap[i]);
+
                 i++;
             }//end data summary
+
+            condenseObservedResponses();
 
         }catch(SQLException ex){
             throw(ex);
@@ -288,84 +309,72 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         }
     }
 
-    private void addObservedPoints(int itemIndex, int ncat, XYSeriesCollection collection)throws SQLException{
+    private void condenseObservedResponses(){
+        double response = 0;
+        double min = eapStats.getMin();
+        double max = eapStats.getMax();
+        double midPoint = 0;
 
-        //Initialize frequency table
-        //Assumes categories are scored 0, 1, ..., k
-        double[][] table = new double[nscores][ncat];
-        double[] rowMargin = new double[nscores];
-        byte response = 0;
-        int sumScore = 0;
+        //initialize tables
+        table = new TwoWayTable[itemResponseModels.length];
+        for(int i=0;i<table.length;i++){
+            table[i] = new TwoWayTable();
+        }
+
+        //Create two-way frequency tables
         for(int i=0;i<responseVector.length;i++){
-            sumScore = (int)responseVector[i].getSumScore();
-            response = responseVector[i].getResponseAt(itemIndex);
-            if(response!=-1){
-                table[sumScore][response]++;
-                rowMargin[sumScore]++;
-            }
-        }
+            midPoint = findMidPoint(eap[i], nBins, min, max);
 
-        if(ncat>2){
-            for(int k=0;k<ncat;k++){
-                collection.addSeries(getSmoothedProportions(table, rowMargin, k));
-//                collection.addSeries(getCategoryProportions(table, rowMargin, k));
+            for(int j=0;j<responseVector[i].getNumberOfItems();j++){
+                response = responseVector[i].getResponseAt(j);
+                if(response!=-1){
+                    table[j].addValue(midPoint, Double.valueOf(response).byteValue());
+                }
             }
-        }else{
-            collection.addSeries(getSmoothedProportions(table, rowMargin, 1));
-//            collection.addSeries(getCategoryProportions(table, rowMargin, 1));
         }
 
     }
 
-    private XYSeries getSmoothedProportions(double[][] table, double[] rowMargin, int category){
-        XYSeries series = new XYSeries(category+"p");
+    private void addObservedPoints(int itemIndex, XYSeriesCollection collection){
 
-        double N = 0;
-        for(int i=0;i<nscores;i++){
-            N+=rowMargin[i];
-        }
+        TwoWayTable itemTable = table[itemIndex];
+        Iterator<Comparable<?>> rowIter = itemTable.rowValuesIterator();
+        Iterator<Comparable<?>> colIter = itemTable.colValuesIterator();
+        double r;
+        double prop;
 
-        Max max = new Max();
-        Min min = new Min();
-        UniformDistributionApproximation dist = new UniformDistributionApproximation(min.evaluate(eapScore), max.evaluate(eapScore), thin);
-        NonparametricIccBandwidth bw = new NonparametricIccBandwidth(N, 1);
-        KernelRegression kreg = new KernelRegression(new GaussianKernel(), bw, dist);
+        while(colIter.hasNext()){
+            Comparable<?> ci = colIter.next();
+            int c = ((Byte)ci).intValue();
+            XYSeries series = new XYSeries(c+"p");
 
-        for(int i=0;i<nscores;i++){
-            if(rowMargin[i]!=0){
-//                kreg.increment(eapScore[index], table[index][category]/rowMargin[index]);
-                kreg.increment(eapScore[i], 1, table[i][category]);
-                kreg.increment(eapScore[i], 0, rowMargin[i]-table[i][category]);
+            if((itemResponseModels[itemIndex].getNcat()>2) ||
+                    (itemResponseModels[itemIndex].getNcat()==2 && c==1) ){
+
+                rowIter = itemTable.rowValuesIterator();
+
+                while(rowIter.hasNext()){
+                    Comparable<?> ri = rowIter.next();
+                    r = (Double)ri;
+                    prop = (double)itemTable.getCount(ri, ci)/(double)itemTable.getRowCount(ri);
+                    series.add(r, prop);
+                }
+                collection.addSeries(series);
+
             }
-        }
 
-        double[] x = kreg.getPoints();
-        double[] y = kreg.value();
-        for(int i=0;i<x.length;i++){
-            series.add(x[i], y[i]);
         }
-
-        return series;
     }
 
-    private XYSeries getCategoryProportions(double[][] table, double[] rowMargin, int category){
-        XYSeries series = new XYSeries(category+"p");
+    private double findMidPoint(double x, int nBins, double min, double max){
+        double h = (max-min)/nBins;
+        double upperBound;
 
-        int index = 0;
-        while(index<table.length){
-            if(rowMargin[index]!=0){
-                series.add(eapScore[index], table[index][category]/rowMargin[index]);
-            }
-            index+=thin;
+        for(int i=0;i<nBins;i++){
+            upperBound = min+(i+1)*h;
+            if(x <= upperBound) return upperBound-h/2;
         }
-
-//        for(int i=0;i<table.length;i++){
-//            if(rowMargin[i]!=0){
-//                series.add(eapScore[i], table[i][category]/rowMargin[i]);
-//            }
-//        }
-        return series;
-
+        return max-h/2;
     }
 
     private void addTcc(XYSeriesCollection collection){
@@ -465,9 +474,9 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
             plotTcc = command.getSelectAllOption("person").isArgumentSelected("tcc");
             plotTestInfo = command.getSelectAllOption("person").isArgumentSelected("info");
             plotTestStdError = command.getSelectAllOption("person").isArgumentSelected("se");
-            min = command.getPairedOptionList("xaxis").getDoubleAt("min").doubleValue();
-            max = command.getPairedOptionList("xaxis").getDoubleAt("max").doubleValue();
-            points = command.getPairedOptionList("xaxis").getIntegerAt("points").intValue();
+            double min = command.getPairedOptionList("xaxis").getDoubleAt("min").doubleValue();
+            double max = command.getPairedOptionList("xaxis").getDoubleAt("max").doubleValue();
+            int points = command.getPairedOptionList("xaxis").getIntegerAt("points").intValue();
 
             savePlots = command.getFreeOption("output").hasValue();
             if(savePlots) savePath = command.getFreeOption("output").getString();
@@ -479,7 +488,7 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
             if(hasResponseData){
                 String tn = command.getPairedOptionList("response").getStringAt("table");
                 responseTableName = new DataTableName(tn);
-                thin = command.getPairedOptionList("response").getIntegerAt("thin");
+                nBins = command.getPairedOptionList("response").getIntegerAt("bins");
                 summarizeResponseData();
             }
 

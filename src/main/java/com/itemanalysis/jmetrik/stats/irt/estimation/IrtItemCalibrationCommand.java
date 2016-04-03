@@ -33,7 +33,7 @@ public class IrtItemCalibrationCommand extends MegaCommand {
         this.addOption(optimizer);
 
         MegaOption latent = new MegaOption("latent", "Latent distribution specification", OptionType.ARGUMENT_VALUE_OPTION_LIST, true);
-        latent.addArgument("name", "Name of the distribution. Possible values are \"normal\" for normal distribution or \"GH\" for Gauss-Hermite", false);
+        latent.addArgument("name", "Name of the distribution. Possible values are \"normal\" for normal distribution or \"GH\" for Gauss-Hermite or \"EH\" for Empirical histogram", false);
         latent.addArgument("min", "Minimum value", false);
         latent.addArgument("max", "Maximum value", false);
         latent.addArgument("points", "Number of quadrature points", false);

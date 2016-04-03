@@ -22,6 +22,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Formatter;
 import java.util.List;
 import javax.swing.JTree;
 import javax.swing.SwingWorker;
@@ -216,7 +218,6 @@ public class RaschAnalysis extends SwingWorker<String, String>{
 
     public void runEstimation(double intercept, double scale, int precision)throws SQLException{
         try{
-            this.firePropertyChange("status", "", "Running JMLE...");
 
             JointMaximumLikelihoodEstimation jmle = new JointMaximumLikelihoodEstimation(getData(), getItemResponseModels());
             DefaultLinearTransformation linearTransformation = new DefaultLinearTransformation(intercept, scale);
@@ -227,6 +228,8 @@ public class RaschAnalysis extends SwingWorker<String, String>{
 
             //print initial values and frequencies if requested
             if(showStart) publish("\n" + jmle.printBasicItemStats("PROX STARTING VALUES") + "\n\n");
+
+            this.firePropertyChange("status", "", "Running JMLE...");
 
             //estimate parameters and optionally adjust for bias
             jmle.estimateParameters(globalMaxUpdate, globalConvergence, centerItems);
@@ -267,9 +270,10 @@ public class RaschAnalysis extends SwingWorker<String, String>{
 
 
             if(evaluateDimensionality){
+                this.firePropertyChange("status", "", "PCA of standardized residuals...");
                 ExploratoryFactorAnalysis princomp = jmle.getPrincipalComponentsForStandardizedResiduals(5);//TODO make number of factors a user option
                 princomp.estimateParameters(EstimationMethod.PRINCOMP);
-                publish("\n\n", princomp.printOutput("Principal Components Analysis of Standardized Residuals"));
+                publish("\n", princomp.printOutput("PRINCIPAL COMPONENTS ANALYSIS OF STANDARDIZED RESIDUALS"));
             }
 
             //add item estimates to db
@@ -340,6 +344,26 @@ public class RaschAnalysis extends SwingWorker<String, String>{
         savePersonFit = command.getSelectAllOption("person").isArgumentSelected("pfit");
         saveResiduals = command.getSelectAllOption("person").isArgumentSelected("rsave");
         centerItems = command.getSelectOneOption("center").isValueSelected("items");
+        evaluateDimensionality = command.getSelectOneOption("pca").isValueSelected("yes");
+    }
+
+    private void printHeader(){
+        StringBuilder headerBuffer = new StringBuilder();
+        Formatter f = new Formatter(headerBuffer);
+        int outputMidpoint = 47;
+        String s1 = String.format("%1$tB %1$te, %1$tY  %tT", Calendar.getInstance());
+        int len = outputMidpoint+Double.valueOf(Math.floor(Double.valueOf(s1.length()).doubleValue()/2.0)).intValue();
+        String dString = "";
+
+        dString = command.getDataString();
+
+        int len2 = outputMidpoint+Double.valueOf(Math.floor(Double.valueOf(dString.length()).doubleValue()/2.0)).intValue();
+
+        f.format("%54s", "RASCH ANALYSIS"); f.format("%n");
+        f.format("%" + len2 + "s", dString); f.format("%n");
+        f.format("%" + len + "s", s1); f.format("%n");
+
+        publish(f.toString());
     }
 
     public String doInBackground(){
@@ -351,9 +375,11 @@ public class RaschAnalysis extends SwingWorker<String, String>{
         try{
             processCommand();
 
+            printHeader();
+
             runEstimation(command.getPairedOptionList("transform").getDoubleAt("intercept"),
-                        command.getPairedOptionList("transform").getDoubleAt("scale"),
-                        command.getPairedOptionList("transform").getIntegerAt("precision"));
+                    command.getPairedOptionList("transform").getDoubleAt("scale"),
+                    command.getPairedOptionList("transform").getIntegerAt("precision"));
 
             firePropertyChange("status", "", "Done: " + sw.getElapsedTime());
             firePropertyChange("progress-off", null, null); //make statusbar progress not visible

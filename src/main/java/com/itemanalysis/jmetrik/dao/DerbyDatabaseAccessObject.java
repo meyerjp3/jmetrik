@@ -1254,7 +1254,7 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
             selectQuery.addColumn(table, "*");
             stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             rs = stmt.executeQuery(selectQuery.toString());
-            ArrayList<VariableAttributes> variables = new ArrayList<VariableAttributes>();
+            HashMap<VariableName, VariableAttributes> variables = new HashMap<VariableName, VariableAttributes>();
             int dbColumnPosition = 0;
             int testItemOrder = 0;
             String groupId = "";
@@ -1296,12 +1296,20 @@ public class DerbyDatabaseAccessObject implements DatabaseAccessObject {
 
 
                 if(selectedVariables.contains(var.getName().toString())){
-                    variables.add(var);
+                    variables.put(var.getName(), var);
                 }
 
                 dbColumnPosition++;
             }
-            return variables;
+
+            //Ensures that returned attributes are in teh same order as the selectedVariables
+            ArrayList<VariableAttributes> attributes = new ArrayList<VariableAttributes>();
+            for(String s : selectedVariables){
+                VariableName vname = new VariableName(s);
+                attributes.add(variables.get(vname));
+            }
+
+            return attributes;
         }catch(SQLException ex){
             throw ex;
         }finally{

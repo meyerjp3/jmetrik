@@ -34,8 +34,8 @@ public class IrtPlotCommand extends AbstractCommand {
             this.addPairedOptionList(dataInfo);
 
             PairedOptionList responseData = new PairedOptionList("response", "Name of table with item response data", false);
-            responseData.addArgument("table", "Name of table that contains item resposnes.", OptionValueType.STRING);
-            responseData.addArgument("thin", "Sum score increment to plot (e.g. every 5th value).", OptionValueType.INTEGER);
+            responseData.addArgument("table", "Name of table that contains item responses.", OptionValueType.STRING);
+            responseData.addArgument("bins", "Number of bins for computing observed points", OptionValueType.INTEGER);
             this.addPairedOptionList(responseData);
 
             SelectAllOption options = new SelectAllOption("options", "Chart options", false);

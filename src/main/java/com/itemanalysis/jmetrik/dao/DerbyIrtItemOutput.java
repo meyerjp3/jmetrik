@@ -60,12 +60,22 @@ public class DerbyIrtItemOutput {
 
     private void initialize(){
         for(int j=0;j<irm.length;j++){
-            if(irm[j].getType()==IrmType.L4 || irm[j].getType()==IrmType.L3){
-                maxCol = Math.max(1, maxCol);
-                maxBinaryParam = Math.max(maxBinaryParam, irm[j].getNumberOfParameters());
+//            if(irm[j].getType()==IrmType.L4 || irm[j].getType()==IrmType.L3){
+//                maxCol = Math.max(1, maxCol);
+//                maxBinaryParam = Math.max(maxBinaryParam, irm[j].getNumberOfParameters());
+//                hasDifficulty = true;
+//                if(maxBinaryParam>1) hasDiscrimination = true;
+//            }
+            if(irm[j].getType()==IrmType.L4){
+                maxBinaryParam = Math.max(maxBinaryParam, 4);
                 hasDifficulty = true;
-                if(maxBinaryParam>1) hasDiscrimination = true;
-            }else if(irm[j].getType()==IrmType.GPCM || irm[j].getType()==IrmType.PCM2){
+                hasDiscrimination = true;
+            }else if(irm[j].getType()==IrmType.L3){
+                maxBinaryParam = Math.max(maxBinaryParam, 3);
+                hasDifficulty = true;
+                hasDiscrimination = true;
+            }
+            else if(irm[j].getType()==IrmType.GPCM || irm[j].getType()==IrmType.PCM2){
                 maxCol = Math.max(maxCol, irm[j].getNcat()-1);
             }else if(irm[j].getType()==IrmType.GPCM2 || irm[j].getType()==IrmType.PCM){
                 hasDifficulty = true;

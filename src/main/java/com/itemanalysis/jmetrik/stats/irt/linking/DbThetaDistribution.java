@@ -19,19 +19,26 @@ package com.itemanalysis.jmetrik.stats.irt.linking;
 
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.psychometrics.data.VariableName;
+import com.itemanalysis.psychometrics.distribution.ContinuousDistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.DistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.UserSuppliedDistributionApproximation;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
+import org.apache.commons.math3.stat.descriptive.rank.Max;
+import org.apache.commons.math3.stat.descriptive.rank.Min;
+import org.apache.commons.math3.util.ResizableDoubleArray;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 public class DbThetaDistribution {
 
-    UserSuppliedDistributionApproximation dist = null;
+//    UserSuppliedDistributionApproximation dist = null;
+    private ArrayList<Double> points = null;
+    private ArrayList<Double> weights = null;
 
     public DbThetaDistribution(){
 
@@ -40,13 +47,16 @@ public class DbThetaDistribution {
     public DistributionApproximation getDistribution(Connection conn, DataTableName tableName, VariableName thetaName,
                                                      VariableName weightName, boolean hasWeight)throws SQLException {
 
-        dist = new UserSuppliedDistributionApproximation();
+        points = new ArrayList<Double>();
+        Min min = new Min();
+        Max max = new Max();
 
         Table sqlTable = new Table(tableName.getNameForDatabase());
         SelectQuery query = new SelectQuery();
         query.addColumn(sqlTable, thetaName.nameForDatabase());
         if(hasWeight){
             query.addColumn(sqlTable, weightName.nameForDatabase());
+            weights = new ArrayList<Double>();
         }
 
         Statement stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -62,14 +72,33 @@ public class DbThetaDistribution {
                     if(rs.wasNull()){
                         w=0.0;
                     }
-                    dist.increment(value, w);
+                    points.add(value);
+                    weights.add(w);
+                    min.increment(value);
+                    max.increment(value);
                 }else{
-                    dist.increment(value);
+                    points.add(value);
+                    min.increment(value);
+                    max.increment(value);
                 }
             }
         }
         rs.close();
         stmt.close();
+
+
+        ContinuousDistributionApproximation dist = new ContinuousDistributionApproximation(points.size(), min.getResult(), max.getResult());
+
+        if(hasWeight){
+            for(int i=0;i<points.size();i++){
+                dist.setPointAt(i, points.get(i));
+                dist.setDensityAt(i, weights.get(i));
+            }
+        }else{
+            for(int i=0;i<points.size();i++){
+                dist.setPointAt(i, points.get(i));
+            }
+        }
 
         return dist;
 

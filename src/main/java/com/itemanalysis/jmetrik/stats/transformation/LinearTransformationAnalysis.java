@@ -29,6 +29,7 @@ import com.itemanalysis.psychometrics.data.DataType;
 import com.itemanalysis.psychometrics.data.ItemType;
 import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.scaling.DefaultLinearTransformation;
+import com.itemanalysis.psychometrics.scaling.LinearTransformationType;
 import com.itemanalysis.psychometrics.scaling.ScoreBounds;
 import com.itemanalysis.psychometrics.statistics.StorelessDescriptiveStatistics;
 import com.itemanalysis.psychometrics.tools.StopWatch;
@@ -74,6 +75,7 @@ public class LinearTransformationAnalysis  extends SwingWorker<String, Void> {
     private double minPossibleScore = Double.NEGATIVE_INFINITY;
     private double maxPossibleScore = Double.POSITIVE_INFINITY;
     private boolean type1 = true;
+    DefaultLinearTransformation linearTransformation = null;
     private StorelessDescriptiveStatistics descriptiveStatistics = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
     static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
@@ -174,22 +176,22 @@ public class LinearTransformationAnalysis  extends SwingWorker<String, Void> {
             double A = 1.0;
             double B = 0.0;
 
+
+            if(type1){
+                //Transformation using mean and sd
+                linearTransformation = new DefaultLinearTransformation(meanValue, scaleMean, sdValue, scaleSd, LinearTransformationType.MEAN_STANDARD_DEVIATION);
+            }else{
+                //transformation using min and max values
+                linearTransformation = new DefaultLinearTransformation(minValue, minPossibleScore, maxValue, maxPossibleScore, LinearTransformationType.MIN_MAX);
+            }
+
             rs.beforeFirst();
 
             while(rs.next()){
                 origValue = rs.getDouble(selectedVariable.getName().nameForDatabase());
                 if(!rs.wasNull()){
-                    if(type1){
-                        z = (origValue - meanValue)/sdValue;
-                        transValue = scaleSd*z + scaleMean;
-                        transValue = checkConstraints(transValue);
-                    }else{
-                        A = (maxPossibleScore-minPossibleScore)/(maxValue-minValue);
-                        B = minPossibleScore - minValue*A;
-                        transValue = origValue*A + B;
-                        transValue = checkConstraints(transValue);
-                    }
-
+                    transValue = linearTransformation.transform(origValue);
+                    transValue = checkConstraints(transValue);
                     descriptiveStatistics.increment(transValue);
 
                     rs.updateDouble(addedVariableInfo.getName().nameForDatabase(), transValue);
@@ -200,11 +202,6 @@ public class LinearTransformationAnalysis  extends SwingWorker<String, Void> {
 
             conn.commit();
             conn.setAutoCommit(true);
-
-            //create output
-            DefaultLinearTransformation linearTransformation = new DefaultLinearTransformation();
-            linearTransformation.setScale(A);
-            linearTransformation.setIntercept(B);
 
             StringBuilder sb = new StringBuilder();
             Formatter f = new Formatter(sb);

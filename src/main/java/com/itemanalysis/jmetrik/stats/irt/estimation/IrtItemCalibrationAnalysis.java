@@ -15,6 +15,7 @@ import com.itemanalysis.psychometrics.data.DataType;
 import com.itemanalysis.psychometrics.data.ItemType;
 import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
+import com.itemanalysis.psychometrics.distribution.ContinuousDistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.DistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.NormalDistributionApproximation;
 import com.itemanalysis.psychometrics.distribution.UserSuppliedDistributionApproximation;
@@ -81,6 +82,7 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
     private int numberOfExaminees = 0;
     private double[] theta = null;
     private boolean latentDistributionSaved = false;
+    private DensityEstimationType densityEstimationType = DensityEstimationType.FIXED_NO_ESTIMATION;
 
     public IrtItemCalibrationAnalysis(Connection conn, DatabaseAccessObject dao, IrtItemCalibrationCommand command, JmetrikTextFile tfa){
         this.conn = conn;
@@ -513,13 +515,18 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
      */
     private void extractLatentDistributionFromOption(String name, double min, double max, int nPoints){
         if("normal".equals(name)){
-            latentDistribution = new NormalDistributionApproximation(min, max, nPoints);
+            latentDistribution = new ContinuousDistributionApproximation(nPoints, min, max, 0, 1);
         }else if("GH".equals(name)){
             HermiteRuleFactory gaussHermite = new HermiteRuleFactory();
             Pair<double[], double[]> dist = gaussHermite.getRule(41);
-            latentDistribution = new UserSuppliedDistributionApproximation(dist.getKey(), dist.getValue());
-        }else{
-            latentDistribution = new NormalDistributionApproximation(-4.0, 4.0, 40);
+            latentDistribution = new ContinuousDistributionApproximation(dist.getKey(), dist.getValue());
+            latentDistribution.standardize(false);
+        }else if("GH".equals(name)){
+            latentDistribution = new ContinuousDistributionApproximation(nPoints, min, max, 0, 1);
+            densityEstimationType = DensityEstimationType.EMPIRICAL_HISTOGRAM_STANDARDIZED_KEEP_POINTS;
+        }
+        else{
+            latentDistribution = new ContinuousDistributionApproximation(41, -4.5, 4.5, 0, 1);
         }
     }
 
@@ -687,7 +694,7 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
         mmle.addEMStatusListener(emStatus);
         mmle.addEMStatusListener(liveStatus);
         mmle.setVerbose(true);//will store details for each EM cycle
-        mmle.estimateParameters(tol, maxIter);
+        mmle.estimateParameters(tol, maxIter, densityEstimationType);
         mmle.computeItemStandardErrors();
 
         publish(mmle.printItemParameters()+"\n\n");
@@ -822,8 +829,6 @@ public class IrtItemCalibrationAnalysis extends SwingWorker<String, String> {
         f.format("%53s", "IRT ITEM CALIBRATION"); f.format("%n");
         f.format("%" + len2 + "s", dString); f.format("%n");
         f.format("%" + len + "s", s1); f.format("%n");
-        f.format("%n");
-        f.format("%n");
         f.format("%n");
 
         return f.toString();

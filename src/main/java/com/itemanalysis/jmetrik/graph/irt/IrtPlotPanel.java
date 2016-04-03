@@ -28,9 +28,11 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleInsets;
+import org.jfree.util.ShapeUtilities;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -85,6 +87,7 @@ public class IrtPlotPanel extends GraphPanel {
         plot.setDataset(dataset);
         XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
         setXYPlotRendererWithPoints(plot);
+
     }
 
     public void updateOrdinate(String name, double min, double max){
@@ -171,6 +174,9 @@ public class IrtPlotPanel extends GraphPanel {
         renderer.setBaseShapesFilled(false);
         renderer.setDrawOutlines(true);
 
+
+
+
         plot.setBackgroundPaint(Color.WHITE);
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
         plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
@@ -193,6 +199,7 @@ public class IrtPlotPanel extends GraphPanel {
         this.add(subPanel);
 
     }
+
 
 //    /**
 //     * This method uses the proprietary library EpsGraphics. It is only here

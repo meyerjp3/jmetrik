@@ -38,9 +38,8 @@ public class SelectTableDialog extends JDialog {
     DataTableName tableName = null;
     static Logger logger = Logger.getLogger("jmetrik-logger");
 
-
     public SelectTableDialog(JDialog parent, DatabaseName dbName, SortedListModel<DataTableName> listModel){
-        super(parent, "Delete Table",true);
+        super(parent, "Select Table",true);
         this.dbName = dbName;
         tableList = new JList(listModel);
         tableList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

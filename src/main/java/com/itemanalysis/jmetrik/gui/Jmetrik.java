@@ -84,10 +84,10 @@ import java.util.TreeMap;
 public class Jmetrik extends JFrame{
 
     final static String APP_NAME = "jMetrik";
-    final static String VERSION = "4.0.3";
+    final static String VERSION = "4.0.6";
     final static boolean BETA_VERSION = false;
-    final static String RELEASE_DATE = "March 30, 2016";
-    final static String COPYRIGHT_YEAR = "2009 - 2016";
+    final static String RELEASE_DATE = "April 27, 2017";
+    final static String COPYRIGHT_YEAR = "2009 - 2017";
     final static String AUTHOR = "J. Patrick Meyer";
 
     private DataTable dataTable = null;

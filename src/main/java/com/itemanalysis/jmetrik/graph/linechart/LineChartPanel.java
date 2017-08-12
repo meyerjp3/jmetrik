@@ -20,9 +20,7 @@ package com.itemanalysis.jmetrik.graph.linechart;
 import com.itemanalysis.jmetrik.swing.GraphPanel;
 
 import org.apache.log4j.Logger;
-import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeriesCollection;
 
 public class LineChartPanel extends GraphPanel {

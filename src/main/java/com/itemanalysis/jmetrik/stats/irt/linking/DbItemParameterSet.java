@@ -74,7 +74,11 @@ public class DbItemParameterSet {
         else defaultD = 1.7;
 
         try{
-            pstmt = conn.prepareStatement("SELECT * FROM " + tableName.getNameForDatabase() + " WHERE " + itemName.nameForDatabase() + "=?");
+
+
+            //NEW ALTERNATIVE April 26, 2017
+            //pstmt = conn.prepareStatement("SELECT * FROM " + tableName.getNameForDatabase() + " WHERE " + itemName.nameForDatabase() + "=?");
+            pstmt = conn.prepareStatement("SELECT * FROM " + tableName.getNameForDatabase() + " WHERE LOWER(" + itemName.nameForDatabase() + ")=?");
 
             //get meta data to check for variable names -- could be slow for some drivers
             ResultSetMetaData rsmd = pstmt.getMetaData();
@@ -100,7 +104,12 @@ public class DbItemParameterSet {
                     iName = pair.getYVariable();
                 }
 
-                pstmt.setString(1, iName.toString());
+
+
+                //NEW ALTERNATIVE April 26, 2017
+                //pstmt.setString(1, iName.toString());
+                pstmt.setString(1, iName.toString().toLowerCase());
+
                 rs = pstmt.executeQuery();
                 rs.next();
 

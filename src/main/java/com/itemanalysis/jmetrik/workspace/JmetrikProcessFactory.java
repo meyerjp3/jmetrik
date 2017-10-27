@@ -88,7 +88,9 @@ public class JmetrikProcessFactory {
         else if(commandName.equals("renamevar")){
             return new RenameVariableProcess();
         }
-
+        if(commandName.equals("importspss")){
+            return new ImportSpssProcess();
+        }
 
         //graph processes
         else if(commandName.equals("barchart")){

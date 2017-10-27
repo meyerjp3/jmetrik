@@ -114,6 +114,11 @@ public class JmetrikCommandFactory {
             command.split(commandSyntax);
             return command;
         }
+        if(commandName.equals("importspss")){
+            ImportSPSSCommand command = new ImportSPSSCommand();
+            command.split(commandSyntax);
+            return command;
+        }
 
         //graph processes
         else if(commandName.equals("barchart")){

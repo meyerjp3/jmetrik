@@ -10,7 +10,7 @@ public class ImportSPSSCommand extends AbstractCommand {
         FreeOption fileName = new FreeOption("file", "File name", true, OptionValueType.STRING);
         this.addFreeOption(fileName);
 
-        FreeOption pathToPlugin = new FreeOption("path", "Path to SPSS Java Plugin jar file.", false, OptionValueType.STRING);
+        FreeOption pathToPlugin = new FreeOption("pluginpath", "Path to SPSS Java Plugin jar file.", false, OptionValueType.STRING);
         this.addFreeOption(pathToPlugin);
 
         PairedOptionList dataInfo = new PairedOptionList("data", "Data information", true);
@@ -29,7 +29,6 @@ public class ImportSPSSCommand extends AbstractCommand {
         SelectAllOption options = new SelectAllOption("options", "General options", false);
         options.addArgument("display", "Display imported SPSS data", true);
         this.addSelectAllOption(options);
-
 
     }
 

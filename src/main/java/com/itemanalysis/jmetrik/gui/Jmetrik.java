@@ -84,9 +84,9 @@ import java.util.TreeMap;
 public class Jmetrik extends JFrame{
 
     final static String APP_NAME = "jMetrik";
-    final static String VERSION = "4.0.6";
+    final static String VERSION = "4.1.0";
     final static boolean BETA_VERSION = false;
-    final static String RELEASE_DATE = "April 27, 2017";
+    final static String RELEASE_DATE = "October 30, 2017";
     final static String COPYRIGHT_YEAR = "2009 - 2017";
     final static String AUTHOR = "J. Patrick Meyer";
 
@@ -554,6 +554,31 @@ public class Jmetrik extends JFrame{
                     if(importDialog.canRun()){
                         importExportPath = importDialog.getCurrentDirectory();
                         workspace.runProcess(importDialog.getCommand());
+                    }
+                }else{
+                    JOptionPane.showMessageDialog(Jmetrik.this, "You must open a database before importing data.",
+                            "No Open Database", JOptionPane.ERROR_MESSAGE);
+                }
+
+            }
+        });
+        manageMenu.add(mItem);
+
+        //urlString = "/org/tango-project/tango-icon-theme/16x16/actions/list-add.png";
+        //url = this.getClass().getResource( urlString );
+        //ImageIcon iconImport = new ImageIcon(url, "Import");
+        mItem = new JMenuItem("Import SPSS file...");
+//        mItem.setIcon(iconImport);
+        mItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(workspace.databaseOpened()){
+                    ImportSpssDialog importSpssDialog = new ImportSpssDialog(Jmetrik.this, workspace.getDatabaseName(), importExportPath);
+                    importSpssDialog.setVisible(true);
+
+                    if(importSpssDialog.canRun()){
+                        importExportPath = importSpssDialog.getCurrentDirectory();
+                        workspace.runProcess(importSpssDialog.getCommand());
                     }
                 }else{
                     JOptionPane.showMessageDialog(Jmetrik.this, "You must open a database before importing data.",
@@ -1253,7 +1278,7 @@ public class Jmetrik extends JFrame{
         logger.info("Checking for updates...");
 
         try{
-            url = new URL("http://www.itemanalysis.com/version/jmetrik-version.txt");
+            url = new URL("https://itemanalysis.com/version/jmetrik-version.txt");
             urlConn = url.openConnection();
 
             urlConn.setDoInput(true);

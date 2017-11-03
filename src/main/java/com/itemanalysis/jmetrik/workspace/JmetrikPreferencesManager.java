@@ -94,6 +94,10 @@ public class JmetrikPreferencesManager {
     private static final int DEFAULT_FONT_STYLE = Font.PLAIN;
     private static final int DEFAULT_FONT_SIZE = 12;
 
+    //Location of spss plugin
+    private static final String SPSS_PLUGIN_PATH = "spss_plugin_path";
+    private static final String DEFAULT_SPSS_PLUGIN_PATH = "";
+
     //chart line names
     private static final String CHART_LINE1 = "chart_line1";
     private static final String CHART_LINE2 = "chart_line2";
@@ -594,6 +598,14 @@ public class JmetrikPreferencesManager {
     
     public String getLogFileName(){
         return p.get(LOG_NAME, DEFAULT_LOG_NAME);
+    }
+
+    public String getSpssPluginPath(){
+        return p.get(SPSS_PLUGIN_PATH, DEFAULT_SPSS_PLUGIN_PATH);
+    }
+
+    public void setSpssPluginPath(String path){
+        p.put(SPSS_PLUGIN_PATH, path);
     }
     
     public String getDatabaseHome(){

@@ -115,7 +115,12 @@ public class JmetrikCommandFactory {
             return command;
         }
         if(commandName.equals("importspss")){
-            ImportSPSSCommand command = new ImportSPSSCommand();
+            ImportSpssCommand command = new ImportSpssCommand();
+            command.split(commandSyntax);
+            return command;
+        }
+        if(commandName.equals("exportspss")){
+            ExportSpssCommand command = new ExportSpssCommand();
             command.split(commandSyntax);
             return command;
         }

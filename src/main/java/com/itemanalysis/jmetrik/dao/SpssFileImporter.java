@@ -2,7 +2,7 @@ package com.itemanalysis.jmetrik.dao;
 
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
-import com.itemanalysis.jmetrik.workspace.ImportSPSSCommand;
+import com.itemanalysis.jmetrik.workspace.ImportSpssCommand;
 import com.itemanalysis.psychometrics.data.DataType;
 import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableLabel;
@@ -30,6 +30,8 @@ import java.util.Map;
  * It requires that the end user have a licensed copy of SPSS installed on their computer.
  * Reflections are needed to access the classes in the SPSS Java plugin (spssjavaplugin.jar).
  *
+ * Values for String variables ar elimited to 256 characters. Longer string will be truncated.
+ *
  * The spssjavaplugin.jar file is stored in a different location depending on the user's
  * operating system. The location of the plugin is provided in teh ImportSPSScommand by
  * the end user.
@@ -55,7 +57,7 @@ public class SpssFileImporter extends SwingWorker<String,Void> {
 
     private Connection conn = null;
 
-    private ImportSPSSCommand command = null;
+    private ImportSpssCommand command = null;
 
     private String tableNameString = "";
 
@@ -84,7 +86,7 @@ public class SpssFileImporter extends SwingWorker<String,Void> {
     static Logger scriptLogger = Logger.getLogger("jmetrik-script-logger");
 
 
-    public SpssFileImporter(Connection conn, ImportSPSSCommand command){
+    public SpssFileImporter(Connection conn, ImportSpssCommand command){
         this.conn = conn;
         this.command = command;
     }
@@ -258,7 +260,8 @@ public class SpssFileImporter extends SwingWorker<String,Void> {
                         if(null==strvar){
                             pstmt.setNull(j+1, Types.VARCHAR);
                         }else{
-                            pstmt.setString(j+1, strvar);
+                            //String variables limited to 256 characters.
+                            pstmt.setString(j+1, strvar.substring(0, Math.min(strvar.length(), 255)));
                         }
 
                     }else{

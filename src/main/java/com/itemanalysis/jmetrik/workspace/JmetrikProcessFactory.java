@@ -91,6 +91,9 @@ public class JmetrikProcessFactory {
         if(commandName.equals("importspss")){
             return new ImportSpssProcess();
         }
+        if(commandName.equals("exportspss")){
+            return new ExportSpssProcess();
+        }
 
         //graph processes
         else if(commandName.equals("barchart")){

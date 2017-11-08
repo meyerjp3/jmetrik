@@ -85,19 +85,31 @@ public class ExportDataDialog extends JDialog{
 
         JFileChooser exportChooser = new JFileChooser();
         SimpleFilter txtFilter = new SimpleFilter("txt", "Text Files (*.txt)");
+        SimpleFilter csvFilter = new SimpleFilter("csv", "CSV Files (*.csv)");
+        exportChooser.addChoosableFileFilter(txtFilter);
+        exportChooser.addChoosableFileFilter(csvFilter);
+        exportChooser.setFileFilter(csvFilter);
+        exportChooser.setAcceptAllFileFilterUsed(false);
+
         exportChooser.setCurrentDirectory(new File(currentDirectory));
         exportChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        exportChooser.setSelectedFile(new File(tableName.getTableName() + ".txt"));
-        exportChooser.setFileFilter(txtFilter);
-        exportChooser.setAcceptAllFileFilterUsed(false);
+        exportChooser.setSelectedFile(new File(tableName.getTableName() + ".csv"));
+
         exportChooser.setAccessory(delimiterDialogPanel);
         exportChooser.setDialogType(JFileChooser.SAVE_DIALOG);
         exportChooser.setDialogTitle("Exporting: " + tableName.getTableName());
 
         if(exportChooser.showDialog(parent, "OK") == JFileChooser.APPROVE_OPTION){
             String fileName = exportChooser.getSelectedFile().toString();
-            if(!fileName.endsWith(".txt")) fileName += ".txt";
+
+            if("comma".equals(delimGroup.getSelection().getActionCommand())){
+                if(!fileName.endsWith(".csv")) fileName += ".csv";
+            }else{
+                if(!fileName.endsWith(".txt")) fileName += ".txt";
+            }
             File f = new File(fileName);
+
+
             int choice = JOptionPane.YES_OPTION;
             if(f.exists()){
                 String[] options = {"Yes", "No"};

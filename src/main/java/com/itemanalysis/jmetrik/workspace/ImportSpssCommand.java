@@ -2,9 +2,9 @@ package com.itemanalysis.jmetrik.workspace;
 
 import com.itemanalysis.jmetrik.commandbuilder.*;
 
-public class ImportSPSSCommand extends AbstractCommand {
+public class ImportSpssCommand extends AbstractCommand {
 
-    public ImportSPSSCommand()throws IllegalArgumentException{
+    public ImportSpssCommand()throws IllegalArgumentException{
         super("importspss", "Import SPSS *.sav file");
 
         FreeOption fileName = new FreeOption("file", "File name", true, OptionValueType.STRING);

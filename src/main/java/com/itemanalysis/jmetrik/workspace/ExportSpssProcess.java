@@ -2,7 +2,7 @@ package com.itemanalysis.jmetrik.workspace;
 
 import com.itemanalysis.jmetrik.commandbuilder.Command;
 import com.itemanalysis.jmetrik.dao.JmetrikDatabaseFactory;
-import com.itemanalysis.jmetrik.dao.SpssFileImporter;
+import com.itemanalysis.jmetrik.dao.SpssFileExporter;
 
 import javax.swing.*;
 import java.beans.PropertyChangeListener;
@@ -10,16 +10,16 @@ import java.sql.Connection;
 import java.util.TreeMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public class ImportSpssProcess extends AbstractJmetrikProcess {
+public class ExportSpssProcess extends AbstractJmetrikProcess {
 
-    private ImportSpssCommand command = null;
+    private ExportSpssCommand command = null;
 
-    public ImportSpssProcess(){
-        command = new ImportSpssCommand();
+    public ExportSpssProcess(){
+        command = new ExportSpssCommand();
     }
 
     public String getName(){
-        return "Import SPSS Process";
+        return "Export SPSS Process";
     }
 
     public boolean commandMatch(Command command){
@@ -27,7 +27,7 @@ public class ImportSpssProcess extends AbstractJmetrikProcess {
     }
 
     public void setCommand(Command command){
-        this.command = (ImportSpssCommand)command;
+        this.command = (ExportSpssCommand)command;
     }
 
     public void addMenuItem(final JFrame parent, JMenu menu, final TreeMap<String, JDialog> dialogs, final Workspace workspace, final JList tableList){
@@ -35,8 +35,8 @@ public class ImportSpssProcess extends AbstractJmetrikProcess {
     }
 
     public void runProcess(Connection conn, JmetrikDatabaseFactory dbFactory, JTabbedPane tabbedPane, ThreadPoolExecutor threadPool){
-        SpssFileImporter importer = new SpssFileImporter(conn, command);
-        SwingWorker worker = (SwingWorker)importer;
+        SpssFileExporter exporter = new SpssFileExporter(conn, command);
+        SwingWorker worker = (SwingWorker)exporter;
         for(PropertyChangeListener pcl : propertyChangeListeners){
             worker.addPropertyChangeListener(pcl);
         }

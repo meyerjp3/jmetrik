@@ -3,7 +3,7 @@ package com.itemanalysis.jmetrik.gui;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.DatabaseName;
 import com.itemanalysis.jmetrik.swing.ExtensionFileFilter;
-import com.itemanalysis.jmetrik.workspace.ImportSPSSCommand;
+import com.itemanalysis.jmetrik.workspace.ImportSpssCommand;
 import com.itemanalysis.jmetrik.workspace.JmetrikPreferencesManager;
 import org.apache.log4j.Logger;
 
@@ -46,7 +46,7 @@ public class ImportSpssDialog extends JDialog {
     private boolean canRun = false;
     private JFileChooser importChooser = null;
     private JFileChooser pluginPathChooser = null;
-    private ImportSPSSCommand command = null;
+    private ImportSpssCommand command = null;
     private JmetrikPreferencesManager prefs = null;
     private String currentPluginPath = "";
     static Logger logger = Logger.getLogger("jmetrik-logger");
@@ -286,7 +286,7 @@ public class ImportSpssDialog extends JDialog {
         return currentDirectory;
     }
 
-    public ImportSPSSCommand getCommand(){
+    public ImportSpssCommand getCommand(){
         return command;
     }
 
@@ -371,13 +371,13 @@ public class ImportSpssDialog extends JDialog {
         }else if(!f.exists()){
             JOptionPane.showMessageDialog(
                     ImportSpssDialog.this,
-                    "Importing an SPSS file requires a licensed copy of IBM SPSS.\n"+
-                    "The required plugin was not found. If you have a licensed copy," +
-                    "make sure this path points to the location of the 'spssjavaplugin.jar'"+
-                    "file. On a Windows machine this file is located in the IBM SPSS "+
-                    "installation directory. On Mac OSX it is located in the bin directory"+
-                    "under the Content directory in the IBM SPSS Statistics application"+
-                    "bundle. On Linux and UNIX it is located in the bin directory under"+
+                    "The required plugin was not found. Importing an SPSS file requires\n" +
+                    "a licensed copy of IBM SPSS. If you have a licensed copy, make\n" +
+                    "sure this path points to the location of the 'spssjavaplugin.jar'\n"+
+                    "file. On a Windows machine this file is located in the IBM SPSS\n"+
+                    "installation directory. On Mac OSX it is located in the bin directory\n"+
+                    "under the Content directory in the IBM SPSS Statistics application\n"+
+                    "bundle. On Linux and UNIX it is located in the bin directory under\n"+
                     "the IBM SPSS Statistics installation directory.",
                     "SPSS Plugin Error",
                     JOptionPane.ERROR_MESSAGE);
@@ -400,7 +400,7 @@ public class ImportSpssDialog extends JDialog {
                     "Data Name Error",
                     JOptionPane.ERROR_MESSAGE);
         }else{
-            command = new ImportSPSSCommand();
+            command = new ImportSpssCommand();
             currentDirectory = spssFileTextField.getText().trim().replaceAll("\\\\", "/");
 
             DataTableName derbyTableName = new DataTableName(tableName);

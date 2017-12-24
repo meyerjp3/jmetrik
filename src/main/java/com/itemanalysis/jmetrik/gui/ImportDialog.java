@@ -355,7 +355,7 @@ public class ImportDialog extends JDialog {
         public void actionPerformed(ActionEvent e){
             importChooser.setCurrentDirectory(new File(currentDirectory));
             makeimportDialog();
-            if(importChooser.showDialog(ImportDialog.this, "Browse") != JFileChooser.APPROVE_OPTION){
+            if(importChooser.showDialog(ImportDialog.this, "OK") != JFileChooser.APPROVE_OPTION){
 //				send error message
                 return;
             }

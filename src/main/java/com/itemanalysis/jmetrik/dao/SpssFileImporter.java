@@ -118,10 +118,12 @@ public class SpssFileImporter extends SwingWorker<String,Void> {
 
         valueLabels = command.getSelectOneOption("use").isValueSelected("vlabels");
 
+        System.out.println("Encoding: " + System.getProperty("file.encoding", "UTF-8"));
+
     }
 
     /**
-     * Imports an SPSS file using teh original data values. Value labels are ignored.
+     * Imports an SPSS file using the original data values. Value labels are ignored.
      *
      * @throws Exception
      */

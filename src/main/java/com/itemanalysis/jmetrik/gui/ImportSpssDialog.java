@@ -301,13 +301,14 @@ public class ImportSpssDialog extends JDialog {
             importChooser.addChoosableFileFilter(filter);
             importChooser.setFileFilter(filter);
             importChooser.setDialogType(JFileChooser.OPEN_DIALOG);
+            importChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
             importChooser.setDialogTitle("Import SPSS File");
 
         }
 
         importChooser.setVisible(true);
 
-        if(importChooser.showDialog(ImportSpssDialog.this, "Browse") != JFileChooser.APPROVE_OPTION){
+        if(importChooser.showDialog(ImportSpssDialog.this, "OK") != JFileChooser.APPROVE_OPTION){
             return;
         }
 
@@ -328,12 +329,13 @@ public class ImportSpssDialog extends JDialog {
             pluginPathChooser.addChoosableFileFilter(filter);
             pluginPathChooser.setFileFilter(filter);
             pluginPathChooser.setDialogType(JFileChooser.OPEN_DIALOG);
+            pluginPathChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             pluginPathChooser.setDialogTitle("Path to SPSS Plugin");
         }
 
         pluginPathChooser.setVisible(true);
 
-        if(pluginPathChooser.showDialog(ImportSpssDialog.this, "Browse")!=JFileChooser.APPROVE_OPTION){
+        if(pluginPathChooser.showDialog(ImportSpssDialog.this, "OK")!=JFileChooser.APPROVE_OPTION){
             return;
         }
 
@@ -390,8 +392,8 @@ public class ImportSpssDialog extends JDialog {
         }else if(pluginTextField.getText().trim().equals("")){
             JOptionPane.showMessageDialog(
                     ImportSpssDialog.this,
-                    "Please type a value for SPSS file to import.",
-                    "Import Data File Error",
+                    "Please type the path to the SPSS plugin.",
+                    "SPSS Plugin Not Found",
                     JOptionPane.ERROR_MESSAGE);
         }else if(tableName.indexOf("variables")>-1){
             JOptionPane.showMessageDialog(

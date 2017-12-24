@@ -620,17 +620,24 @@ public class Jmetrik extends JFrame{
         mItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(workspace.databaseOpened()){
-//                    ImportSpssDialog importSpssDialog = new ImportSpssDialog(Jmetrik.this, workspace.getDatabaseName(), importExportPath);
-//                    importSpssDialog.setVisible(true);
-//
-//                    if(importSpssDialog.canRun()){
-//                        importExportPath = importSpssDialog.getCurrentDirectory();
-//                        workspace.runProcess(importSpssDialog.getCommand());
-//                    }
-                }else{
+
+                DataTableName tableName = (DataTableName)workspaceList.getSelectedValue();
+                if(!workspace.databaseOpened()){
                     JOptionPane.showMessageDialog(Jmetrik.this, "You must open a database before exporting data.",
                             "No Open Database", JOptionPane.ERROR_MESSAGE);
+
+                }else if(tableName==null){
+                    JOptionPane.showMessageDialog(Jmetrik.this, "You must select a table in the workspace list. \n " +
+                            "Select a table to continue the export.", "No Table Selected", JOptionPane.ERROR_MESSAGE);
+                }else{
+                    ExportSpssDialog exportSpssDialog = new ExportSpssDialog(Jmetrik.this, workspace.getDatabaseName(), tableName, importExportPath);
+                    exportSpssDialog.setVisible(true);
+
+                    if(exportSpssDialog.canRun()){
+                        importExportPath = exportSpssDialog.getCurrentDirectory();
+                        workspace.runProcess(exportSpssDialog.getCommand());
+                    }
+
                 }
 
             }
@@ -1181,6 +1188,8 @@ public class Jmetrik extends JFrame{
 
 //                    Insets MENU_INSETS = new Insets(1,12,2,5);//default values
 //                    Font MENU_FONT = new Font("SansSerif ", Font.PLAIN, 12);//default values
+
+
 
 
 

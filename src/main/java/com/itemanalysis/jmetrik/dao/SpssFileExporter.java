@@ -27,8 +27,6 @@ import java.util.ArrayList;
  * licensed copy of IBM SPSS. It works by creating a temporary CSV file. Then,
  * it uses the spssjavaplugin.jar to process SPSS commands for importing a CSV file.
  *
- * TODO change JmetrikCSVWriter to use tCommon CSV instead of OpenCSV.
- * TODO add exportSPSS dialog
  *
  */
 public class SpssFileExporter extends SwingWorker<String,Void>{

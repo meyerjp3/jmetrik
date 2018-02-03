@@ -86,7 +86,7 @@ public class Jmetrik extends JFrame{
     final static String APP_NAME = "jMetrik";
     final static String VERSION = "4.1.0";
     final static boolean BETA_VERSION = false;
-    final static String RELEASE_DATE = "October 30, 2017";
+    final static String RELEASE_DATE = "December 24, 2017";
     final static String COPYRIGHT_YEAR = "2009 - 2017";
     final static String AUTHOR = "J. Patrick Meyer";
 

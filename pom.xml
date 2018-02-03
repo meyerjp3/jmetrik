@@ -6,7 +6,7 @@
 
     <groupId>com.itemanalysis</groupId>
     <artifactId>jmetrik</artifactId>
-    <version>4.0.6</version>
+    <version>4.1.0</version>
     <name>jMetrik</name>
     <inceptionYear>2002</inceptionYear>
     <description>jMetrik is a pure Java application for psychometrics. It provides features for data management and methods for classical and modern psychometrics.</description>
@@ -111,7 +111,7 @@
       <dependency>
       	<groupId>com.itemanalysis</groupId>
       	<artifactId>psychometrics</artifactId>
-      	<version>1.3</version>
+      	<version>1.4</version>
       </dependency>
   </dependencies>
   <developers>

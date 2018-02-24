@@ -415,6 +415,10 @@ public class ImportSpssDialog extends JDialog {
             command.getFreeOption("file").add(spssFileTextField.getText().trim());
             command.getFreeOption("pluginpath").add(f.getAbsolutePath());
 
+            if(!"".equals(descriptionTextArea.getText().trim())){
+                command.getFreeOption("description").add(descriptionTextArea.getText().trim());
+            }
+
             if(!currentPluginPath.equals(f.getAbsolutePath())){
                 prefs.setSpssPluginPath(f.getAbsolutePath());
             }

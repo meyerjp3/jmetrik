@@ -84,10 +84,10 @@ import java.util.TreeMap;
 public class Jmetrik extends JFrame{
 
     final static String APP_NAME = "jMetrik";
-    final static String VERSION = "4.1.0";
+    final static String VERSION = "4.1.1";
     final static boolean BETA_VERSION = false;
-    final static String RELEASE_DATE = "December 24, 2017";
-    final static String COPYRIGHT_YEAR = "2009 - 2017";
+    final static String RELEASE_DATE = "February 23, 2018";
+    final static String COPYRIGHT_YEAR = "2009 - 2018";
     final static String AUTHOR = "J. Patrick Meyer";
 
     private DataTable dataTable = null;
@@ -1351,8 +1351,8 @@ public class Jmetrik extends JFrame{
     private void showUpdateResults(boolean updateAvailable){
         String text = "";
         if(updateAvailable){
-            text =   "<html><body>jMetrik Update Available. <br>" +
-            "Go to  <a href=http://www.itemanalysis.com/jmetrik_download.php>http://www.itemanalysis.com/jmetrik-download.php</a><br>" +
+            text =   "<html><body>jMetrik Update Available.<br>" +
+            "Go to <a href=https://itemanalysis.com/jmetrik-download>https://itemanalysis.com/jmetrik-download</a><br>" +
             "and download the new version.<br>" +
             "</body></html>";
         }else{

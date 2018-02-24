@@ -119,7 +119,7 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
             ml = command.getSelectOneOption("polychoric").isValueSelected("ml");
             mixedCovMat = new MixedCorrelationMatrix(variables, ml);
         }else{
-            covMat = new CovarianceMatrix(variables);
+            covMat = new CovarianceMatrix(variables, unbiased);
         }
 
         responseVector = new Double[numberOfVariables];
@@ -201,11 +201,11 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
         if(mixed){
             sb.append(mixedCovMat.printCorrelationMatrix(stdError));
         }else{
-            sb.append(covMat.printCorrelationMatrix(unbiased, stdError));
+            sb.append(covMat.printCorrelationMatrix(stdError));
             sb.append("\n");
             sb.append("\n");
             sb.append("\n");
-            sb.append(covMat.printCovarianceMatrix(unbiased));
+            sb.append(covMat.printCovarianceMatrix());
         }
         return sb.toString();
     }

@@ -298,7 +298,7 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
             }
 
             //compute reliability estimate
-            CoefficientAlpha alpha = new CoefficientAlpha(matrix, false);
+            CoefficientAlpha alpha = new CoefficientAlpha(matrix);
             KelleyRegressedScore kelley = new KelleyRegressedScore(rawScoreDescriptives.getMean(), alpha);
 
             //close statement and result set from first pass

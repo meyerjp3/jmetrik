@@ -3,10 +3,7 @@ package com.itemanalysis.jmetrik.dao;
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.jmetrik.sql.VariableTableName;
 import com.itemanalysis.jmetrik.workspace.ImportSpssCommand;
-import com.itemanalysis.psychometrics.data.DataType;
-import com.itemanalysis.psychometrics.data.VariableAttributes;
-import com.itemanalysis.psychometrics.data.VariableLabel;
-import com.itemanalysis.psychometrics.data.VariableName;
+import com.itemanalysis.psychometrics.data.*;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import org.apache.log4j.Logger;
 
@@ -208,7 +205,7 @@ public class SpssFileImporter extends SwingWorker<String,Void> {
                     dataType = DataType.STRING;
                 }
 
-                tempAttributes = new VariableAttributes(vName, vLabel, dataType, j);
+                tempAttributes = new VariableAttributes(vName, vLabel, ItemType.NOT_ITEM, dataType, (j+1), "");
                 variables.add(tempAttributes);
 
             }

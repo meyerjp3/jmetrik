@@ -42,6 +42,9 @@ public class JmetrikAboutDialog extends JDialog {
         txt1.setBorder(new EmptyBorder(10,5,5,5));
         txt1.setFont(new Font("SansSerif",Font.PLAIN, 18));
 
+        JLabel jmetrikLabel = new JLabel("jMetrik");
+        jmetrikLabel.setFont(new Font("SansSerif",Font.PLAIN, 22));
+
         String versionText = version;
         if(isBeta) versionText += " Beta";
         JLabel versionLabel = new JLabel("Version: " + versionText);
@@ -75,7 +78,7 @@ public class JmetrikAboutDialog extends JDialog {
         c.weighty = 1;
         c.anchor = GridBagConstraints.CENTER;
         c.fill = GridBagConstraints.NONE;
-        p.add(versionLabel,c);
+        p.add(jmetrikLabel,c);
 
         c.gridx = 0;
         c.gridy = 2;
@@ -85,10 +88,20 @@ public class JmetrikAboutDialog extends JDialog {
         c.weighty = 1;
         c.anchor = GridBagConstraints.CENTER;
         c.fill = GridBagConstraints.NONE;
-        p.add(releaseLabel,c);
+        p.add(versionLabel,c);
 
         c.gridx = 0;
         c.gridy = 3;
+        c.gridwidth = 1;
+        c.gridheight = 1;
+        c.weightx = 1;
+        c.weighty = 1;
+        c.anchor = GridBagConstraints.CENTER;
+        c.fill = GridBagConstraints.NONE;
+        p.add(releaseLabel,c);
+
+        c.gridx = 0;
+        c.gridy = 4;
         c.gridwidth = 1;
         c.gridheight = 1;
         c.weightx = 1;
@@ -102,33 +115,33 @@ public class JmetrikAboutDialog extends JDialog {
         txt4.setBorder(new EmptyBorder(5,5,5,5));
         txt4.setFont(new Font("SansSerif",Font.PLAIN, 12));
 
-        c.gridx = 0;
-        c.gridy = 3;
-        c.gridwidth = 1;
-        c.gridheight = 1;
-        c.weightx = 1;
-        c.weighty = 1;
-        c.anchor = GridBagConstraints.NORTHEAST;
-        c.fill = GridBagConstraints.NONE;
-        p.add(new JLabel(""),c);
-        c.gridx = 0;
-        c.gridy = 3;
-        c.gridwidth = 1;
-        c.gridheight = 1;
-        c.weightx = 1;
-        c.weighty = 1;
-        c.anchor = GridBagConstraints.NORTHEAST;
-        c.fill = GridBagConstraints.NONE;
-        p.add(new JLabel(""),c);
-        c.gridx = 0;
-        c.gridy = 4;
-        c.gridwidth = 1;
-        c.gridheight = 1;
-        c.weightx = 1;
-        c.weighty = 1;
-        c.anchor = GridBagConstraints.NORTHEAST;
-        c.fill = GridBagConstraints.NONE;
-        p.add(new JLabel(""),c);
+//        c.gridx = 0;
+//        c.gridy = 3;
+//        c.gridwidth = 1;
+//        c.gridheight = 1;
+//        c.weightx = 1;
+//        c.weighty = 1;
+//        c.anchor = GridBagConstraints.NORTHEAST;
+//        c.fill = GridBagConstraints.NONE;
+//        p.add(new JLabel(""),c);
+//        c.gridx = 0;
+//        c.gridy = 3;
+//        c.gridwidth = 1;
+//        c.gridheight = 1;
+//        c.weightx = 1;
+//        c.weighty = 1;
+//        c.anchor = GridBagConstraints.NORTHEAST;
+//        c.fill = GridBagConstraints.NONE;
+//        p.add(new JLabel(""),c);
+//        c.gridx = 0;
+//        c.gridy = 4;
+//        c.gridwidth = 1;
+//        c.gridheight = 1;
+//        c.weightx = 1;
+//        c.weighty = 1;
+//        c.anchor = GridBagConstraints.NORTHEAST;
+//        c.fill = GridBagConstraints.NONE;
+//        p.add(new JLabel(""),c);
 
 
         c.gridx = 0;
@@ -176,7 +189,7 @@ public class JmetrikAboutDialog extends JDialog {
 
     private JLabel getImageLabel(){
         JLabel picLabel = null;
-        String urlString = "/images/jmetrik.png";
+        String urlString = "/images/jmetrik-256.png";
         URL url = this.getClass().getResource(urlString);
         picLabel = new JLabel(new ImageIcon( url ));
 //        try{

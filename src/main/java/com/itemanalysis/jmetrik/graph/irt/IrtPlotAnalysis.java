@@ -75,7 +75,7 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
     private DataTableName responseTableName = null;
     private boolean hasResponseData = false;
     private ItemResponseVector[] responseVector = null;
-    private LinkedHashMap<String, ItemResponseModel> itemParameterSet = null;
+    private LinkedHashMap<VariableName, ItemResponseModel> itemParameterSet = null;
     private ArrayList<VariableChangeListener> variableChangeListeners = null;
 
     int nBins = 10;
@@ -146,10 +146,10 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
         double maxItemScore = 1;
         XYSeriesCollection collection = null;
         ItemResponseModel irm = null;
-        for(String s : itemParameterSet.keySet()){
+        for(VariableName v : itemParameterSet.keySet()){
 
             collection = new XYSeriesCollection();
-            irm = itemParameterSet.get(s);
+            irm = itemParameterSet.get(v);
             maxPossibleTestScore += irm.getMaxScoreWeight();
             int ncat = irm.getNcat();
 
@@ -172,20 +172,20 @@ public class IrtPlotAnalysis extends SwingWorker<IrtPlotPanel, Void> {
                 }
             }
 
-            irtPanel.updateOrdinate(s, 0.0, maxItemScore);
+            irtPanel.updateOrdinate(v.toString(), 0.0, maxItemScore);
             if(plotItemInfo){
                 collection.addSeries(getItemInformation(irm));
                 if(!plotIcc){
-                    irtPanel.setOrdinateLabel(s, "Item Information");
-                    irtPanel.setOrdinateAutoRange(s, true);
+                    irtPanel.setOrdinateLabel(v.toString(), "Item Information");
+                    irtPanel.setOrdinateAutoRange(v.toString(), true);
                 }
             }
 
             if(hasResponseData){
                 addObservedPoints(j, collection);
-                irtPanel.updateDatasetLinesAndPoints(s, collection, collection.getSeriesCount()>2);
+                irtPanel.updateDatasetLinesAndPoints(v.toString(), collection, collection.getSeriesCount()>2);
             }else{
-                irtPanel.updateDataset(s, collection, collection.getSeriesCount()>1);
+                irtPanel.updateDataset(v.toString(), collection, collection.getSeriesCount()>1);
             }
 
 

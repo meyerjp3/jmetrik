@@ -51,9 +51,9 @@ public class IrtLinkingAnalysis extends SwingWorker<String, String> {
 
     private StopWatch sw = null;
 
-    private LinkedHashMap<String, ItemResponseModel> irmX = null;
+    private LinkedHashMap<VariableName, ItemResponseModel> irmX = null;
 
-    private LinkedHashMap<String, ItemResponseModel> irmY = null;
+    private LinkedHashMap<VariableName, ItemResponseModel> irmY = null;
 
     private ArrayList<LinkingItemPair> commonItems = null;
 

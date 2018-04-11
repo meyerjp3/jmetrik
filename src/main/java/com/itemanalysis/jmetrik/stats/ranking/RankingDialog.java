@@ -65,7 +65,7 @@ public class RankingDialog extends JDialog {
     private boolean canRun=false;
     private String tiesName = "max";
     private String[] tiesNameArray = {"Sequential", "Min", "Average", "Max", "Random"};
-    private String[] scoreNameArray = {"Rank", "Quartiles", "Deciles", "Percentile ranks", "Ntiles",
+    private String[] scoreNameArray = {"Rank", "Quartiles", "Deciles", "Percentile Ranks", "Ntiles",
             "Blom normal score", "Tukey normal score", "van der Waerden NS"};
     private int ntiles = 100;
     private String scoreName = "rank";

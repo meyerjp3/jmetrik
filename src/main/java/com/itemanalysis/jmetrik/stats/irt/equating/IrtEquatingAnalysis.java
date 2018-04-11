@@ -48,8 +48,8 @@ public class IrtEquatingAnalysis extends SwingWorker<String, String> {
     private Throwable theException = null;
     private StopWatch sw = null;
 
-    private LinkedHashMap<String, ItemResponseModel> irmX = null;
-    private LinkedHashMap<String, ItemResponseModel> irmY = null;
+    private LinkedHashMap<VariableName, ItemResponseModel> irmX = null;
+    private LinkedHashMap<VariableName, ItemResponseModel> irmY = null;
     private DistributionApproximation xDistribution = null;
     private DistributionApproximation yDistribution = null;
     private DataTableName tableNameItemsX = null;

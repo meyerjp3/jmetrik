@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 
 public class LinkingItemPair {
 
-    private String pairName = "";
+    private VariableName pairName = null;
 
     private VariableName x = null;
 
@@ -39,7 +39,7 @@ public class LinkingItemPair {
     public LinkingItemPair(VariableName x, VariableName y){
         this.x = x;
         this.y = y;
-        pairName = x.toString() + "_" + y.toString();
+        pairName = new VariableName(x.toString() + "_" + y.toString());
         pattern = Pattern.compile(REGEX);
     }
 
@@ -56,7 +56,7 @@ public class LinkingItemPair {
         return y;
     }
 
-    public String getPairName(){
+    public VariableName getPairName(){
         return pairName;
     }
 
@@ -75,7 +75,7 @@ public class LinkingItemPair {
         }
         x = new VariableName(xName);
         y = new VariableName(yName);
-        pairName = x.toString() + "_" + y.toString();
+        pairName = new VariableName(x.toString() + "_" + y.toString());
     }
 
     public String commandString(){
@@ -84,7 +84,7 @@ public class LinkingItemPair {
 
     @Override
     public String toString(){
-        return pairName;
+        return pairName.toString();
     }
 
 }

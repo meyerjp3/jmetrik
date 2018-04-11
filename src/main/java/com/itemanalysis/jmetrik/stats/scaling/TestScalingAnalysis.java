@@ -36,6 +36,7 @@ import com.itemanalysis.jmetrik.workspace.VariableChangeType;
 import com.itemanalysis.psychometrics.data.DataType;
 import com.itemanalysis.psychometrics.data.ItemType;
 import com.itemanalysis.psychometrics.data.VariableAttributes;
+import com.itemanalysis.psychometrics.data.VariableName;
 import com.itemanalysis.psychometrics.polycor.CovarianceMatrix;
 import com.itemanalysis.psychometrics.reliability.CoefficientAlpha;
 import com.itemanalysis.psychometrics.scaling.*;
@@ -244,7 +245,13 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
         int numberOfItems = variables.size();
         double tempSum = 0.0;
         double[] sumScore = new double[nrow];
-        CovarianceMatrix matrix = new CovarianceMatrix(variables);
+
+        ArrayList<VariableName> vName = new ArrayList<VariableName>();
+        for(VariableAttributes v : variables){
+            vName.add(v.getName());
+        }
+
+        CovarianceMatrix matrix = new CovarianceMatrix(vName);
         rawScoreDescriptives = new StorelessDescriptiveStatistics();
         scaleScoreDescriptives = new StorelessDescriptiveStatistics();
 
@@ -298,7 +305,7 @@ public class TestScalingAnalysis  extends SwingWorker<String, Void> {
             }
 
             //compute reliability estimate
-            CoefficientAlpha alpha = new CoefficientAlpha(matrix);
+            CoefficientAlpha alpha = new CoefficientAlpha(matrix.value());
             KelleyRegressedScore kelley = new KelleyRegressedScore(rawScoreDescriptives.getMean(), alpha);
 
             //close statement and result set from first pass

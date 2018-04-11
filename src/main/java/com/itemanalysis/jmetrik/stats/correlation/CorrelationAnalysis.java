@@ -25,6 +25,7 @@ import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.psychometrics.data.ItemType;
 import com.itemanalysis.psychometrics.data.VariableAttributes;
+import com.itemanalysis.psychometrics.data.VariableName;
 import com.itemanalysis.psychometrics.polycor.CovarianceMatrix;
 import com.itemanalysis.psychometrics.polycor.MixedCorrelationMatrix;
 import com.itemanalysis.psychometrics.tools.StopWatch;
@@ -116,10 +117,15 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
         numberOfVariables=variables.size();
 
         if(mixed){
-            ml = command.getSelectOneOption("polychoric").isValueSelected("ml");
-            mixedCovMat = new MixedCorrelationMatrix(variables, ml);
+//            ml = command.getSelectOneOption("polychoric").isValueSelected("ml");
+//            mixedCovMat = new MixedCorrelationMatrix(variables, ml);
         }else{
-            covMat = new CovarianceMatrix(variables, unbiased);
+            ArrayList<VariableName> vName = new ArrayList<VariableName>();
+            for(VariableAttributes v : variables){
+                vName.add(v.getName());
+            }
+
+            covMat = new CovarianceMatrix(vName, unbiased);
         }
 
         responseVector = new Double[numberOfVariables];
@@ -168,7 +174,7 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
                 for(int j=0;j<numberOfVariables;j++){
                     for(int k=j;k<numberOfVariables;k++){
                         if(mixed){
-                            mixedCovMat.increment(j, k, responseVector[j].doubleValue(), responseVector[k].doubleValue());
+//                            mixedCovMat.increment(j, k, responseVector[j].doubleValue(), responseVector[k].doubleValue());
                         }else{
                             covMat.increment(j, k, responseVector[j], responseVector[k]);
                         }
@@ -178,7 +184,7 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
                 for(int j=0;j<numberOfVariables;j++){
                     for(int k=j;k<numberOfVariables;k++){
                         if(mixed){
-                            mixedCovMat.increment(j, k, responseVector[j].doubleValue(), responseVector[k].doubleValue());
+//                            mixedCovMat.increment(j, k, responseVector[j].doubleValue(), responseVector[k].doubleValue());
                         }else{
                             if(responseVector[j]!=null && responseVector[k]!=null){
                                 covMat.increment(j, k, responseVector[j], responseVector[k]);
@@ -199,7 +205,7 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
     public String printCorrelationMatrix(){
         StringBuilder sb = new StringBuilder();
         if(mixed){
-            sb.append(mixedCovMat.printCorrelationMatrix(stdError));
+//            sb.append(mixedCovMat.printCorrelationMatrix(stdError));
         }else{
             sb.append(covMat.printCorrelationMatrix(stdError));
             sb.append("\n");
@@ -213,11 +219,11 @@ public class CorrelationAnalysis extends SwingWorker<String,Void> {
     public String printPolychoricInformation(){
         if(!mixed) return "";
         StringBuilder sb = new StringBuilder();
-        sb.append(mixedCovMat.printPolychoricThresholds());
+//        sb.append(mixedCovMat.printPolychoricThresholds());
         sb.append("\n");
         sb.append("\n");
         sb.append("\n");
-        sb.append(mixedCovMat.printCorrelationTypes());
+//        sb.append(mixedCovMat.printCorrelationTypes());
         return sb.toString();
 
 

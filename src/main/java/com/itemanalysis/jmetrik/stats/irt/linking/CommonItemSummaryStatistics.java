@@ -35,8 +35,8 @@ import java.util.LinkedHashMap;
 
 public class CommonItemSummaryStatistics {
 
-    private LinkedHashMap<String, ItemResponseModel> irmX = null;
-    private LinkedHashMap<String, ItemResponseModel> irmY = null;
+    private LinkedHashMap<VariableName, ItemResponseModel> irmX = null;
+    private LinkedHashMap<VariableName, ItemResponseModel> irmY = null;
     private ArrayList<VariableName> varNamesA = null;
     private ArrayList<VariableName> varNamesB = null;
     private double[] aX = null;
@@ -61,7 +61,7 @@ public class CommonItemSummaryStatistics {
     private StandardDeviation xCSd;
     private StandardDeviation yCSd;
 
-    public CommonItemSummaryStatistics(LinkedHashMap<String, ItemResponseModel> irmX, LinkedHashMap<String, ItemResponseModel> irmY){
+    public CommonItemSummaryStatistics(LinkedHashMap<VariableName, ItemResponseModel> irmX, LinkedHashMap<VariableName, ItemResponseModel> irmY){
         this.irmX = irmX;
         this.irmY = irmY;
         varNamesA = new ArrayList<VariableName>();
@@ -90,8 +90,8 @@ public class CommonItemSummaryStatistics {
         int xPolytomous = 0;
         int xTotalSteps = 0;
         ItemResponseModel irm;
-        for(String s : irmX.keySet()){
-            irm = irmX.get(s);
+        for(VariableName v : irmX.keySet()){
+            irm = irmX.get(v);
             if(irm.getNcat()==2){
                 xBinary++;
             }else{
@@ -107,8 +107,8 @@ public class CommonItemSummaryStatistics {
         int yBinary = 0;
         int yPolytomous = 0;
         int yTotalSteps = 0;
-        for(String s : irmY.keySet()){
-            irm = irmY.get(s);
+        for(VariableName v : irmY.keySet()){
+            irm = irmY.get(v);
             if(irm.getNcat()==2){
                 yBinary++;
             }else{
@@ -126,11 +126,11 @@ public class CommonItemSummaryStatistics {
         int binaryIndex = 0;
         int polyIndex = 0;
         int ncat = 0;
-        for(String s : irmX.keySet()){
-            irm = irmX.get(s);
+        for(VariableName v : irmX.keySet()){
+            irm = irmX.get(v);
             ncat = irm.getNcat();
 
-            varNamesA.add(new VariableName(s));
+            varNamesA.add(v);
 
             aX[itemIndex] = irm.getDiscrimination();
             xAMean.increment(aX[itemIndex]);
@@ -147,7 +147,7 @@ public class CommonItemSummaryStatistics {
 
                 binaryIndex++;
                 polyIndex++;
-                varNamesB.add(new VariableName(s));
+                varNamesB.add(v);
             }else{
                 double[] steps;
                 if(irm.getType()== IrmType.GPCM || irm.getType()==IrmType.PCM2){
@@ -163,7 +163,7 @@ public class CommonItemSummaryStatistics {
                     xBSd.increment(bX[polyIndex]);
 
                     polyIndex++;
-                    varNamesB.add(new VariableName(s+"_"+(k+1)));
+                    varNamesB.add(new VariableName(v.toString()+"_"+(k+1)));
                 }
             }
             itemIndex++;
@@ -176,8 +176,8 @@ public class CommonItemSummaryStatistics {
         binaryIndex = 0;
         polyIndex = 0;
         ncat = 0;
-        for(String s : irmY.keySet()){
-            irm = irmY.get(s);
+        for(VariableName v : irmY.keySet()){
+            irm = irmY.get(v);
             ncat = irm.getNcat();
 
             aY[itemIndex] = irm.getDiscrimination();

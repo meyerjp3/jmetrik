@@ -24,10 +24,10 @@ import com.itemanalysis.jmetrik.workspace.VariableChangeEvent;
 import com.itemanalysis.jmetrik.workspace.VariableChangeListener;
 import com.itemanalysis.psychometrics.data.DataType;
 import com.itemanalysis.psychometrics.data.VariableAttributes;
-import com.itemanalysis.psychometrics.distribution.UniformDistributionApproximation;
 import com.itemanalysis.psychometrics.kernel.*;
 import com.itemanalysis.psychometrics.measurement.KernelRegressionCategories;
 import com.itemanalysis.psychometrics.measurement.KernelRegressionItem;
+import com.itemanalysis.psychometrics.quadrature.UniformQuadratureRule;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
@@ -80,7 +80,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
     private boolean savePlots = false;
     private int gridPoints = 51;
     boolean allCategories = false;
-    private UniformDistributionApproximation uniformDistributionApproximation = null;
+    private UniformQuadratureRule uniformDistributionApproximation = null;
     private double bwAdjustment = 1.0;
     private NonparametricIccBandwidth bandwidth = null;
     private KernelFunction kernelFunction = null;
@@ -205,7 +205,7 @@ public class NonparametricCurveAnalysis extends SwingWorker<String, Void> {
             gridPoints = command.getFreeOption("gridpoints").getInteger();
 //            uniformDistributionApproximation = new UniformDistributionApproximation(
 //                    min.getResult(), max.getResult(), gridPoints);
-            uniformDistributionApproximation = new UniformDistributionApproximation(
+            uniformDistributionApproximation = new UniformQuadratureRule(
                     lower, upper, gridPoints);
 
         }catch(SQLException ex){

@@ -19,14 +19,13 @@ package com.itemanalysis.jmetrik.stats.irt.linking;
 
 import com.itemanalysis.jmetrik.sql.DataTableName;
 import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.distribution.ContinuousDistributionApproximation;
-import com.itemanalysis.psychometrics.distribution.DistributionApproximation;
-import com.itemanalysis.psychometrics.distribution.UserSuppliedDistributionApproximation;
+import com.itemanalysis.psychometrics.quadrature.ContinuousQuadratureRule;
+import com.itemanalysis.psychometrics.quadrature.QuadratureRule;
+import com.itemanalysis.psychometrics.quadrature.UniformQuadratureRule;
 import com.itemanalysis.squiggle.base.SelectQuery;
 import com.itemanalysis.squiggle.base.Table;
 import org.apache.commons.math3.stat.descriptive.rank.Max;
 import org.apache.commons.math3.stat.descriptive.rank.Min;
-import org.apache.commons.math3.util.ResizableDoubleArray;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -36,7 +35,6 @@ import java.util.ArrayList;
 
 public class DbThetaDistribution {
 
-//    UserSuppliedDistributionApproximation dist = null;
     private ArrayList<Double> points = null;
     private ArrayList<Double> weights = null;
 
@@ -44,8 +42,8 @@ public class DbThetaDistribution {
 
     }
 
-    public DistributionApproximation getDistribution(Connection conn, DataTableName tableName, VariableName thetaName,
-                                                     VariableName weightName, boolean hasWeight)throws SQLException {
+    public QuadratureRule getDistribution(Connection conn, DataTableName tableName, VariableName thetaName,
+                                          VariableName weightName, boolean hasWeight)throws SQLException {
 
         points = new ArrayList<Double>();
         Min min = new Min();
@@ -87,7 +85,7 @@ public class DbThetaDistribution {
         stmt.close();
 
 
-        ContinuousDistributionApproximation dist = new ContinuousDistributionApproximation(points.size(), min.getResult(), max.getResult());
+        QuadratureRule dist = new ContinuousQuadratureRule(points.size(), min.getResult(), max.getResult());
 
         if(hasWeight){
             for(int i=0;i<points.size();i++){

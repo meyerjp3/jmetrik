@@ -28,9 +28,9 @@ import com.itemanalysis.psychometrics.data.DataType;
 import com.itemanalysis.psychometrics.data.ItemType;
 import com.itemanalysis.psychometrics.data.VariableAttributes;
 import com.itemanalysis.psychometrics.data.VariableName;
-import com.itemanalysis.psychometrics.distribution.DistributionApproximation;
 import com.itemanalysis.psychometrics.irt.equating.IrtTrueScoreEquating;
 import com.itemanalysis.psychometrics.irt.model.ItemResponseModel;
+import com.itemanalysis.psychometrics.quadrature.QuadratureRule;
 import com.itemanalysis.psychometrics.tools.StopWatch;
 import org.apache.log4j.Logger;
 
@@ -50,8 +50,8 @@ public class IrtEquatingAnalysis extends SwingWorker<String, String> {
 
     private LinkedHashMap<VariableName, ItemResponseModel> irmX = null;
     private LinkedHashMap<VariableName, ItemResponseModel> irmY = null;
-    private DistributionApproximation xDistribution = null;
-    private DistributionApproximation yDistribution = null;
+    private QuadratureRule xDistribution = null;
+    private QuadratureRule yDistribution = null;
     private DataTableName tableNameItemsX = null;
     private DataTableName tableNameItemsY = null;
     private ArrayList<VariableName> itemsFormX = null;
